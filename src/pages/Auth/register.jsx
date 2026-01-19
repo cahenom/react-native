@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useAuth} from '../../context/AuthContext';
 
 export default function RegisterPage({navigation}) {
-    const {setIsLoggedIn} = useAuth();
+    const {setIsLoggedIn, setLoggedInState} = useAuth();
     const isDarkMode = useColorScheme() === 'dark'
     const [isSecure, setIsSecure] = useState(true)
     const [name, setName] = useState('')
@@ -52,7 +52,8 @@ export default function RegisterPage({navigation}) {
         // SIMPAN USER
         await AsyncStorage.setItem('user', JSON.stringify(user));
 
-        setIsLoggedIn(true);
+        // Update the context state with user data
+        setLoggedInState(user);
 
         Alert.alert('Success', 'Registrasi berhasil');
 

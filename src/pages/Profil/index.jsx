@@ -5,8 +5,10 @@ import {
   useColorScheme,
   TouchableOpacity,
   Alert,
+  ScrollView,
+  RefreshControl,
 } from 'react-native';
-import React from 'react';
+import React, {useState} from 'react';
 import {
   BOLD_FONT,
   DARK_BACKGROUND,
@@ -23,7 +25,8 @@ import {useAuth} from '../../context/AuthContext';
 
 export default function ProfilScreen({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
-  const {user, logout} = useAuth();
+  const {user, logout, refreshUserProfile} = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
 
   const handleLogout = () => {
     Alert.alert(
@@ -55,13 +58,28 @@ export default function ProfilScreen({navigation}) {
     );
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshUserProfile();
+    } catch (error) {
+      console.error('Failed to refresh user profile:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
-    <View
+    <ScrollView
       style={{
         flex: 1,
         backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
-        padding: HORIZONTAL_MARGIN,
-      }}>
+      }}
+      contentContainerStyle={{padding: HORIZONTAL_MARGIN}}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View style={styles.profileHeader}>
         <Text
           style={[
@@ -124,7 +142,7 @@ export default function ProfilScreen({navigation}) {
               styles.value,
               {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
             ]}>
-            Rp {user?.saldo?.toLocaleString() || '0'}
+            Rp {user?.saldo ? parseFloat(user.saldo).toLocaleString() : '0'}
           </Text>
         </View>
       </View>
@@ -134,7 +152,7 @@ export default function ProfilScreen({navigation}) {
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 

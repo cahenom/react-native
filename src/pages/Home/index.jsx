@@ -91,7 +91,7 @@ export default function HomeScreen({navigation}) {
             fontFamily: MEDIUM_FONT,
             fontSize: FONT_NORMAL,
           }}>
-          Rp. {user?.saldo ? user.saldo.toLocaleString() : '0'}
+          Rp. {user?.saldo ? parseFloat(user.saldo).toLocaleString() : '0'}
         </Text>
         <View
           style={{
