@@ -35,21 +35,21 @@ export default function MasaAktif({navigation}) {
     try {
       console.log('Attempting to fetch masa aktif providers...');
       const response = await api.post('/api/product/masaaktif');
-      
+
       console.log('Response status:', response.status);
       console.log('Response data:', response.data);
-      
-      if (response.data && response.data.data && response.data.data.masaaktif) {
-        const allProducts = response.data.data.masaaktif;
+
+      if (response.data && response.data.status === "success" && response.data.data && response.data.data.masa_aktif) {
+        const allProducts = response.data.data.masa_aktif;
         console.log('All products:', allProducts);
-        
+
         const uniqueProviders = [...new Set(allProducts.map(item => item.provider))];
         console.log('Unique providers:', uniqueProviders);
-        
+
         setProviders(uniqueProviders);
       } else {
         console.log('Unexpected response structure:', response.data);
-        Alert.alert('Error', 'Silakan hubungi administrator.');
+        Alert.alert('Error', response.data.message || 'Silakan hubungi administrator.');
       }
     } catch (error) {
       console.error('Error details:', {
@@ -58,7 +58,7 @@ export default function MasaAktif({navigation}) {
         status: error.response?.status,
         data: error.response?.data
       });
-      
+
       if (error.response?.status === 405) {
         Alert.alert('Error', 'Metode tidak diizinkan. Endpoint mungkin salah atau tidak mendukung metode POST.');
       } else if (error.response?.status === 401) {
@@ -66,7 +66,7 @@ export default function MasaAktif({navigation}) {
       } else if (error.response?.status === 404) {
         Alert.alert('Error', 'Endpoint tidak ditemukan. Silakan periksa kembali alamat API.');
       } else {
-        Alert.alert('Error', `Gagal memuat daftar provider masa aktif: ${error.message}`);
+        Alert.alert('Error', error.response?.data?.message || `Gagal memuat daftar provider masa aktif: ${error.message}`);
       }
     } finally {
       setLoading(false);

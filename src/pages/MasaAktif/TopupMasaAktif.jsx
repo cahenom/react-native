@@ -1,5 +1,6 @@
 import {StyleSheet, Text, View, useColorScheme, ScrollView, FlatList, ActivityIndicator, Alert, SafeAreaView} from 'react-native';
 import React, {useState, useEffect, useMemo} from 'react';
+import { useNavigation } from '@react-navigation/native';
 import {
   BLUE_COLOR,
   DARK_BACKGROUND,
@@ -24,6 +25,7 @@ const productCache = new Map();
 
 export default function TopupMasaAktif({route}) {
   const {provider, title} = route.params;
+  const navigation = useNavigation();
   const isDarkMode = useColorScheme() === 'dark';
   const [customer_no, setCustomerNo] = useState('');
   const [selectItem, setSelectItem] = useState(null);
@@ -43,7 +45,7 @@ export default function TopupMasaAktif({route}) {
   const fetchProductsByProvider = async () => {
     try {
       console.log('Attempting to fetch masa aktif for provider:', provider);
-      
+
       // Check if products are already cached for this provider
       if (productCache.has(provider)) {
         console.log('Using cached masa aktif for provider:', provider);
@@ -51,21 +53,21 @@ export default function TopupMasaAktif({route}) {
         setProducts(cachedProducts);
         return;
       }
-      
+
       const response = await api.post('/api/product/masaaktif');
-      
+
       console.log('Response status:', response.status);
       console.log('Full response:', response);
       console.log('Response data:', response.data);
-      
-      if (response.data && response.data.data && response.data.data.masaaktif) {
-        const allProducts = response.data.data.masaaktif;
+
+      if (response.data && response.data.status === "success" && response.data.data && response.data.data.masa_aktif) {
+        const allProducts = response.data.data.masa_aktif;
         console.log('All masa aktif for provider:', allProducts);
         console.log('Selected provider:', provider);
-        
+
         const filteredProducts = allProducts.filter(item => item.provider === provider);
         console.log('Filtered masa aktif:', filteredProducts);
-        
+
         const transformedProducts = filteredProducts.map(item => ({
           id: item.id,
           label: item.name,
@@ -75,15 +77,15 @@ export default function TopupMasaAktif({route}) {
           sku: item.sku,
           multi: item.multi
         }));
-        
+
         console.log('Transformed masa aktif:', transformedProducts);
-        
+
         // Cache the products for this provider
         productCache.set(provider, transformedProducts);
         setProducts(transformedProducts);
       } else {
         console.log('Unexpected response structure:', response.data);
-        Alert.alert('Error', 'Struktur data tidak sesuai. Silakan hubungi administrator.');
+        Alert.alert('Error', response.data.message || 'Struktur data tidak sesuai. Silakan hubungi administrator.');
       }
     } catch (error) {
       console.error('Error details:', {
@@ -92,7 +94,7 @@ export default function TopupMasaAktif({route}) {
         status: error.response?.status,
         data: error.response?.data
       });
-      
+
       if (error.response?.status === 405) {
         Alert.alert('Error', 'Metode tidak diizinkan. Endpoint mungkin salah atau tidak mendukung metode POST.');
       } else if (error.response?.status === 401) {
@@ -100,7 +102,7 @@ export default function TopupMasaAktif({route}) {
       } else if (error.response?.status === 404) {
         Alert.alert('Error', 'Endpoint tidak ditemukan. Silakan periksa kembali alamat API.');
       } else {
-        Alert.alert('Error', `Gagal memuat produk masa aktif: ${error.message}\nStatus: ${error.response?.status || 'Unknown'}`);
+        Alert.alert('Error', error.response?.data?.message || `Gagal memuat produk masa aktif: ${error.message}\nStatus: ${error.response?.status || 'Unknown'}`);
       }
     } finally {
       setLoading(false);
@@ -141,7 +143,9 @@ export default function TopupMasaAktif({route}) {
       navigation.navigate('SuccessNotif', {
         item: {
           ...response.data,
-          customer_no: customer_no
+          customer_no: customer_no,
+          status: response.data.status || 'Berhasil', // Map status appropriately
+          data: { status: response.data.status || 'Berhasil' } // Also include in data object for SuccessNotif checks
         },
         product: {
           ...selectItem,
