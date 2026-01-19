@@ -21,7 +21,7 @@ import {api} from '../../utils/api';
 // Cache to store fetched products
 const productCache = new Map();
 
-export default function TopupDompet({route}) {
+export default function TopupMasaAktif({route}) {
   const {provider, title} = route.params;
   const isDarkMode = useColorScheme() === 'dark';
   const [customer_no, setCustomerNo] = useState('');
@@ -40,34 +40,30 @@ export default function TopupDompet({route}) {
 
   const fetchProductsByProvider = async () => {
     try {
-      console.log('Attempting to fetch products for provider:', provider);
-
+      console.log('Attempting to fetch masa aktif for provider:', provider);
+      
       // Check if products are already cached for this provider
       if (productCache.has(provider)) {
-        console.log('Using cached products for provider:', provider);
+        console.log('Using cached masa aktif for provider:', provider);
         const cachedProducts = productCache.get(provider);
         setProducts(cachedProducts);
         return;
       }
-
-      // Try POST request instead of GET
-      const response = await api.post('/api/product/emoney');
-
+      
+      const response = await api.post('/api/product/masaaktif');
+      
       console.log('Response status:', response.status);
       console.log('Full response:', response);
       console.log('Response data:', response.data);
-
-      // Check if the response has the expected structure
-      if (response.data && response.data.data && response.data.data.emoney) {
-        // Filter products by the selected provider
-        const allProducts = response.data.data.emoney;
-        console.log('All products for provider:', allProducts); // Products debug log
-        console.log('Selected provider:', provider); // Provider debug log
-
+      
+      if (response.data && response.data.data && response.data.data.masaaktif) {
+        const allProducts = response.data.data.masaaktif;
+        console.log('All masa aktif for provider:', allProducts);
+        console.log('Selected provider:', provider);
+        
         const filteredProducts = allProducts.filter(item => item.provider === provider);
-        console.log('Filtered products:', filteredProducts); // Filtered products debug log
-
-        // Transform the API response to match the expected format for ProductList
+        console.log('Filtered masa aktif:', filteredProducts);
+        
         const transformedProducts = filteredProducts.map(item => ({
           id: item.id,
           label: item.name,
@@ -77,14 +73,13 @@ export default function TopupDompet({route}) {
           sku: item.sku,
           multi: item.multi
         }));
-
-        console.log('Transformed products:', transformedProducts); // Transformed products debug log
-
+        
+        console.log('Transformed masa aktif:', transformedProducts);
+        
         // Cache the products for this provider
         productCache.set(provider, transformedProducts);
         setProducts(transformedProducts);
       } else {
-        // If the structure is different, let's see what we got
         console.log('Unexpected response structure:', response.data);
         Alert.alert('Error', 'Struktur data tidak sesuai. Silakan hubungi administrator.');
       }
@@ -95,8 +90,7 @@ export default function TopupDompet({route}) {
         status: error.response?.status,
         data: error.response?.data
       });
-
-      // More specific error handling based on status code
+      
       if (error.response?.status === 405) {
         Alert.alert('Error', 'Metode tidak diizinkan. Endpoint mungkin salah atau tidak mendukung metode POST.');
       } else if (error.response?.status === 401) {
@@ -104,7 +98,7 @@ export default function TopupDompet({route}) {
       } else if (error.response?.status === 404) {
         Alert.alert('Error', 'Endpoint tidak ditemukan. Silakan periksa kembali alamat API.');
       } else {
-        Alert.alert('Error', `Gagal memuat produk e-money: ${error.message}\nStatus: ${error.response?.status || 'Unknown'}`);
+        Alert.alert('Error', `Gagal memuat produk masa aktif: ${error.message}\nStatus: ${error.response?.status || 'Unknown'}`);
       }
     } finally {
       setLoading(false);
@@ -124,10 +118,9 @@ export default function TopupDompet({route}) {
       Alert.alert('Error', 'Silakan pilih produk terlebih dahulu');
       return;
     }
-
+    
     console.log('Selected Item:', selectItem);
     console.log('Customer Number:', customer_no);
-    // Here you would typically navigate to the next screen with the selected item and customer number
   };
 
   if (loading) {
@@ -167,7 +160,7 @@ export default function TopupDompet({route}) {
 
       {/* Scrollable Product List */}
       {sortedProducts.length > 0 ? (
-        <ScrollView
+        <ScrollView 
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
@@ -232,10 +225,6 @@ const styles = StyleSheet.create({
   productItem: {
     width: '47%', // Adjusted to prevent clipping
     marginBottom: 0, // Let the rowGap in parent handle spacing
-  },
-  spacer: {
-    height: 120, // Space equivalent to bottom button height plus some extra
-    width: '100%',
   },
   bottomButtonContainer: {
     paddingHorizontal: HORIZONTAL_MARGIN,

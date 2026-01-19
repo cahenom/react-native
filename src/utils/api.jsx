@@ -1,17 +1,16 @@
 import axios from 'axios';
-
-const {
-  default: AsyncStorage,
-} = require('@react-native-async-storage/async-storage');
-const {API_URL} = require('./const');
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from './const';
 
 export const api = axios.create({
   baseURL: API_URL,
-  headers: {'Content-Type': 'application/json'},
+  headers: { 'Content-Type': 'application/json' },
 });
 
 api.interceptors.request.use(async config => {
-  const jsonValue = await AsyncStorage.getItem('users');
-  config.headers.Authorization = 'Bearer ' + JSON.parse(jsonValue)?.token;
+  const token = await AsyncStorage.getItem('token'); // ← ambil token langsung
+  if (token) {
+    config.headers.Authorization = 'Bearer ' + token;
+  }
   return config;
 });

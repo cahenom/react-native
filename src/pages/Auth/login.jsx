@@ -5,6 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   useColorScheme,
+  Alert,
 } from 'react-native';
 import React, {useState} from 'react';
 import {
@@ -22,29 +23,81 @@ import {
   WHITE_COLOR,
 } from '../../utils/const';
 import {Eye, EyeCros} from '../../assets';
-import axios from 'axios';
+import {api} from '../../utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useAuth} from '../../context/AuthContext';
 
-export default function LoginPage() {
+export default function LoginPage({navigation}) {
   const {setIsLoggedIn} = useAuth();
   const isDarkMode = useColorScheme() === 'dark';
   const [isSecure, setIsSecure] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    // Basic validation
+    if (!email || !password) {
+      Alert.alert('Error', 'Email dan password wajib diisi');
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const response = await axios.post(`${API_URL}/api/auth/login`, {
+      const response = await api.post(`/api/auth/login`, {
         email,
         password,
       });
-      await AsyncStorage.setItem('users', JSON.stringify(response.data.data));
-      setIsLoggedIn(response.data.data);
+
+      console.log('Login response:', response.data); // Debug log
+
+      const token = response.data.data?.token;
+      const user = response.data.data?.user;
+
+      if (!token) {
+        throw new Error('Token tidak ditemukan dalam respons');
+      }
+
+      // SIMPAN TOKEN
+      await AsyncStorage.setItem('token', token);
+
+      // SIMPAN USER
+      await AsyncStorage.setItem('user', JSON.stringify(user));
+
+      setIsLoggedIn(true);
+
+      Alert.alert('Success', 'Login berhasil');
+
     } catch (error) {
-      console.log('error : ', error);
+      console.log('Login error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: error.config ? {
+          url: error.config.url,
+          method: error.config.method,
+          data: error.config.data
+        } : undefined
+      });
+
+      // Handle different error scenarios
+      if (error.response?.status === 401) {
+        Alert.alert('Error', 'Email atau password salah');
+      } else if (error.response?.status === 422) {
+        // Validation error
+        const errors = error.response.data.errors || error.response.data.message;
+        Alert.alert('Error Validasi', typeof errors === 'string' ? errors : JSON.stringify(errors));
+      } else if (error.code === 'NETWORK_ERROR') {
+        Alert.alert('Error Jaringan', 'Tidak dapat terhubung ke server. Pastikan jaringan internet Anda stabil.');
+      } else {
+        Alert.alert('Error', error.response?.data?.message || 'Terjadi kesalahan saat login. Silakan coba lagi.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
+
 
   return (
     <View
@@ -83,7 +136,9 @@ export default function LoginPage() {
           placeholder="Masukan email"
           placeholderTextColor={isDarkMode ? SLATE_COLOR : GREY_COLOR}
           value={email}
-          onChangeText={text => setEmail(text)}
+          onChangeText={text => setEmail(text.trim())}
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
 
         <View style={{height: 20}} />
@@ -119,18 +174,20 @@ export default function LoginPage() {
 
         <TouchableOpacity
           style={{
-            backgroundColor: BLUE_COLOR,
+            backgroundColor: loading ? '#99ccff' : BLUE_COLOR,
             padding: 10,
             borderRadius: 5,
+            opacity: loading ? 0.7 : 1,
           }}
-          onPress={handleLogin}>
+          onPress={handleLogin}
+          disabled={loading}>
           <Text
             style={{
               color: WHITE_COLOR,
               textAlign: 'center',
               fontFamily: REGULAR_FONT,
             }}>
-            Login
+            {loading ? 'Loading...' : 'Login'}
           </Text>
         </TouchableOpacity>
         <View style={{height: 20}} />
@@ -140,7 +197,7 @@ export default function LoginPage() {
             textAlign: 'center',
             fontFamily: REGULAR_FONT,
           }}>
-          atau
+            atau
         </Text>
         <View style={{height: 20}} />
         <View
@@ -151,7 +208,7 @@ export default function LoginPage() {
           }}>
           <Text>Belum punya akun?</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text>Daftar</Text>
+            <Text style={{color: BLUE_COLOR}}>Daftar</Text>
           </TouchableOpacity>
         </View>
       </View>

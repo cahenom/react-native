@@ -20,6 +20,7 @@ import {
   MEDIUM_FONT,
   REGULAR_FONT,
   SLATE_COLOR,
+  WHITE_COLOR,
   windowHeight,
   windowWidth,
 } from '../../utils/const';
@@ -28,9 +29,8 @@ import {useAuth} from '../../context/AuthContext';
 
 export default function HomeScreen({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
-  const {isLoggedIn} = useAuth();
+  const {user} = useAuth();
 
-  console.log(isLoggedIn);
   return (
     <ImageBackground
       source={HeaderBG}
@@ -51,9 +51,19 @@ export default function HomeScreen({navigation}) {
             fontWeight: '500',
             fontFamily: MEDIUM_FONT,
           }}>
-          Hai, Gagas
+          Hai, {user?.name || user?.email || 'User'}
         </Text>
-        <BellIkon />
+        <TouchableOpacity onPress={() => navigation.navigate('Profil')}>
+          <Text
+            style={{
+              color: WHITE_COLOR,
+              fontSize: FONT_SEDANG,
+              fontWeight: '500',
+              fontFamily: MEDIUM_FONT,
+            }}>
+            Profil
+          </Text>
+        </TouchableOpacity>
       </View>
       <View
         style={{
@@ -81,7 +91,7 @@ export default function HomeScreen({navigation}) {
             fontFamily: MEDIUM_FONT,
             fontSize: FONT_NORMAL,
           }}>
-          Rp. 15.000
+          Rp. {user?.saldo ? user.saldo.toLocaleString() : '0'}
         </Text>
         <View
           style={{

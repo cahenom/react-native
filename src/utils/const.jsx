@@ -26,4 +26,4 @@ export const GREEN_COLOR = '#01C1A2';
 export const WHITE_COLOR = '#FFFFFF';
 
 export const API_URL =
-  'https://dd3b-2001-448a-40a8-1174-491b-9bd5-2f3d-901.ngrok-free.app';
+  'https://67d1194ec52f.ngrok-free.app';

@@ -1,12 +1,81 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, useColorScheme} from 'react-native'
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, useColorScheme, Alert} from 'react-native'
 import React, {useState} from 'react'
-import { BLUE_COLOR, BOLD_FONT, DARK_BACKGROUND, DARK_COLOR, GREY_COLOR, HORIZONTAL_MARGIN, LIGHT_COLOR, REGULAR_FONT, SLATE_COLOR, WHITE_BACKGROUND, WHITE_COLOR } from '../../utils/const'
+import { API_URL, BLUE_COLOR, BOLD_FONT, DARK_BACKGROUND, DARK_COLOR, GREY_COLOR, HORIZONTAL_MARGIN, LIGHT_COLOR, REGULAR_FONT, SLATE_COLOR, WHITE_BACKGROUND, WHITE_COLOR } from '../../utils/const'
 import { Eye, EyeCros } from '../../assets'
+import {api} from '../../utils/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useAuth} from '../../context/AuthContext';
 
 export default function RegisterPage({navigation}) {
+    const {setIsLoggedIn} = useAuth();
     const isDarkMode = useColorScheme() === 'dark'
-
     const [isSecure, setIsSecure] = useState(true)
+    const [name, setName] = useState('')
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [passwordConfirmation, setPasswordConfirmation] = useState('')
+    const [loading, setLoading] = useState(false)
+
+    const handleRegister = async () => {
+      if (!name || !email || !password || !passwordConfirmation) {
+        Alert.alert('Error', 'Semua field wajib diisi')
+        return
+      }
+
+      if (password !== passwordConfirmation) {
+        Alert.alert('Error', 'Konfirmasi password tidak cocok')
+        return
+      }
+
+      setLoading(true)
+
+      try {
+        const response = await api.post(`/api/auth/register`, {
+          name,
+          email,
+          password,
+          password_confirmation: passwordConfirmation
+        });
+
+        console.log('Register response:', response.data); // Debug log
+
+        const token = response.data.data?.token;
+        const user = response.data.data?.user;
+
+        if (!token) {
+          throw new Error('Token tidak ditemukan dalam respons');
+        }
+
+        // SIMPAN TOKEN
+        await AsyncStorage.setItem('token', token);
+
+        // SIMPAN USER
+        await AsyncStorage.setItem('user', JSON.stringify(user));
+
+        setIsLoggedIn(true);
+
+        Alert.alert('Success', 'Registrasi berhasil');
+
+      } catch (error) {
+        console.log('Register error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+        });
+
+        if (error.response?.status === 422) {
+          // Validation error
+          const errors = error.response.data.errors || error.response.data.message;
+          Alert.alert('Error Validasi', typeof errors === 'string' ? errors : JSON.stringify(errors));
+        } else if (error.code === 'NETWORK_ERROR') {
+          Alert.alert('Error Jaringan', 'Tidak dapat terhubung ke server. Pastikan jaringan internet Anda stabil.');
+        } else {
+          Alert.alert('Error', error.response?.data?.message || 'Terjadi kesalahan saat registrasi. Silakan coba lagi.');
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
 
   return (
     <View style={{
@@ -38,6 +107,8 @@ export default function RegisterPage({navigation}) {
              }}
              placeholder='Masukan Nama'
              placeholderTextColor={isDarkMode ? SLATE_COLOR : GREY_COLOR}
+             value={name}
+             onChangeText={text => setName(text)}
             />
              <View style={{height : 20}}/>
             <TextInput
@@ -51,6 +122,10 @@ export default function RegisterPage({navigation}) {
              }}
              placeholder='Masukan email'
              placeholderTextColor={isDarkMode ? SLATE_COLOR : GREY_COLOR}
+             value={email}
+             onChangeText={text => setEmail(text.trim())}
+             keyboardType="email-address"
+             autoCapitalize="none"
             />
 
             <View style={{height : 20}}/>
@@ -73,7 +148,9 @@ export default function RegisterPage({navigation}) {
              }}
              placeholder='Password'
              placeholderTextColor={isDarkMode ? SLATE_COLOR : GREY_COLOR}
-             secureTextEntry={isSecure}/>
+             secureTextEntry={isSecure}
+             value={password}
+             onChangeText={text => setPassword(text)}/>
                <TouchableOpacity onPress={() => setIsSecure(!isSecure)}>
                 {isSecure ? <Eye /> : <EyeCros />}
                </TouchableOpacity>
@@ -81,13 +158,57 @@ export default function RegisterPage({navigation}) {
 
             <View style={{height : 20}}/>
 
-            <TouchableOpacity style={{
-                backgroundColor : BLUE_COLOR,
-                padding : 10,
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor : isDarkMode ? SLATE_COLOR : GREY_COLOR,
                 borderRadius : 5,
-             }}>
-                <Text style={{ color : WHITE_COLOR, textAlign : 'center', fontFamily : REGULAR_FONT }}>Register</Text>
+                flexDirection: 'row',
+                alignItems : 'center',
+                justifyContent : 'space-between',
+                paddingHorizontal: 10
+             }}
+            >
+                <TextInput style={{
+                fontFamily : REGULAR_FONT,
+                color : isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+                flex : 1
+             }}
+             placeholder='Konfirmasi Password'
+             placeholderTextColor={isDarkMode ? SLATE_COLOR : GREY_COLOR}
+             secureTextEntry={isSecure}
+             value={passwordConfirmation}
+             onChangeText={text => setPasswordConfirmation(text)}/>
+            </View>
+
+            <View style={{height : 20}}/>
+
+            <TouchableOpacity 
+              style={{
+                  backgroundColor : loading ? '#99ccff' : BLUE_COLOR,
+                  padding : 10,
+                  borderRadius : 5,
+                  opacity: loading ? 0.7 : 1
+               }}
+               onPress={handleRegister}
+               disabled={loading}>
+                <Text style={{ color : WHITE_COLOR, textAlign : 'center', fontFamily : REGULAR_FONT }}> 
+                  {loading ? 'Loading...' : 'Register'}
+                </Text>
             </TouchableOpacity>
+
+            <View style={{height : 20}}/>
+            <View
+              style={{
+                flexDirection: 'row',
+                columnGap: 5,
+                justifyContent: 'center',
+              }}>
+              <Text>Sudah punya akun?</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={{color: BLUE_COLOR}}>Login</Text>
+              </TouchableOpacity>
+            </View>
 
         </View>
     </View>

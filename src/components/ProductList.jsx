@@ -53,17 +53,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: GREY_COLOR,
     borderRadius: 10,
-    padding: 20,
-    width: '47%',
+    padding: 15, // Reduced padding to prevent overflow
+    width: '100%', // Let parent handle width to prevent cutting
     backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
+    minHeight: 80, // Ensure minimum height to prevent text overlap
   }),
   productLabel: isDarkMode => ({
     fontFamily: MEDIUM_FONT,
     fontSize: FONT_NORMAL,
     color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    marginBottom: 5,
+    flexWrap: 'wrap',
   }),
   productPrice: isDarkMode => ({
     fontFamily: REGULAR_FONT,
     color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    flexWrap: 'wrap',
   }),
 });

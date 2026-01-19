@@ -24,6 +24,26 @@ export const mainmenus = [
     path: 'DompetElektronik',
   },
   {
+    label: 'Games',
+    ikon: HandphoneIkon, // Using existing icon temporarily
+    path: 'Games',
+  },
+  {
+    label: 'Masa Aktif',
+    ikon: HandphoneIkon, // Using existing icon temporarily
+    path: 'MasaAktif',
+  },
+  {
+    label: 'TV',
+    ikon: InternetIkon, // Using existing icon temporarily
+    path: 'TV',
+  },
+  {
+    label: 'Voucher',
+    ikon: DompetIkon, // Using existing icon temporarily
+    path: 'Voucher',
+  },
+  {
     label: 'BPJS Kesehatan',
     ikon: BPJSIkon,
     path: 'BpjsKesehatan',

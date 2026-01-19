@@ -22,7 +22,7 @@ import {
 import {ArrowRight} from '../../assets';
 import {api} from '../../utils/api';
 
-export default function DompetElektronik({navigation}) {
+export default function MasaAktif({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,28 +33,23 @@ export default function DompetElektronik({navigation}) {
 
   const fetchProviders = async () => {
     try {
-      console.log('Attempting to fetch e-money products...');
-
-      // Try POST request instead of GET
-      const response = await api.post('/api/product/emoney');
-
+      console.log('Attempting to fetch masa aktif providers...');
+      const response = await api.post('/api/product/masaaktif');
+      
       console.log('Response status:', response.status);
-      console.log('Full response:', response);
       console.log('Response data:', response.data);
-
-      // Check if the response has the expected structure
-      if (response.data && response.data.data && response.data.data.emoney) {
-        const allProducts = response.data.data.emoney;
+      
+      if (response.data && response.data.data && response.data.data.masaaktif) {
+        const allProducts = response.data.data.masaaktif;
         console.log('All products:', allProducts);
-
+        
         const uniqueProviders = [...new Set(allProducts.map(item => item.provider))];
         console.log('Unique providers:', uniqueProviders);
-
+        
         setProviders(uniqueProviders);
       } else {
-        // If the structure is different, let's see what we got
         console.log('Unexpected response structure:', response.data);
-        Alert.alert('Error', 'Struktur data tidak sesuai. Silakan hubungi administrator.');
+        Alert.alert('Error', 'Silakan hubungi administrator.');
       }
     } catch (error) {
       console.error('Error details:', {
@@ -63,8 +58,7 @@ export default function DompetElektronik({navigation}) {
         status: error.response?.status,
         data: error.response?.data
       });
-
-      // More specific error handling based on status code
+      
       if (error.response?.status === 405) {
         Alert.alert('Error', 'Metode tidak diizinkan. Endpoint mungkin salah atau tidak mendukung metode POST.');
       } else if (error.response?.status === 401) {
@@ -72,7 +66,7 @@ export default function DompetElektronik({navigation}) {
       } else if (error.response?.status === 404) {
         Alert.alert('Error', 'Endpoint tidak ditemukan. Silakan periksa kembali alamat API.');
       } else {
-        Alert.alert('Error', `Gagal memuat daftar provider e-money: ${error.message}`);
+        Alert.alert('Error', `Gagal memuat daftar provider masa aktif: ${error.message}`);
       }
     } finally {
       setLoading(false);
@@ -80,9 +74,9 @@ export default function DompetElektronik({navigation}) {
   };
 
   const handleProviderPress = (provider) => {
-    navigation.navigate('TopupDompet', {
+    navigation.navigate('TopupMasaAktif', {
       provider: provider,
-      title: `${provider} Product`,
+      title: `${provider} Masa Aktif`,
     });
   };
 

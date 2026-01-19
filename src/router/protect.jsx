@@ -7,29 +7,30 @@ import MyTabBar from '../components/BottomTab';
 import {
   BpjsKesehatan,
   DompetElektronik,
+  Games,
   HomeScreen,
   Internet,
   LayananPLN,
+  MasaAktif,
   PDAM,
   PLNPascabayar,
   PLNPrabayar,
+  ProfilScreen,
   Pulsa,
   SuccessNotif,
   TopupDompet,
+  TopupGames,
+  TopupMasaAktif,
+  TopupTV,
+  TopupVoucher,
+  TV,
+  Voucher,
 } from '../pages';
 
 function Transaksi() {
   return (
     <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-      <Text>Settings!</Text>
-    </View>
-  );
-}
-
-function Profil() {
-  return (
-    <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-      <Text>Settings!</Text>
+      <Text>Transaksi</Text>
     </View>
   );
 }
@@ -56,7 +57,7 @@ function MyTabs() {
       />
       <Tab.Screen
         name="Profil"
-        component={Profil}
+        component={ProfilScreen}
         options={{
           headerShown: false,
         }}
@@ -122,6 +123,62 @@ function ProtectedRoute() {
         component={TopupDompet}
         options={{
           title: 'Topup Dompet Elektronik',
+        }}
+      />
+      <Stack.Screen
+        name="Games"
+        component={Games}
+        options={{
+          title: 'Topup Games',
+        }}
+      />
+      <Stack.Screen
+        name="TopupGames"
+        component={TopupGames}
+        options={{
+          title: 'Topup Games',
+        }}
+      />
+      <Stack.Screen
+        name="MasaAktif"
+        component={MasaAktif}
+        options={{
+          title: 'Masa Aktif',
+        }}
+      />
+      <Stack.Screen
+        name="TopupMasaAktif"
+        component={TopupMasaAktif}
+        options={{
+          title: 'Topup Masa Aktif',
+        }}
+      />
+      <Stack.Screen
+        name="TV"
+        component={TV}
+        options={{
+          title: 'TV Berlangganan',
+        }}
+      />
+      <Stack.Screen
+        name="TopupTV"
+        component={TopupTV}
+        options={{
+          title: 'Topup TV',
+        }}
+      />
+      <Stack.Screen
+        name="Voucher"
+        component={Voucher}
+        options={{
+          title: 'Voucher',
+        }}
+      />
+      <Stack.Screen
+        name="TopupVoucher"
+        component={TopupVoucher}
+        options={{
+          title: 'Topup Voucher',
         }}
       />
       <Stack.Screen

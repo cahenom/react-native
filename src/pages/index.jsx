@@ -6,11 +6,20 @@ import PLNPascabayar from './Pln/pascabayar';
 import PLNPrabayar from './Pln/prabayar';
 import DompetElektronik from './Dompet_elektronik';
 import TopupDompet from './Dompet_elektronik/topupDompet';
+import Games from './Games';
+import TopupGames from './Games/TopupGames';
+import MasaAktif from './MasaAktif';
+import TopupMasaAktif from './MasaAktif/TopupMasaAktif';
+import TV from './TV';
+import TopupTV from './TV/TopupTV';
+import Voucher from './Voucher';
+import TopupVoucher from './Voucher/TopupVoucher';
 import BpjsKesehatan from './Bpjs';
 import PDAM from './Pdam';
 import Internet from './Internet';
 import LoginPage from './Auth/login';
 import RegisterPage from './Auth/register';
+import ProfilScreen from './Profil';
 export {
   HomeScreen,
   Pulsa,
@@ -20,9 +29,18 @@ export {
   PLNPrabayar,
   DompetElektronik,
   TopupDompet,
+  Games,
+  TopupGames,
+  MasaAktif,
+  TopupMasaAktif,
+  TV,
+  TopupTV,
+  Voucher,
+  TopupVoucher,
   BpjsKesehatan,
   PDAM,
   Internet,
   LoginPage,
-  RegisterPage
+  RegisterPage,
+  ProfilScreen
 };
