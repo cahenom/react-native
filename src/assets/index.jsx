@@ -5,6 +5,9 @@ import InternetIkon from './images/internet-icon.png';
 import PLNIkon from './images/pln-icon.png';
 import PDAMIkon from './images/pdam-icon.png';
 import BPJSIkon from './images/bpjs-icon.png';
+import GamesIkon from './images/games-icon.png';
+import VoucherIkon from './images/voucher-icon.png';
+import TvIkon from './images/tv-icon.png';
 
 // svg file
 import BellIkon from './images/svg/bell-icon.svg';
@@ -33,6 +36,9 @@ export {
   PLNIkon,
   PDAMIkon,
   BPJSIkon,
+  GamesIkon,
+  TvIkon,
+  VoucherIkon,
   HomeDefault,
   TransaksiDefault,
   UserDefault,

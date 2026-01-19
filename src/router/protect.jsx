@@ -27,14 +27,8 @@ import {
   TV,
   Voucher,
 } from '../pages';
+import Transaksi from '../pages/Transaksi';
 
-function Transaksi() {
-  return (
-    <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-      <Text>Transaksi</Text>
-    </View>
-  );
-}
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();

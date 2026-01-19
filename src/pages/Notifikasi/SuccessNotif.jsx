@@ -2,6 +2,7 @@ import {StyleSheet, Text, View, useColorScheme} from 'react-native';
 import React from 'react';
 import LottieView from 'lottie-react-native';
 import {
+  DARK_BACKGROUND,
   DARK_COLOR,
   FONT_NORMAL,
   FONT_SEDANG,
@@ -30,9 +31,15 @@ export default function SuccessNotif({route}) {
           alignItems: 'center',
           marginTop: 15,
         }}>
-        {item?.status === 'Gagal' ? (
+        {(item?.status === 'Gagal' || item?.data?.status === 'Gagal' || item?.status === 'Error' || item?.data?.status === 'Error') ? (
           <LottieView
-            source={require('../../assets/lottie/animation_fail.json')}
+            source={require('../../assets/lottie/gagal-animation.json')}
+            autoPlay
+            loop
+          />
+        ) : item?.status === 'Pending' || item?.data?.status === 'Pending' ? (
+          <LottieView
+            source={require('../../assets/lottie/pending-animation.json')}
             autoPlay
             loop
           />
@@ -51,31 +58,43 @@ export default function SuccessNotif({route}) {
         <View style={styles.modalData(isDarkMode)}>
           <Text style={styles.labelModalData(isDarkMode)}>Nomor Tujuan</Text>
           <Text style={styles.valueModalData(isDarkMode)}>
-            {item?.customer_no}
+            {item?.customer_no || item?.data?.customer_no || '-'}
           </Text>
         </View>
         <View style={styles.modalData(isDarkMode)}>
           <Text style={styles.labelModalData(isDarkMode)}>Produk</Text>
           <Text style={styles.valueModalData(isDarkMode)}>
-            {product?.product_name}
+            {product?.product_name || product?.name || product?.label || '-'}
           </Text>
         </View>
         <View style={styles.modalData(isDarkMode)}>
           <Text style={styles.labelModalData(isDarkMode)}>Harga </Text>
           <Text style={styles.valueModalData(isDarkMode)}>
-            {product?.product_seller_price}
+            {product?.product_seller_price || product?.price || '-'}
           </Text>
         </View>
         <View style={styles.modalData(isDarkMode)}>
           <Text style={styles.labelModalData(isDarkMode)}>Status </Text>
           <Text style={styles.valueModalData(isDarkMode)}>
-            {item?.status || 'Berhasil'}
+            {item?.status || item?.data?.status || 'Berhasil'}
           </Text>
         </View>
         <View style={styles.modalData(isDarkMode)}>
           <Text style={styles.labelModalData(isDarkMode)}>SN </Text>
           <Text style={styles.valueModalData(isDarkMode)}>
-            {item?.sn || item?.serial_number || item?.transaction_id || '-'}
+            {item?.sn || item?.data?.sn || item?.serial_number || item?.transaction_id || '-'}
+          </Text>
+        </View>
+        <View style={styles.modalData(isDarkMode)}>
+          <Text style={styles.labelModalData(isDarkMode)}>Ref ID </Text>
+          <Text style={styles.valueModalData(isDarkMode)}>
+            {item?.ref_id || item?.data?.ref_id || '-'}
+          </Text>
+        </View>
+        <View style={styles.modalData(isDarkMode)}>
+          <Text style={styles.labelModalData(isDarkMode)}>Message </Text>
+          <Text style={styles.valueModalData(isDarkMode)}>
+            {item?.message || item?.data?.message || '-'}
           </Text>
         </View>
       </View>

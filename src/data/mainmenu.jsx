@@ -1,10 +1,13 @@
 import {
   BPJSIkon,
   DompetIkon,
+  GamesIkon,
   HandphoneIkon,
   InternetIkon,
   PDAMIkon,
   PLNIkon,
+  TvIkon,
+  VoucherIkon,
 } from '../assets';
 
 export const mainmenus = [
@@ -25,7 +28,7 @@ export const mainmenus = [
   },
   {
     label: 'Games',
-    ikon: HandphoneIkon, // Using existing icon temporarily
+    ikon: GamesIkon,
     path: 'Games',
   },
   {
@@ -35,12 +38,12 @@ export const mainmenus = [
   },
   {
     label: 'TV',
-    ikon: InternetIkon, // Using existing icon temporarily
+    ikon: TvIkon,
     path: 'TV',
   },
   {
     label: 'Voucher',
-    ikon: DompetIkon, // Using existing icon temporarily
+    ikon: VoucherIkon,
     path: 'Voucher',
   },
   {
