@@ -4,8 +4,12 @@ import {
   View,
   TouchableOpacity,
   useColorScheme,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
 } from 'react-native';
-import React, {useState} from 'react';
+import React, {useState, useEffect, useMemo} from 'react';
 import {
   BLUE_COLOR,
   DARK_BACKGROUND,
@@ -24,22 +28,108 @@ import {
   windowWidth,
 } from '../../utils/const';
 import Input from '../../components/form/Input';
-import {product_token} from '../../data/product_pln';
 import {CheckProduct} from '../../assets';
+import {api} from '../../utils/api';
+import ProductList from '../../components/ProductList';
+
+// Cache to store fetched products
+const productCache = new Map();
 
 export default function PLNPrabayar() {
   const isDarkMode = useColorScheme() === 'dark';
 
   const [customer_no, setCustomerNo] = useState('');
   const [selectItem, setSelectItem] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Memoized sorted products to avoid re-sorting on every render
+  const sortedProducts = useMemo(() => {
+    return [...products].sort((a, b) => a.price - b.price);
+  }, [products]);
 
   const resetInput = () => {
     setCustomerNo('');
   };
 
+  const fetchProducts = async () => {
+    try {
+      // Check if products are already cached
+      if (productCache.has('pln_prabayar')) {
+        console.log('Using cached PLN Prabayar products');
+        const cachedProducts = productCache.get('pln_prabayar');
+        setProducts(cachedProducts);
+        return;
+      }
+
+      const response = await api.post('/api/product/pln');
+
+      console.log('PLN products response:', response.data);
+
+      if (response.data && response.data.data && response.data.data.pln) {
+        const allProducts = response.data.data.pln;
+        console.log('All PLN products:', allProducts);
+
+        // Filter for prepaid products specifically - since all PLN products in the response are prepaid tokens
+        const prepaidProducts = allProducts;
+
+        const transformedProducts = prepaidProducts.map(item => ({
+          id: item.id,
+          label: item.name,
+          price: item.price,
+          desc: item.desc,
+          category: item.category,
+          sku: item.sku,
+          multi: item.multi
+        }));
+
+        console.log('Transformed PLN prepaid products:', transformedProducts);
+
+        // Cache the products
+        productCache.set('pln_prabayar', transformedProducts);
+        setProducts(transformedProducts);
+      } else {
+        Alert.alert('Error', 'Struktur data tidak sesuai. Silakan hubungi administrator.');
+      }
+    } catch (error) {
+      console.error('Error fetching PLN products:', error);
+      if (error.response?.status === 405) {
+        Alert.alert('Error', 'Metode tidak diizinkan. Endpoint mungkin salah atau tidak mendukung metode POST.');
+      } else if (error.response?.status === 401) {
+        Alert.alert('Error', 'Autentikasi gagal. Token mungkin sudah kadaluarsa.');
+      } else if (error.response?.status === 404) {
+        Alert.alert('Error', 'Endpoint tidak ditemukan. Silakan periksa kembali alamat API.');
+      } else {
+        Alert.alert('Error', `Gagal memuat produk PLN: ${error.message}\nStatus: ${error.response?.status || 'Unknown'}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load products when component mounts
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const handleContinue = () => {
+    if (!customer_no) {
+      Alert.alert('Error', 'Silakan masukkan nomor meter');
+      return;
+    }
+    if (!selectItem) {
+      Alert.alert('Error', 'Silakan pilih produk terlebih dahulu');
+      return;
+    }
+
+    console.log('Selected Item:', selectItem);
+    console.log('Customer Number:', customer_no);
+  };
+
   return (
-    <>
-      <View style={styles.container}>
+    <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND, paddingBottom: 100}}>
+      {/* Fixed Header and Input Section */}
+      <View style={[styles.container, {paddingBottom: 10, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}]}>
         <View style={styles.formGroup}>
           <Input
             value={customer_no}
@@ -47,76 +137,50 @@ export default function PLNPrabayar() {
             onchange={text => setCustomerNo(text)}
             ondelete={resetInput}
             type="numeric"
-            lebar={windowWidth * 0.7}
+            lebar={windowWidth * 0.9}
           />
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Cek</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.infoPelanggan(isDarkMode)}>
-          <View style={styles.contentBlock(isDarkMode)}>
-            <Text style={styles.label(isDarkMode)}>Nama</Text>
-            <Text style={styles.value(isDarkMode)}>Lorem Ipsum</Text>
-          </View>
-          <View style={styles.contentBlock(isDarkMode)}>
-            <Text style={styles.label(isDarkMode)}>ID Pelanggan</Text>
-            <Text style={styles.value(isDarkMode)}>1234567890</Text>
-          </View>
-          <View style={styles.contentBlock(isDarkMode)}>
-            <Text style={styles.label(isDarkMode)}>Daya / Segmen power</Text>
-            <Text style={styles.value(isDarkMode)}>900Kwh</Text>
-          </View>
-        </View>
-
-        <View
-          style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            justifyContent: 'space-between',
-            rowGap: 25,
-            marginTop: 20,
-          }}>
-          {product_token.map(p => {
-            return (
-              <TouchableOpacity
-                key={p.id}
-                style={[
-                  styles.productWrapper(isDarkMode),
-                  selectItem?.id === p.id
-                    ? {
-                        borderColor: GREEN_COLOR,
-                      }
-                    : '',
-                ]}
-                onPress={() => setSelectItem(p)}>
-                <Text style={styles.productLabel(isDarkMode)}>{p.label}</Text>
-                <Text style={styles.productPrice(isDarkMode)}>
-                  Rp. {p.price}
-                </Text>
-                {selectItem?.id === p.id && (
-                  <CheckProduct
-                    width={20}
-                    style={{
-                      position: 'absolute',
-                      right: 7,
-                      top: 2,
-                    }}
-                  />
-                )}
-              </TouchableOpacity>
-            );
-          })}
         </View>
       </View>
+
+      {/* Scrollable Product List */}
+      {loading ? (
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 50}}>
+          <ActivityIndicator size="large" color="#138EE9" />
+        </View>
+      ) : sortedProducts.length > 0 ? (
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.productsContainer}>
+            {sortedProducts.map((p, index) => (
+              <View key={`${p.id}-${index}`} style={styles.productItem}>
+                <ProductList
+                  selectItem={selectItem?.id}
+                  data={p}
+                  action={() => setSelectItem(p)}
+                />
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      ) : (
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20}}>
+          <Text style={{fontFamily: REGULAR_FONT, color: isDarkMode ? DARK_COLOR : LIGHT_COLOR}}>
+            Tidak ada produk PLN Prabayar tersedia
+          </Text>
+        </View>
+      )}
+
+      {/* Fixed Bottom Button */}
       {selectItem && (
-        <View style={styles.bottom(isDarkMode)}>
-          <TouchableOpacity style={styles.bottomButton}>
+        <View style={[styles.bottom, {backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}]}>
+          <TouchableOpacity style={styles.bottomButton} onPress={handleContinue}>
             <Text style={styles.buttonText}>Lanjutkan</Text>
           </TouchableOpacity>
         </View>
       )}
-    </>
+    </SafeAreaView>
   );
 }
 
@@ -166,23 +230,22 @@ const styles = StyleSheet.create({
     fontSize: FONT_NORMAL,
     color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   }),
-  productWrapper: isDarkMode => ({
-    borderWidth: 1,
-    borderColor: GREY_COLOR,
-    borderRadius: 10,
-    padding: 20,
-    width: '45%',
-    backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
-  }),
-  productLabel: isDarkMode => ({
-    fontFamily: MEDIUM_FONT,
-    fontSize: FONT_NORMAL,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
-  }),
-  productPrice: isDarkMode => ({
-    fontFamily: REGULAR_FONT,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
-  }),
+  scrollContent: {
+    flexGrow: 1,
+  },
+  productsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 25,
+    marginTop: 10,
+    paddingHorizontal: HORIZONTAL_MARGIN,
+    columnGap: 5,
+  },
+  productItem: {
+    width: '47%', // Adjusted to prevent clipping
+    marginBottom: 0, // Let the rowGap in parent handle spacing
+  },
   bottom: isDarkMode => ({
     position: 'absolute',
     bottom: 0,
