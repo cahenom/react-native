@@ -20,6 +20,7 @@ import Internet from './Internet';
 import LoginPage from './Auth/login';
 import RegisterPage from './Auth/register';
 import ProfilScreen from './Profil';
+import SettingsScreen from './Settings';
 export {
   HomeScreen,
   Pulsa,
@@ -42,5 +43,6 @@ export {
   Internet,
   LoginPage,
   RegisterPage,
-  ProfilScreen
+  ProfilScreen,
+  SettingsScreen
 };

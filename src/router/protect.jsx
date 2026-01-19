@@ -17,6 +17,7 @@ import {
   PLNPrabayar,
   ProfilScreen,
   Pulsa,
+  SettingsScreen,
   SuccessNotif,
   TopupDompet,
   TopupGames,
@@ -179,6 +180,13 @@ function ProtectedRoute() {
         component={TopupVoucher}
         options={{
           title: 'Topup Voucher',
+        }}
+      />
+      <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          title: 'Pengaturan Profil',
         }}
       />
       <Stack.Screen

@@ -17,6 +17,7 @@ import Input from '../../components/form/Input';
 import BottomButton from '../../components/BottomButton';
 import ProductList from '../../components/ProductList';
 import {api} from '../../utils/api';
+import ConfirmationModal from '../../components/ConfirmationModal';
 
 // Cache to store fetched products
 const productCache = new Map();
@@ -28,6 +29,7 @@ export default function TopupGames({route}) {
   const [selectItem, setSelectItem] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Memoized sorted products to avoid re-sorting on every render
   const sortedProducts = useMemo(() => {
@@ -118,9 +120,40 @@ export default function TopupGames({route}) {
       Alert.alert('Error', 'Silakan pilih produk terlebih dahulu');
       return;
     }
-    
-    console.log('Selected Item:', selectItem);
-    console.log('Customer ID/Nickname:', customer_no);
+
+    // Show confirmation modal
+    setShowConfirmation(true);
+  };
+
+  const confirmOrder = async () => {
+    try {
+      const response = await api.post('/api/order/topup', {
+        sku: selectItem.sku,
+        customer_no: customer_no,
+      });
+
+      console.log('Topup response:', response.data);
+
+      // Close confirmation modal
+      setShowConfirmation(false);
+
+      // Navigate to success screen with the response data
+      navigation.navigate('SuccessNotif', {
+        item: {
+          ...response.data,
+          customer_no: customer_no
+        },
+        product: {
+          ...selectItem,
+          product_name: selectItem?.name || selectItem?.label,
+          product_seller_price: selectItem?.price
+        },
+      });
+    } catch (error) {
+      console.error('Topup error:', error);
+      setShowConfirmation(false);
+      Alert.alert('Error', error.response?.data?.message || 'Gagal melakukan topup. Silakan coba lagi.');
+    }
   };
 
   if (loading) {
@@ -194,6 +227,17 @@ export default function TopupGames({route}) {
           />
         </View>
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isVisible={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={confirmOrder}
+        destination={customer_no}
+        product={selectItem?.label || selectItem?.name}
+        price={selectItem?.price}
+        isDarkMode={isDarkMode}
+      />
     </SafeAreaView>
   );
 }

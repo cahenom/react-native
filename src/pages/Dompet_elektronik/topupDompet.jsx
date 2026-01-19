@@ -17,17 +17,19 @@ import Input from '../../components/form/Input';
 import BottomButton from '../../components/BottomButton';
 import ProductList from '../../components/ProductList';
 import {api} from '../../utils/api';
+import ConfirmationModal from '../../components/ConfirmationModal';
 
 // Cache to store fetched products
 const productCache = new Map();
 
-export default function TopupDompet({route}) {
+export default function TopupDompet({route, navigation}) {
   const {provider, title} = route.params;
   const isDarkMode = useColorScheme() === 'dark';
   const [customer_no, setCustomerNo] = useState('');
   const [selectItem, setSelectItem] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Memoized sorted products to avoid re-sorting on every render
   const sortedProducts = useMemo(() => {
@@ -125,9 +127,39 @@ export default function TopupDompet({route}) {
       return;
     }
 
-    console.log('Selected Item:', selectItem);
-    console.log('Customer Number:', customer_no);
-    // Here you would typically navigate to the next screen with the selected item and customer number
+    // Show confirmation modal
+    setShowConfirmation(true);
+  };
+
+  const confirmOrder = async () => {
+    try {
+      const response = await api.post('/api/order/topup', {
+        sku: selectItem.sku,
+        customer_no: customer_no,
+      });
+
+      console.log('Topup response:', response.data);
+
+      // Close confirmation modal
+      setShowConfirmation(false);
+
+      // Navigate to success screen with the response data
+      navigation.navigate('SuccessNotif', {
+        item: {
+          ...response.data,
+          customer_no: customer_no
+        },
+        product: {
+          ...selectItem,
+          product_name: selectItem?.name || selectItem?.label,
+          product_seller_price: selectItem?.price
+        },
+      });
+    } catch (error) {
+      console.error('Topup error:', error);
+      setShowConfirmation(false);
+      Alert.alert('Error', error.response?.data?.message || 'Gagal melakukan topup. Silakan coba lagi.');
+    }
   };
 
   if (loading) {
@@ -201,6 +233,17 @@ export default function TopupDompet({route}) {
           />
         </View>
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isVisible={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={confirmOrder}
+        destination={customer_no}
+        product={selectItem?.label || selectItem?.name}
+        price={selectItem?.price}
+        isDarkMode={isDarkMode}
+      />
     </SafeAreaView>
   );
 }

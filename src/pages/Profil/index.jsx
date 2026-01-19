@@ -147,6 +147,15 @@ export default function ProfilScreen({navigation}) {
         </View>
       </View>
 
+      <View style={styles.settingsSection}>
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={() => navigation.navigate('Settings')}
+        >
+          <Text style={styles.settingsButtonText}>Pengaturan</Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.logoutSection}>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutButtonText}>Logout</Text>
@@ -205,6 +214,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     marginBottom: 30,
+  },
+  settingsSection: {
+    marginBottom: 10,
+  },
+  settingsButton: {
+    backgroundColor: BLUE_COLOR,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  settingsButtonText: {
+    color: WHITE_COLOR,
+    fontFamily: BOLD_FONT,
+    fontSize: FONT_NORMAL,
   },
   logoutButton: {
     backgroundColor: '#ff4444',

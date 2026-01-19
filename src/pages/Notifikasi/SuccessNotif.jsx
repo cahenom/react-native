@@ -67,8 +67,16 @@ export default function SuccessNotif({route}) {
           </Text>
         </View>
         <View style={styles.modalData(isDarkMode)}>
+          <Text style={styles.labelModalData(isDarkMode)}>Status </Text>
+          <Text style={styles.valueModalData(isDarkMode)}>
+            {item?.status || 'Berhasil'}
+          </Text>
+        </View>
+        <View style={styles.modalData(isDarkMode)}>
           <Text style={styles.labelModalData(isDarkMode)}>SN </Text>
-          <Text style={styles.valueModalData(isDarkMode)}></Text>
+          <Text style={styles.valueModalData(isDarkMode)}>
+            {item?.sn || item?.serial_number || item?.transaction_id || '-'}
+          </Text>
         </View>
       </View>
     </View>

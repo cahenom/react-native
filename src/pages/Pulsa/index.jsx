@@ -50,23 +50,37 @@ export default function Pulsa({navigation}) {
   const handleProduct = async () => {
     setLoading(true);
     try {
-      const response = await api.post(`/api/product/get-product-pulsa`, {
+      const response = await api.post(`/api/product/pulsa`, {
         customer_no: nomorTujuan,
       });
-      setPulsa(response.data.data.pulsas);
-      setPaketData(response.data.data.paket_data);
+
+      console.log('API Response:', response.data); // Debug log
+
+      if (response.data && response.data.data) {
+        console.log('Pulsa products:', response.data.data.pulsa); // Debug log
+        console.log('Paket Data products:', response.data.data.paket_data); // Debug log
+
+        // The API returns both pulsa and paket_data in a single call
+        // Use separate arrays as provided by the API
+        setPulsa(response.data.data.pulsa || []);
+        setPaketData(response.data.data.paket_data || []);
+      } else {
+        // Fallback to original structure if different
+        setPulsa(response.data.data?.pulsas || []);
+        setPaketData(response.data.data?.paket_data || []);
+      }
       setLoading(false);
     } catch (error) {
       setLoading(false);
-      console.log(error);
+      console.log('Error fetching products:', error);
     }
   };
 
   const handleTopup = async () => {
     try {
-      const response = await api.post(`/api/digiflaz/topup`, {
+      const response = await api.post(`/api/payment/pulsa`, {
         customer_no: nomorTujuan,
-        sku: selectItem?.product_sku,
+        sku: selectItem?.sku || selectItem?.product_sku,
       });
       navigation.navigate('SuccessNotif', {
         item: response.data,
@@ -167,10 +181,10 @@ export default function Pulsa({navigation}) {
                       ]}
                       onPress={() => setSelectItem(p)}>
                       <Text style={styles.productLabel(isDarkMode)}>
-                        {p.product_name}
+                        {p.name || p.product_name}
                       </Text>
                       <Text style={styles.productPrice(isDarkMode)}>
-                        Rp.{numberWithCommas(p.product_seller_price)}
+                        Rp.{numberWithCommas(p.price || p.product_seller_price)}
                       </Text>
                       {selectItem?.id === p.id && (
                         <CheckProduct
@@ -202,10 +216,10 @@ export default function Pulsa({navigation}) {
                       ]}
                       onPress={() => setSelectItem(d)}>
                       <Text style={styles.productLabel(isDarkMode)}>
-                        {d.product_name}
+                        {d.name || d.product_name}
                       </Text>
                       <Text style={styles.productPrice(isDarkMode)}>
-                        Rp.{numberWithCommas(d.product_seller_price)}
+                        Rp.{numberWithCommas(d.price || d.product_seller_price)}
                       </Text>
                       {selectItem?.id === d.id && (
                         <CheckProduct
