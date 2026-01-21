@@ -44,11 +44,15 @@ export default function TopupDompet({route, navigation}) {
     try {
       console.log('Attempting to fetch products for provider:', provider);
 
+      // Create a cache key specific to this provider
+      const cacheKey = `emoney_${provider}`;
+
       // Check if products are already cached for this provider
-      if (productCache.has(provider)) {
+      if (productCache.has(cacheKey)) {
         console.log('Using cached products for provider:', provider);
-        const cachedProducts = productCache.get(provider);
+        const cachedProducts = productCache.get(cacheKey);
         setProducts(cachedProducts);
+        setLoading(false);
         return;
       }
 
@@ -82,8 +86,8 @@ export default function TopupDompet({route, navigation}) {
 
         console.log('Transformed products:', transformedProducts); // Transformed products debug log
 
-        // Cache the products for this provider
-        productCache.set(provider, transformedProducts);
+        // Cache the products for this provider using the specific cache key
+        productCache.set(cacheKey, transformedProducts);
         setProducts(transformedProducts);
       } else {
         // If the structure is different, let's see what we got

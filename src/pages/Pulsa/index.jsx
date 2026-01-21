@@ -31,6 +31,9 @@ import Input from '../../components/form/Input';
 import {numberWithCommas} from '../../utils/formatter';
 import {api} from '../../utils/api';
 
+// Cache to store fetched products
+const productCache = new Map();
+
 export default function Pulsa({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
   const [nomorTujuan, setNomor] = useState(null);
@@ -48,7 +51,25 @@ export default function Pulsa({navigation}) {
   };
 
   const handleProduct = async () => {
+    if (!nomorTujuan) {
+      return;
+    }
+
     setLoading(true);
+
+    // Create a cache key based on the customer number
+    const cacheKey = `pulsa_${nomorTujuan}`;
+
+    // Check if products are already cached for this customer number
+    if (productCache.has(cacheKey)) {
+      console.log('Using cached pulsa products for:', nomorTujuan);
+      const cachedProducts = productCache.get(cacheKey);
+      setPulsa(cachedProducts.pulsa || []);
+      setPaketData(cachedProducts.paket_data || []);
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await api.post(`/api/product/pulsa`, {
         customer_no: nomorTujuan,
@@ -62,12 +83,30 @@ export default function Pulsa({navigation}) {
 
         // The API returns both pulsa and paket_data in a single call
         // Use separate arrays as provided by the API
-        setPulsa(response.data.data.pulsa || []);
-        setPaketData(response.data.data.paket_data || []);
+        const pulsaProducts = response.data.data.pulsa || [];
+        const paketDataProducts = response.data.data.paket_data || [];
+
+        // Cache the products for this customer number
+        productCache.set(cacheKey, {
+          pulsa: pulsaProducts,
+          paket_data: paketDataProducts
+        });
+
+        setPulsa(pulsaProducts);
+        setPaketData(paketDataProducts);
       } else {
         // Fallback to original structure if different
-        setPulsa(response.data.data?.pulsas || []);
-        setPaketData(response.data.data?.paket_data || []);
+        const pulsaProducts = response.data.data?.pulsas || [];
+        const paketDataProducts = response.data.data?.paket_data || [];
+
+        // Cache the products for this customer number
+        productCache.set(cacheKey, {
+          pulsa: pulsaProducts,
+          paket_data: paketDataProducts
+        });
+
+        setPulsa(pulsaProducts);
+        setPaketData(paketDataProducts);
       }
       setLoading(false);
     } catch (error) {

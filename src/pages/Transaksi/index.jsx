@@ -8,12 +8,23 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  useColorScheme,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { api } from '../../utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  DARK_BACKGROUND,
+  DARK_COLOR,
+  LIGHT_BACKGROUND,
+  LIGHT_COLOR,
+  WHITE_COLOR,
+  GREY_COLOR,
+  SLATE_COLOR,
+} from '../../utils/const';
 
 const Transaksi = () => {
+  const isDarkMode = useColorScheme() === 'dark';
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -28,12 +39,21 @@ const Transaksi = () => {
     try {
       const cachedData = await AsyncStorage.getItem('user_transactions');
       if (cachedData) {
-        setTransactions(JSON.parse(cachedData));
+        const parsedData = JSON.parse(cachedData);
+        // Ensure parsedData is an array
+        if (Array.isArray(parsedData)) {
+          setTransactions(parsedData);
+        } else {
+          setTransactions([]);
+        }
+      } else {
+        setTransactions([]);
       }
       // Fetch fresh data after loading cache
       fetchTransactions();
     } catch (error) {
       console.error('Error loading cached transactions:', error);
+      setTransactions([]);
       fetchTransactions(); // Still try to fetch fresh data
     } finally {
       setLoading(false);
@@ -46,11 +66,31 @@ const Transaksi = () => {
       const response = await api.post('/api/user/transaksi');
 
       if (response.data.status) {
-        const fetchedTransactions = response.data.data;
-        setTransactions(fetchedTransactions);
+        // Handle the new API response structure
+        let fetchedTransactions = response.data.data || [];
+
+        // Ensure fetchedTransactions is an array
+        if (!Array.isArray(fetchedTransactions)) {
+          fetchedTransactions = [];
+        }
+
+        // Validate each transaction object to ensure required fields exist
+        const validatedTransactions = fetchedTransactions.map(transaction => ({
+          ref: transaction.ref || '-',
+          tujuan: transaction.tujuan || '-',
+          sku: transaction.sku || '-',
+          status: transaction.status || '-',
+          message: transaction.message || '-',
+          price: typeof transaction.price === 'number' ? transaction.price : 0,
+          sn: transaction.sn || '-',
+          type: transaction.type || '-',
+          created_at: transaction.created_at || '-'
+        }));
+
+        setTransactions(validatedTransactions);
 
         // Cache the transactions
-        await AsyncStorage.setItem('user_transactions', JSON.stringify(fetchedTransactions));
+        await AsyncStorage.setItem('user_transactions', JSON.stringify(validatedTransactions));
       } else {
         Alert.alert('Error', response.data.message || 'Failed to fetch transactions');
       }
@@ -78,7 +118,12 @@ const Transaksi = () => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return '-';
     const date = new Date(dateString);
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return '-';
+    }
     return date.toLocaleDateString('id-ID', {
       day: '2-digit',
       month: 'short',
@@ -87,6 +132,8 @@ const Transaksi = () => {
   };
 
   const getStatusColor = (status) => {
+    if (!status) return '#94A3B8'; // Gray for undefined/null
+
     switch (status.toLowerCase()) {
       case 'berhasil':
       case 'sukses':
@@ -107,78 +154,79 @@ const Transaksi = () => {
 
   const renderTransactionItem = ({ item }) => (
     <TouchableOpacity
-      style={styles.transactionItem}
+      style={[styles.transactionItem, { backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_COLOR }]}
       onPress={() => navigation.navigate('SuccessNotif', {
+        // Map the new API response structure to match SuccessNotif expectations
         item: {
-          id: item.id,
-          transaction_code: item.transaction_code,
-          transaction_date: item.transaction_date,
-          transaction_time: item.transaction_time,
-          transaction_type: item.transaction_type,
-          transaction_provider: item.transaction_provider,
-          transaction_number: item.transaction_number,
-          transaction_sku: item.transaction_sku,
-          transaction_cost: item.transaction_cost,
-          transaction_profit: item.transaction_profit,
-          transaction_total: item.transaction_total,
-          transaction_message: item.transaction_message,
-          transaction_status: item.transaction_status,
-          transaction_user_id: item.transaction_user_id,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          // Map to SuccessNotif expected fields with proper status values
-          status: item.transaction_status,
-          data: { status: item.transaction_status }, // Also include in data object for SuccessNotif checks
-          customer_no: item.transaction_number,
-          message: item.transaction_message,
-          sn: item.transaction_code, // Using transaction code as serial number
-          ref_id: item.id // Using transaction ID as reference ID
+          ref: item.ref || '-',
+          tujuan: item.tujuan || '-',
+          sku: item.sku || '-',
+          status: item.status || '-',
+          message: item.message || '-',
+          price: item.price || 0,
+          sn: item.sn || '-',
+          type: item.type || '-',
+          created_at: item.created_at || '-',
+          // Backward compatibility fields
+          customer_no: item.tujuan || '-',
+          ref_id: item.ref || '-',
+          data: {
+            ref: item.ref || '-',
+            tujuan: item.tujuan || '-',
+            sku: item.sku || '-',
+            status: item.status || '-',
+            message: item.message || '-',
+            price: item.price || 0,
+            sn: item.sn || '-',
+            type: item.type || '-',
+            created_at: item.created_at || '-'
+          }
         },
         product: {
-          product_name: item.transaction_type,
-          name: item.transaction_type,
-          label: item.transaction_type,
-          product_seller_price: `Rp ${item.transaction_total?.toLocaleString('id-ID')}`,
-          price: `Rp ${item.transaction_total?.toLocaleString('id-ID')}`
+          product_name: item.sku || 'Transaksi',
+          name: item.sku || 'Transaksi',
+          label: item.sku || 'Transaksi',
+          product_seller_price: item.price ? `Rp ${item.price.toLocaleString('id-ID')}` : 'Rp -',
+          price: item.price ? `Rp ${item.price.toLocaleString('id-ID')}` : 'Rp -'
         }
       })}
     >
       <View style={styles.leftSection}>
-        <Text style={styles.transactionType}>{item.transaction_type}</Text>
-        <Text style={styles.transactionNumber}>{item.transaction_number}</Text>
-        <Text style={styles.transactionDate}>
-          {formatDate(item.transaction_date)} • {item.transaction_time}
+        <Text style={[styles.transactionType, { color: isDarkMode ? DARK_COLOR : LIGHT_COLOR }]}>{item.sku || 'Transaksi'}</Text>
+        <Text style={[styles.transactionNumber, { color: isDarkMode ? DARK_COLOR : SLATE_COLOR }]}>{item.tujuan || '-'}</Text>
+        <Text style={[styles.transactionDate, { color: isDarkMode ? DARK_COLOR : SLATE_COLOR }]}>
+          {formatDate(item.created_at)} • {item.created_at ? new Date(item.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}
         </Text>
       </View>
       <View style={styles.rightSection}>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.transaction_status) }]}>
-          <Text style={styles.statusText}>{item.transaction_status}</Text>
+        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+          <Text style={styles.statusText}>{item.status}</Text>
         </View>
-        <Text style={styles.transactionAmount}>Rp {item.transaction_total?.toLocaleString('id-ID')}</Text>
+        <Text style={[styles.transactionAmount, { color: isDarkMode ? DARK_COLOR : LIGHT_COLOR }]}>Rp {item.price ? item.price.toLocaleString('id-ID') : '-'}</Text>
       </View>
     </TouchableOpacity>
   );
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: isDarkMode ? DARK_BACKGROUND : LIGHT_BACKGROUND }]}>
         <ActivityIndicator size="large" color="#138EE9" />
-        <Text style={styles.loadingText}>Memuat transaksi...</Text>
+        <Text style={[styles.loadingText, { color: isDarkMode ? DARK_COLOR : LIGHT_COLOR }]}>Memuat transaksi...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: isDarkMode ? DARK_BACKGROUND : LIGHT_BACKGROUND }]}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Riwayat Transaksi</Text>
-        <Text style={styles.headerSubtitle}>Daftar transaksi Anda</Text>
+        <Text style={[styles.headerTitle, { color: isDarkMode ? DARK_COLOR : LIGHT_COLOR }]}>Riwayat Transaksi</Text>
+        <Text style={[styles.headerSubtitle, { color: isDarkMode ? DARK_COLOR : SLATE_COLOR }]}>Daftar transaksi Anda</Text>
       </View>
-      
+
       <FlatList
         data={transactions}
         renderItem={renderTransactionItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item, index) => (item.ref ? item.ref.toString() : index.toString())}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -186,7 +234,7 @@ const Transaksi = () => {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Belum pernah transaksi</Text>
+            <Text style={[styles.emptyText, { color: isDarkMode ? DARK_COLOR : SLATE_COLOR }]}>Belum pernah transaksi</Text>
           </View>
         }
       />
@@ -197,7 +245,6 @@ const Transaksi = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
     padding: 16,
   },
   loadingContainer: {
@@ -208,7 +255,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#374957',
   },
   header: {
     marginBottom: 20,
@@ -216,18 +262,15 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#374957',
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#94A3B8',
     marginTop: 4,
   },
   listContainer: {
     paddingBottom: 20,
   },
   transactionItem: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -254,16 +297,13 @@ const styles = StyleSheet.create({
   transactionType: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#374957',
   },
   transactionNumber: {
     fontSize: 14,
-    color: '#94A3B8',
     marginTop: 4,
   },
   transactionDate: {
     fontSize: 12,
-    color: '#94A3B8',
     marginTop: 2,
   },
   statusBadge: {
@@ -281,7 +321,6 @@ const styles = StyleSheet.create({
   transactionAmount: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#374957',
     marginTop: 8,
   },
   emptyContainer: {
@@ -292,7 +331,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#94A3B8',
   },
 });
 

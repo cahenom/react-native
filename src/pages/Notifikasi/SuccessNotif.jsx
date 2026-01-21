@@ -1,4 +1,4 @@
-import {StyleSheet, Text, View, useColorScheme} from 'react-native';
+import {StyleSheet, Text, View, useColorScheme, ScrollView} from 'react-native';
 import React from 'react';
 import LottieView from 'lottie-react-native';
 import {
@@ -18,86 +18,116 @@ import {
 export default function SuccessNotif({route}) {
   const {item, product} = route.params;
   const isDarkMode = useColorScheme() === 'dark';
+
+  // Extract data from the API response structure
+  const responseData = item?.data || item;
+
   return (
     <View
       style={{
         flex: 1,
         backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
       }}>
-      <View
-        style={{
-          height: 150,
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginTop: 15,
-        }}>
-        {(item?.status === 'Gagal' || item?.data?.status === 'Gagal' || item?.status === 'Error' || item?.data?.status === 'Error') ? (
-          <LottieView
-            source={require('../../assets/lottie/gagal-animation.json')}
-            autoPlay
-            loop
-          />
-        ) : item?.status === 'Pending' || item?.data?.status === 'Pending' ? (
-          <LottieView
-            source={require('../../assets/lottie/pending-animation.json')}
-            autoPlay
-            loop
-          />
-        ) : (
-          <LottieView
-            source={require('../../assets/lottie/success-animation.json')}
-            autoPlay
-            loop
-          />
-        )}
-      </View>
-      <View
-        style={{
-          marginHorizontal: HORIZONTAL_MARGIN,
-        }}>
-        <View style={styles.modalData(isDarkMode)}>
-          <Text style={styles.labelModalData(isDarkMode)}>Nomor Tujuan</Text>
-          <Text style={styles.valueModalData(isDarkMode)}>
-            {item?.customer_no || item?.data?.customer_no || '-'}
-          </Text>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View
+          style={{
+            height: 150,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginTop: 15,
+          }}>
+          {(item?.status === 'Gagal' || responseData?.status === 'Gagal' || item?.status === 'Error' || responseData?.status === 'Error') ? (
+            <LottieView
+              source={require('../../assets/lottie/gagal-animation.json')}
+              autoPlay
+              loop
+            />
+          ) : item?.status === 'Pending' || responseData?.status === 'Pending' ? (
+            <LottieView
+              source={require('../../assets/lottie/pending-animation.json')}
+              autoPlay
+              loop
+            />
+          ) : (
+            <LottieView
+              source={require('../../assets/lottie/success-animation.json')}
+              autoPlay
+              loop
+            />
+          )}
         </View>
-        <View style={styles.modalData(isDarkMode)}>
-          <Text style={styles.labelModalData(isDarkMode)}>Produk</Text>
-          <Text style={styles.valueModalData(isDarkMode)}>
-            {product?.product_name || product?.name || product?.label || '-'}
-          </Text>
+        <View
+          style={{
+            marginHorizontal: HORIZONTAL_MARGIN,
+            marginBottom: 100,
+          }}>
+          {/* Reference ID */}
+          <View style={styles.modalData(isDarkMode)}>
+            <Text style={styles.labelModalData(isDarkMode)}>Ref ID</Text>
+            <Text style={styles.valueModalData(isDarkMode)}>
+              {responseData?.ref || responseData?.ref_id || item?.ref_id || '-'}
+            </Text>
+          </View>
+
+          {/* Target Number */}
+          <View style={styles.modalData(isDarkMode)}>
+            <Text style={styles.labelModalData(isDarkMode)}>Nomor Tujuan</Text>
+            <Text style={styles.valueModalData(isDarkMode)}>
+              {responseData?.tujuan || item?.customer_no || item?.data?.customer_no || '-'}
+            </Text>
+          </View>
+
+          {/* SKU */}
+          <View style={styles.modalData(isDarkMode)}>
+            <Text style={styles.labelModalData(isDarkMode)}>SKU</Text>
+            <Text style={styles.valueModalData(isDarkMode)}>
+              {responseData?.sku || '-'}
+            </Text>
+          </View>
+
+          {/* Status */}
+          <View style={styles.modalData(isDarkMode)}>
+            <Text style={styles.labelModalData(isDarkMode)}>Status</Text>
+            <Text style={styles.valueModalData(isDarkMode)}>
+              {responseData?.status || item?.status || 'Berhasil'}
+            </Text>
+          </View>
+
+          {/* Price */}
+          <View style={styles.modalData(isDarkMode)}>
+            <Text style={styles.labelModalData(isDarkMode)}>Harga</Text>
+            <Text style={styles.valueModalData(isDarkMode)}>
+              {typeof responseData?.price === 'number'
+                ? `Rp ${responseData?.price?.toLocaleString('id-ID')}`
+                : responseData?.price || product?.product_seller_price || product?.price || '-'}
+            </Text>
+          </View>
+
+          {/* Serial Number */}
+          <View style={styles.modalData(isDarkMode)}>
+            <Text style={styles.labelModalData(isDarkMode)}>SN</Text>
+            <Text style={styles.valueModalData(isDarkMode)}>
+              {responseData?.sn || item?.sn || item?.data?.sn || item?.serial_number || '-'}
+            </Text>
+          </View>
+
+          {/* Message */}
+          <View style={styles.modalData(isDarkMode)}>
+            <Text style={styles.labelModalData(isDarkMode)}>Message</Text>
+            <Text style={styles.valueModalData(isDarkMode)}>
+              {responseData?.message || item?.message || item?.data?.message || '-'}
+            </Text>
+          </View>
+
+          {/* Product Name (if available) */}
+          <View style={styles.modalData(isDarkMode)}>
+            <Text style={styles.labelModalData(isDarkMode)}>Produk</Text>
+            <Text style={styles.valueModalData(isDarkMode)}>
+              {product?.product_name || product?.name || product?.label || '-'}
+            </Text>
+          </View>
         </View>
-        <View style={styles.modalData(isDarkMode)}>
-          <Text style={styles.labelModalData(isDarkMode)}>Harga </Text>
-          <Text style={styles.valueModalData(isDarkMode)}>
-            {product?.product_seller_price || product?.price || '-'}
-          </Text>
-        </View>
-        <View style={styles.modalData(isDarkMode)}>
-          <Text style={styles.labelModalData(isDarkMode)}>Status </Text>
-          <Text style={styles.valueModalData(isDarkMode)}>
-            {item?.status || item?.data?.status || 'Berhasil'}
-          </Text>
-        </View>
-        <View style={styles.modalData(isDarkMode)}>
-          <Text style={styles.labelModalData(isDarkMode)}>SN </Text>
-          <Text style={styles.valueModalData(isDarkMode)}>
-            {item?.sn || item?.data?.sn || item?.serial_number || item?.transaction_id || '-'}
-          </Text>
-        </View>
-        <View style={styles.modalData(isDarkMode)}>
-          <Text style={styles.labelModalData(isDarkMode)}>Ref ID </Text>
-          <Text style={styles.valueModalData(isDarkMode)}>
-            {item?.ref_id || item?.data?.ref_id || '-'}
-          </Text>
-        </View>
-        <View style={styles.modalData(isDarkMode)}>
-          <Text style={styles.labelModalData(isDarkMode)}>Message </Text>
-          <Text style={styles.valueModalData(isDarkMode)}>
-            {item?.message || item?.data?.message || '-'}
-          </Text>
-        </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }

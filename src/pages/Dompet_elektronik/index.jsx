@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import React, {useState, useEffect} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   DARK_BACKGROUND,
   DARK_COLOR,
@@ -20,7 +21,7 @@ import {
   WHITE_BACKGROUND,
 } from '../../utils/const';
 import {ArrowRight} from '../../assets';
-import {api} from '../../utils/api';
+import {fetchProviderList} from '../../helpers/providerHelper';
 
 export default function DompetElektronik({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -31,52 +32,21 @@ export default function DompetElektronik({navigation}) {
     fetchProviders();
   }, []);
 
+  const [error, setError] = useState(null);
+
   const fetchProviders = async () => {
-    try {
-      console.log('Attempting to fetch e-money products...');
+    setLoading(true);
+    const result = await fetchProviderList('emoney_providers', '/api/product/emoney', 'emoney');
 
-      // Try POST request instead of GET
-      const response = await api.post('/api/product/emoney');
+    setProviders(result.providers);
+    setError(result.error);
+    setLoading(false);
+  };
 
-      console.log('Response status:', response.status);
-      console.log('Full response:', response);
-      console.log('Response data:', response.data);
-
-      // Check if the response has the expected structure
-      if (response.data && response.data.data && response.data.data.emoney) {
-        const allProducts = response.data.data.emoney;
-        console.log('All products:', allProducts);
-
-        const uniqueProviders = [...new Set(allProducts.map(item => item.provider))];
-        console.log('Unique providers:', uniqueProviders);
-
-        setProviders(uniqueProviders);
-      } else {
-        // If the structure is different, let's see what we got
-        console.log('Unexpected response structure:', response.data);
-        Alert.alert('Error', 'Struktur data tidak sesuai. Silakan hubungi administrator.');
-      }
-    } catch (error) {
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response,
-        status: error.response?.status,
-        data: error.response?.data
-      });
-
-      // More specific error handling based on status code
-      if (error.response?.status === 405) {
-        Alert.alert('Error', 'Metode tidak diizinkan. Endpoint mungkin salah atau tidak mendukung metode POST.');
-      } else if (error.response?.status === 401) {
-        Alert.alert('Error', 'Autentikasi gagal. Token mungkin sudah kadaluarsa.');
-      } else if (error.response?.status === 404) {
-        Alert.alert('Error', 'Endpoint tidak ditemukan. Silakan periksa kembali alamat API.');
-      } else {
-        Alert.alert('Error', `Gagal memuat daftar provider e-money: ${error.message}`);
-      }
-    } finally {
-      setLoading(false);
-    }
+  const handleRetry = () => {
+    setError(null);
+    setLoading(true);
+    fetchProviders();
   };
 
   const handleProviderPress = (provider) => {
@@ -95,10 +65,26 @@ export default function DompetElektronik({navigation}) {
     </TouchableOpacity>
   );
 
-  if (loading) {
+  if (loading && !error) {
     return (
       <View style={[styles.wrapper(isDarkMode), {justifyContent: 'center', alignItems: 'center'}]}>
         <ActivityIndicator size="large" color="#138EE9" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.wrapper(isDarkMode), {justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20}]}>
+        <Text style={[styles.buttonText(isDarkMode), {textAlign: 'center', marginBottom: 20}]}>
+          {error}
+        </Text>
+        <TouchableOpacity
+          style={[styles.layananButton(isDarkMode), {backgroundColor: '#138EE9', alignItems: 'center'}]}
+          onPress={handleRetry}
+        >
+          <Text style={[styles.buttonText(isDarkMode), {color: 'white'}]}>Coba Lagi</Text>
+        </TouchableOpacity>
       </View>
     );
   }

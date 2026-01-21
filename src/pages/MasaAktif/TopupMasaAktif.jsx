@@ -46,11 +46,15 @@ export default function TopupMasaAktif({route}) {
     try {
       console.log('Attempting to fetch masa aktif for provider:', provider);
 
+      // Create a cache key specific to this provider
+      const cacheKey = `masaaktif_${provider}`;
+
       // Check if products are already cached for this provider
-      if (productCache.has(provider)) {
+      if (productCache.has(cacheKey)) {
         console.log('Using cached masa aktif for provider:', provider);
-        const cachedProducts = productCache.get(provider);
+        const cachedProducts = productCache.get(cacheKey);
         setProducts(cachedProducts);
+        setLoading(false);
         return;
       }
 
@@ -80,8 +84,8 @@ export default function TopupMasaAktif({route}) {
 
         console.log('Transformed masa aktif:', transformedProducts);
 
-        // Cache the products for this provider
-        productCache.set(provider, transformedProducts);
+        // Cache the products for this provider using the specific cache key
+        productCache.set(cacheKey, transformedProducts);
         setProducts(transformedProducts);
       } else {
         console.log('Unexpected response structure:', response.data);

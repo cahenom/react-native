@@ -1,5 +1,6 @@
 import {StyleSheet, Text, View, useColorScheme, ScrollView, FlatList, ActivityIndicator, Alert, SafeAreaView} from 'react-native';
 import React, {useState, useEffect, useMemo} from 'react';
+import { useNavigation } from '@react-navigation/native';
 import {
   BLUE_COLOR,
   DARK_BACKGROUND,
@@ -23,6 +24,7 @@ import ConfirmationModal from '../../components/ConfirmationModal';
 const productCache = new Map();
 
 export default function TopupVoucher({route}) {
+  const navigation = useNavigation();
   const {provider, title} = route.params;
   const isDarkMode = useColorScheme() === 'dark';
   const [customer_no, setCustomerNo] = useState('');
@@ -43,29 +45,33 @@ export default function TopupVoucher({route}) {
   const fetchProductsByProvider = async () => {
     try {
       console.log('Attempting to fetch vouchers for provider:', provider);
-      
+
+      // Create a cache key specific to this provider
+      const cacheKey = `voucher_${provider}`;
+
       // Check if products are already cached for this provider
-      if (productCache.has(provider)) {
+      if (productCache.has(cacheKey)) {
         console.log('Using cached vouchers for provider:', provider);
-        const cachedProducts = productCache.get(provider);
+        const cachedProducts = productCache.get(cacheKey);
         setProducts(cachedProducts);
+        setLoading(false);
         return;
       }
-      
+
       const response = await api.post('/api/product/voucher');
-      
+
       console.log('Response status:', response.status);
       console.log('Full response:', response);
       console.log('Response data:', response.data);
-      
+
       if (response.data && response.data.data && response.data.data.voucher) {
         const allProducts = response.data.data.voucher;
         console.log('All vouchers for provider:', allProducts);
         console.log('Selected provider:', provider);
-        
+
         const filteredProducts = allProducts.filter(item => item.provider === provider);
         console.log('Filtered vouchers:', filteredProducts);
-        
+
         const transformedProducts = filteredProducts.map(item => ({
           id: item.id,
           label: item.name,
@@ -75,11 +81,11 @@ export default function TopupVoucher({route}) {
           sku: item.sku,
           multi: item.multi
         }));
-        
+
         console.log('Transformed vouchers:', transformedProducts);
-        
-        // Cache the products for this provider
-        productCache.set(provider, transformedProducts);
+
+        // Cache the products for this provider using the specific cache key
+        productCache.set(cacheKey, transformedProducts);
         setProducts(transformedProducts);
       } else {
         console.log('Unexpected response structure:', response.data);
@@ -92,7 +98,7 @@ export default function TopupVoucher({route}) {
         status: error.response?.status,
         data: error.response?.data
       });
-      
+
       if (error.response?.status === 405) {
         Alert.alert('Error', 'Metode tidak diizinkan. Endpoint mungkin salah atau tidak mendukung metode POST.');
       } else if (error.response?.status === 401) {

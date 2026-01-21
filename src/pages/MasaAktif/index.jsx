@@ -20,7 +20,7 @@ import {
   WHITE_BACKGROUND,
 } from '../../utils/const';
 import {ArrowRight} from '../../assets';
-import {api} from '../../utils/api';
+import {fetchProviderList} from '../../helpers/providerHelper';
 
 export default function MasaAktif({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -31,46 +31,21 @@ export default function MasaAktif({navigation}) {
     fetchProviders();
   }, []);
 
+  const [error, setError] = useState(null);
+
   const fetchProviders = async () => {
-    try {
-      console.log('Attempting to fetch masa aktif providers...');
-      const response = await api.post('/api/product/masaaktif');
+    setLoading(true);
+    const result = await fetchProviderList('masaaktif_providers', '/api/product/masaaktif', 'masa_aktif');
 
-      console.log('Response status:', response.status);
-      console.log('Response data:', response.data);
+    setProviders(result.providers);
+    setError(result.error);
+    setLoading(false);
+  };
 
-      if (response.data && response.data.status === "success" && response.data.data && response.data.data.masa_aktif) {
-        const allProducts = response.data.data.masa_aktif;
-        console.log('All products:', allProducts);
-
-        const uniqueProviders = [...new Set(allProducts.map(item => item.provider))];
-        console.log('Unique providers:', uniqueProviders);
-
-        setProviders(uniqueProviders);
-      } else {
-        console.log('Unexpected response structure:', response.data);
-        Alert.alert('Error', response.data.message || 'Silakan hubungi administrator.');
-      }
-    } catch (error) {
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response,
-        status: error.response?.status,
-        data: error.response?.data
-      });
-
-      if (error.response?.status === 405) {
-        Alert.alert('Error', 'Metode tidak diizinkan. Endpoint mungkin salah atau tidak mendukung metode POST.');
-      } else if (error.response?.status === 401) {
-        Alert.alert('Error', 'Autentikasi gagal. Token mungkin sudah kadaluarsa.');
-      } else if (error.response?.status === 404) {
-        Alert.alert('Error', 'Endpoint tidak ditemukan. Silakan periksa kembali alamat API.');
-      } else {
-        Alert.alert('Error', error.response?.data?.message || `Gagal memuat daftar provider masa aktif: ${error.message}`);
-      }
-    } finally {
-      setLoading(false);
-    }
+  const handleRetry = () => {
+    setError(null);
+    setLoading(true);
+    fetchProviders();
   };
 
   const handleProviderPress = (provider) => {
@@ -89,10 +64,26 @@ export default function MasaAktif({navigation}) {
     </TouchableOpacity>
   );
 
-  if (loading) {
+  if (loading && !error) {
     return (
       <View style={[styles.wrapper(isDarkMode), {justifyContent: 'center', alignItems: 'center'}]}>
         <ActivityIndicator size="large" color="#138EE9" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.wrapper(isDarkMode), {justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20}]}>
+        <Text style={[styles.buttonText(isDarkMode), {textAlign: 'center', marginBottom: 20}]}>
+          {error}
+        </Text>
+        <TouchableOpacity
+          style={[styles.layananButton(isDarkMode), {backgroundColor: '#138EE9', alignItems: 'center'}]}
+          onPress={handleRetry}
+        >
+          <Text style={[styles.buttonText(isDarkMode), {color: 'white'}]}>Coba Lagi</Text>
+        </TouchableOpacity>
       </View>
     );
   }

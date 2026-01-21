@@ -31,6 +31,7 @@ import Input from '../../components/form/Input';
 import {CheckProduct} from '../../assets';
 import {api} from '../../utils/api';
 import ProductList from '../../components/ProductList';
+import ConfirmationModal from '../../components/ConfirmationModal';
 
 // Cache to store fetched products
 const productCache = new Map();
@@ -112,6 +113,8 @@ export default function PLNPrabayar() {
     fetchProducts();
   }, []);
 
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
   const handleContinue = () => {
     if (!customer_no) {
       Alert.alert('Error', 'Silakan masukkan nomor meter');
@@ -124,6 +127,40 @@ export default function PLNPrabayar() {
 
     console.log('Selected Item:', selectItem);
     console.log('Customer Number:', customer_no);
+
+    // Show confirmation modal
+    setShowConfirmation(true);
+  };
+
+  const confirmOrder = async () => {
+    try {
+      const response = await api.post('/api/order/topup', {
+        sku: selectItem.sku,
+        customer_no: customer_no,
+      });
+
+      console.log('PLN Topup response:', response.data);
+
+      // Close confirmation modal
+      setShowConfirmation(false);
+
+      // Navigate to success screen with the response data
+      navigation.navigate('SuccessNotif', {
+        item: {
+          ...response.data,
+          customer_no: customer_no
+        },
+        product: {
+          ...selectItem,
+          product_name: selectItem?.name || selectItem?.label,
+          product_seller_price: selectItem?.price
+        },
+      });
+    } catch (error) {
+      console.error('PLN Topup error:', error);
+      setShowConfirmation(false);
+      Alert.alert('Error', error.response?.data?.message || 'Gagal melakukan pembayaran PLN. Silakan coba lagi.');
+    }
   };
 
   return (
@@ -180,6 +217,17 @@ export default function PLNPrabayar() {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isVisible={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={confirmOrder}
+        destination={customer_no}
+        product={selectItem?.label || selectItem?.name}
+        price={selectItem?.price}
+        isDarkMode={isDarkMode}
+      />
     </SafeAreaView>
   );
 }
@@ -247,12 +295,15 @@ const styles = StyleSheet.create({
     marginBottom: 0, // Let the rowGap in parent handle spacing
   },
   bottom: isDarkMode => ({
-    position: 'absolute',
+    paddingHorizontal: HORIZONTAL_MARGIN,
+    paddingBottom: 20,
+    paddingTop: 10,
+    position: 'absolute', // Position absolutely at the bottom
     bottom: 0,
     left: 0,
     right: 0,
     backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
-    padding: 10,
+    zIndex: 1, // Ensure it appears on top if needed
   }),
   bottomButton: {
     backgroundColor: BLUE_COLOR,
