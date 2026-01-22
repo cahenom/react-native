@@ -17,12 +17,13 @@ export const HORIZONTAL_MARGIN = 20;
 export const DARK_BACKGROUND = Colors.darker;
 export const LIGHT_BACKGROUND = Colors.lighter;
 export const WHITE_BACKGROUND = '#FFFFFF';
-export const LIGHT_COLOR = '#374957';
+export const LIGHT_COLOR = '#000000';
 export const DARK_COLOR = '#FFFFFF';
 export const SLATE_COLOR = '#94A3B8';
 export const BLUE_COLOR = '#138EE9';
 export const GREY_COLOR = '#d9d9d9';
 export const GREEN_COLOR = '#01C1A2';
+export const RED_COLOR = '#FF0000';
 export const WHITE_COLOR = '#FFFFFF';
 
-export const API_URL = 'https://7d9d97badf17.ngrok-free.app';
+export const API_URL = 'https://96576ce37888.ngrok-free.app';

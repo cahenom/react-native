@@ -8,7 +8,8 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
+import usePersistentState from '../../hooks/usePersistentState';
 import {
   DARK_BACKGROUND,
   DARK_COLOR,
@@ -24,28 +25,82 @@ import {fetchProviderList} from '../../helpers/providerHelper';
 
 export default function MasaAktif({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
-  const [providers, setProviders] = useState([]);
+  const [providers, setProviders, isLoadingFromHook, , isCacheExpired, needsBackgroundRefresh, isRefreshing] = usePersistentState('masaaktif_providers', []);
   const [loading, setLoading] = useState(true);
+  const hasLoaded = useRef(false); // Track if data has been loaded in this session
 
   useEffect(() => {
-    fetchProviders();
-  }, []);
+    // Check if we have data from persistent storage
+    const initializeData = async () => {
+      if (hasLoaded.current) {
+        return; // Already initialized in this session
+      }
+
+      // Wait for persistent state to load
+      if (!isLoadingFromHook) {
+        // Check if cache is expired
+        const expired = await isCacheExpired();
+        if (providers.length === 0 || expired) {
+          // No data available or cache is expired, fetch fresh data
+          await fetchProviders(false);
+        } else {
+          // We have valid cached data, no need to fetch initially
+          setLoading(false);
+          hasLoaded.current = true; // Mark as initialized
+
+          // Check if background refresh is needed
+          const shouldRefreshInBackground = await needsBackgroundRefresh();
+          if (shouldRefreshInBackground) {
+            // Fetch fresh data in background without affecting UI
+            fetchProviders(false); // Don't force refresh, just update cache
+          }
+        }
+      }
+    };
+
+    initializeData();
+  }, [isLoadingFromHook, providers, isCacheExpired, needsBackgroundRefresh]);
+
+  // Update loading state based on persistent state loading
+  useEffect(() => {
+    if (isLoadingFromHook) {
+      setLoading(true); // Still loading persistent state
+    }
+    // Don't override loading state set by fetchProviders
+  }, [isLoadingFromHook]);
 
   const [error, setError] = useState(null);
 
-  const fetchProviders = async () => {
-    setLoading(true);
-    const result = await fetchProviderList('masaaktif_providers', '/api/product/masaaktif', 'masa_aktif');
+  const fetchProviders = async (forceRefresh = false) => {
+    // For forced refresh, show loading
+    if (forceRefresh) {
+      setLoading(true);
+    }
 
-    setProviders(result.providers);
-    setError(result.error);
-    setLoading(false);
+    const result = await fetchProviderList('masaaktif_providers', '/api/product/masaaktif', 'masa_aktif', forceRefresh);
+
+    // Update persistent state with new providers
+    await setProviders(result.providers);
+
+    // Only show error if there are no providers AND there's an error message
+    // This means if we have cached data (providers.length > 0), we don't show the error
+    if (result.providers.length === 0 && result.error) {
+      setError(result.error);
+    } else {
+      setError(null); // Clear any previous error if we have data
+    }
+
+    // Hide loading indicator after data is loaded (only if we showed it for forced refresh)
+    // For background refresh, don't affect the main loading state
+    if (forceRefresh) {
+      setLoading(false);
+    }
   };
 
   const handleRetry = () => {
     setError(null);
     setLoading(true);
-    fetchProviders();
+    fetchProviders(true); // Force refresh when user clicks retry
   };
 
   const handleProviderPress = (provider) => {

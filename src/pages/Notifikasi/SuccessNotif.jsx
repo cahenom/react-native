@@ -36,13 +36,18 @@ export default function SuccessNotif({route}) {
             alignItems: 'center',
             marginTop: 15,
           }}>
-          {(item?.status === 'Gagal' || responseData?.status === 'Gagal' || item?.status === 'Error' || responseData?.status === 'Error') ? (
+          {item?.status === 'Gagal' ||
+          responseData?.status === 'Gagal' ||
+          item?.status === 'Error' ||
+          responseData?.status === 'Error' ||
+          item?.status === 'none' ? (
             <LottieView
               source={require('../../assets/lottie/gagal-animation.json')}
               autoPlay
               loop
             />
-          ) : item?.status === 'Pending' || responseData?.status === 'Pending' ? (
+          ) : item?.status === 'Pending' ||
+            responseData?.status === 'Pending' ? (
             <LottieView
               source={require('../../assets/lottie/pending-animation.json')}
               autoPlay
@@ -73,7 +78,10 @@ export default function SuccessNotif({route}) {
           <View style={styles.modalData(isDarkMode)}>
             <Text style={styles.labelModalData(isDarkMode)}>Nomor Tujuan</Text>
             <Text style={styles.valueModalData(isDarkMode)}>
-              {responseData?.tujuan || item?.customer_no || item?.data?.customer_no || '-'}
+              {responseData?.tujuan ||
+                item?.customer_no ||
+                item?.data?.customer_no ||
+                '-'}
             </Text>
           </View>
 
@@ -99,7 +107,10 @@ export default function SuccessNotif({route}) {
             <Text style={styles.valueModalData(isDarkMode)}>
               {typeof responseData?.price === 'number'
                 ? `Rp ${responseData?.price?.toLocaleString('id-ID')}`
-                : responseData?.price || product?.product_seller_price || product?.price || '-'}
+                : responseData?.price ||
+                  product?.product_seller_price ||
+                  product?.price ||
+                  '-'}
             </Text>
           </View>
 
@@ -107,7 +118,11 @@ export default function SuccessNotif({route}) {
           <View style={styles.modalData(isDarkMode)}>
             <Text style={styles.labelModalData(isDarkMode)}>SN</Text>
             <Text style={styles.valueModalData(isDarkMode)}>
-              {responseData?.sn || item?.sn || item?.data?.sn || item?.serial_number || '-'}
+              {responseData?.sn ||
+                item?.sn ||
+                item?.data?.sn ||
+                item?.serial_number ||
+                '-'}
             </Text>
           </View>
 
@@ -115,7 +130,10 @@ export default function SuccessNotif({route}) {
           <View style={styles.modalData(isDarkMode)}>
             <Text style={styles.labelModalData(isDarkMode)}>Message</Text>
             <Text style={styles.valueModalData(isDarkMode)}>
-              {responseData?.message || item?.message || item?.data?.message || '-'}
+              {responseData?.message ||
+                item?.message ||
+                item?.data?.message ||
+                '-'}
             </Text>
           </View>
 

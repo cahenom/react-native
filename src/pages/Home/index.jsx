@@ -69,9 +69,9 @@ export default function HomeScreen({navigation}) {
         style={{
           backgroundColor: isDarkMode ? DARK_BACKGROUND : '#FFF',
           marginHorizontal: HORIZONTAL_MARGIN,
-          padding: 15,
+          padding: 10,
           borderRadius: 10,
-          height: 70,
+          height: 90,
           shadowColor: '#000',
           shadowOffset: {
             width: 0,
@@ -85,14 +85,25 @@ export default function HomeScreen({navigation}) {
           justifyContent: 'space-between',
           alignItems: 'center',
         }}>
-        <Text
-          style={{
-            color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
-            fontFamily: MEDIUM_FONT,
-            fontSize: FONT_NORMAL,
-          }}>
-          Rp. {user?.saldo ? parseFloat(user.saldo).toLocaleString() : '0'}
-        </Text>
+        <View style={{alignItems: 'center'}}>
+          <Text
+            style={{
+              color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+              fontFamily: BOLD_FONT,
+              fontSize: FONT_NORMAL,
+              marginBottom: 7,
+            }}>
+            Saldo Saya
+          </Text>
+          <Text
+            style={{
+              color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+              fontFamily: BOLD_FONT,
+              fontSize: FONT_NORMAL,
+            }}>
+            Rp. {user?.saldo ? parseFloat(user.saldo).toLocaleString() : '0'}
+          </Text>
+        </View>
         <View
           style={{
             flexDirection: 'row',
@@ -144,6 +155,7 @@ export default function HomeScreen({navigation}) {
             style={{
               fontFamily: BOLD_FONT,
               fontSize: FONT_NORMAL,
+              color: isDarkMode ? LIGHT_COLOR : LIGHT_COLOR,
             }}>
             Topup & Tagihan
           </Text>
@@ -176,6 +188,7 @@ export default function HomeScreen({navigation}) {
                     fontFamily: MEDIUM_FONT,
                     fontSize: FONT_SEDANG,
                     marginTop: 10,
+                    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
                   }}>
                   {item.label}
                 </Text>

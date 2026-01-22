@@ -6,6 +6,7 @@ import {
   useColorScheme,
   TouchableOpacity,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import React, {useState, useMemo} from 'react';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -133,8 +134,8 @@ export default function Pulsa({navigation}) {
 
   return (
     <>
-      <SafeAreaView>
-        <View style={{marginHorizontal: HORIZONTAL_MARGIN, marginTop: 15}}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={{ flex: 1, marginHorizontal: HORIZONTAL_MARGIN, marginTop: 15 }}>
           <View
             style={{
               rowGap: 10,
@@ -196,86 +197,90 @@ export default function Pulsa({navigation}) {
             })}
           </View>
           {/* PRODUK */}
-          <View
-            style={{
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              justifyContent: 'space-between',
-              rowGap: 25,
-              marginTop: 20,
-            }}>
-            {type === 'Pulsa' ? (
-              <>
-                {data_pulsa.map(p => {
-                  return (
-                    <TouchableOpacity
-                      key={p.id}
-                      style={[
-                        styles.productWrapper(isDarkMode),
-                        selectItem?.id === p.id
-                          ? {
-                              borderColor: GREEN_COLOR,
-                            }
-                          : '',
-                      ]}
-                      onPress={() => setSelectItem(p)}>
-                      <Text style={styles.productLabel(isDarkMode)}>
-                        {p.name || p.product_name}
-                      </Text>
-                      <Text style={styles.productPrice(isDarkMode)}>
-                        Rp.{numberWithCommas(p.price || p.product_seller_price)}
-                      </Text>
-                      {selectItem?.id === p.id && (
-                        <CheckProduct
-                          width={20}
-                          style={{
-                            position: 'absolute',
-                            right: 7,
-                            top: 2,
-                          }}
-                        />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </>
-            ) : (
-              <>
-                {paket_data.map(d => {
-                  return (
-                    <TouchableOpacity
-                      key={d.id}
-                      style={[
-                        styles.productWrapper(isDarkMode),
-                        selectItem?.id === d.id
-                          ? {
-                              borderColor: GREEN_COLOR,
-                            }
-                          : '',
-                      ]}
-                      onPress={() => setSelectItem(d)}>
-                      <Text style={styles.productLabel(isDarkMode)}>
-                        {d.name || d.product_name}
-                      </Text>
-                      <Text style={styles.productPrice(isDarkMode)}>
-                        Rp.{numberWithCommas(d.price || d.product_seller_price)}
-                      </Text>
-                      {selectItem?.id === d.id && (
-                        <CheckProduct
-                          width={20}
-                          style={{
-                            position: 'absolute',
-                            right: 7,
-                            top: 2,
-                          }}
-                        />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </>
-            )}
-          </View>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            style={{ flex: 1, marginTop: 10 }}
+            contentContainerStyle={{ paddingBottom: 100 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                justifyContent: 'space-between',
+                rowGap: 25,
+              }}>
+              {type === 'Pulsa' ? (
+                <>
+                  {data_pulsa.map(p => {
+                    return (
+                      <TouchableOpacity
+                        key={p.id}
+                        style={[
+                          styles.productWrapper(isDarkMode),
+                          selectItem?.id === p.id
+                            ? {
+                                borderColor: GREEN_COLOR,
+                              }
+                            : '',
+                        ]}
+                        onPress={() => setSelectItem(p)}>
+                        <Text style={styles.productLabel(isDarkMode)}>
+                          {p.name || p.product_name}
+                        </Text>
+                        <Text style={styles.productPrice(isDarkMode)}>
+                          Rp.{numberWithCommas(p.price || p.product_seller_price)}
+                        </Text>
+                        {selectItem?.id === p.id && (
+                          <CheckProduct
+                            width={20}
+                            style={{
+                              position: 'absolute',
+                              right: 7,
+                              top: 2,
+                            }}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </>
+              ) : (
+                <>
+                  {paket_data.map(d => {
+                    return (
+                      <TouchableOpacity
+                        key={d.id}
+                        style={[
+                          styles.productWrapper(isDarkMode),
+                          selectItem?.id === d.id
+                            ? {
+                                borderColor: GREEN_COLOR,
+                              }
+                            : '',
+                        ]}
+                        onPress={() => setSelectItem(d)}>
+                        <Text style={styles.productLabel(isDarkMode)}>
+                          {d.name || d.product_name}
+                        </Text>
+                        <Text style={styles.productPrice(isDarkMode)}>
+                          Rp.{numberWithCommas(d.price || d.product_seller_price)}
+                        </Text>
+                        {selectItem?.id === d.id && (
+                          <CheckProduct
+                            width={20}
+                            style={{
+                              position: 'absolute',
+                              right: 7,
+                              top: 2,
+                            }}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </>
+              )}
+            </View>
+          </ScrollView>
         </View>
       </SafeAreaView>
       {selectItem && (
@@ -299,13 +304,13 @@ export default function Pulsa({navigation}) {
           <View style={styles.modalData(isDarkMode)}>
             <Text style={styles.labelModalData(isDarkMode)}>Produk</Text>
             <Text style={styles.valueModalData(isDarkMode)}>
-              {selectItem?.product_name}
+              {selectItem?.name || selectItem?.product_name}
             </Text>
           </View>
           <View style={styles.modalData(isDarkMode)}>
             <Text style={styles.labelModalData(isDarkMode)}>Harga </Text>
             <Text style={styles.valueModalData(isDarkMode)}>
-              Rp.{numberWithCommas(selectItem?.product_seller_price)}
+              Rp.{numberWithCommas(selectItem?.price || selectItem?.product_seller_price)}
             </Text>
           </View>
         </View>
@@ -347,7 +352,7 @@ const styles = StyleSheet.create({
   }),
   productWrapper: isDarkMode => ({
     borderWidth: 1,
-    borderColor: GREY_COLOR,
+    borderColor: isDarkMode ? SLATE_COLOR : GREY_COLOR,
     borderRadius: 10,
     padding: 20,
     width: '45%',
@@ -356,11 +361,11 @@ const styles = StyleSheet.create({
   productLabel: isDarkMode => ({
     fontFamily: MEDIUM_FONT,
     fontSize: FONT_NORMAL,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR, // Changed to ensure contrast
   }),
   productPrice: isDarkMode => ({
     fontFamily: REGULAR_FONT,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR, // Changed to ensure contrast
   }),
   bottom: isDarkMode => ({
     position: 'absolute',
@@ -384,11 +389,11 @@ const styles = StyleSheet.create({
   labelModalData: isDarkMode => ({
     fontFamily: MEDIUM_FONT,
     fontSize: FONT_SEDANG,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR, // Changed to ensure contrast
   }),
   valueModalData: isDarkMode => ({
     fontFamily: REGULAR_FONT,
     fontSize: FONT_NORMAL,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR, // Changed to ensure contrast
   }),
 });

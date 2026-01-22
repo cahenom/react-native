@@ -1,134 +1,62 @@
-import {StyleSheet, Text, View, useColorScheme, ScrollView, FlatList, ActivityIndicator, Alert, SafeAreaView} from 'react-native';
-import React, {useState, useEffect, useMemo} from 'react';
+import {StyleSheet, Text, View, useColorScheme, ScrollView, FlatList, ActivityIndicator, Alert, SafeAreaView, TouchableOpacity} from 'react-native';
+import React, {useRef, useState} from 'react';
 import { useNavigation } from '@react-navigation/native';
 import {
   BLUE_COLOR,
   DARK_BACKGROUND,
   DARK_COLOR,
   FONT_NORMAL,
+  FONT_SEDANG,
   GREY_COLOR,
   HORIZONTAL_MARGIN,
   LIGHT_COLOR,
   MEDIUM_FONT,
   REGULAR_FONT,
+  SLATE_COLOR,
   WHITE_BACKGROUND,
   windowWidth,
 } from '../../utils/const';
 import Input from '../../components/form/Input';
 import BottomButton from '../../components/BottomButton';
 import ProductList from '../../components/ProductList';
-import {api} from '../../utils/api';
-import ConfirmationModal from '../../components/ConfirmationModal';
-
-// Cache to store fetched products
-const productCache = new Map();
+import SkeletonCard from '../../components/SkeletonCard';
+import BottomModal from '../../components/BottomModal';
+import TransactionDetail from '../../components/TransactionDetail';
+import useTopupProducts from '../../hooks/useTopupProducts';
+import { api } from '../../utils/api';
+import {numberWithCommas} from '../../utils/formatter';
 
 export default function TopupTV({route}) {
   const navigation = useNavigation();
   const {provider, title} = route.params;
   const isDarkMode = useColorScheme() === 'dark';
-  const [customer_no, setCustomerNo] = useState('');
-  const [selectItem, setSelectItem] = useState(null);
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showConfirmation, setShowConfirmation] = useState(false);
+  const scrollViewRef = useRef(null);
 
-  // Memoized sorted products to avoid re-sorting on every render
-  const sortedProducts = useMemo(() => {
-    return [...products].sort((a, b) => a.price - b.price);
-  }, [products]);
+  const {
+    customer_no,
+    setCustomerNo,
+    selectItem,
+    setSelectItem,
+    sortedProducts,
+    loading,
+    showConfirmation,
+    setShowConfirmation,
+    resetInput,
+    validationErrors,
+    validateInputs,
+    clearValidationErrors
+  } = useTopupProducts(provider, title, '/api/product/tv', 'tv');
 
-  useEffect(() => {
-    fetchProductsByProvider();
-  }, [provider]);
-
-  const fetchProductsByProvider = async () => {
-    try {
-      console.log('Attempting to fetch TV for provider:', provider);
-
-      // Create a cache key specific to this provider
-      const cacheKey = `tv_${provider}`;
-
-      // Check if products are already cached for this provider
-      if (productCache.has(cacheKey)) {
-        console.log('Using cached TV for provider:', provider);
-        const cachedProducts = productCache.get(cacheKey);
-        setProducts(cachedProducts);
-        setLoading(false);
-        return;
-      }
-
-      const response = await api.post('/api/product/tv');
-
-      console.log('Response status:', response.status);
-      console.log('Full response:', response);
-      console.log('Response data:', response.data);
-
-      if (response.data && response.data.data && response.data.data.tv) {
-        const allProducts = response.data.data.tv;
-        console.log('All TV for provider:', allProducts);
-        console.log('Selected provider:', provider);
-
-        const filteredProducts = allProducts.filter(item => item.provider === provider);
-        console.log('Filtered TV:', filteredProducts);
-
-        const transformedProducts = filteredProducts.map(item => ({
-          id: item.id,
-          label: item.name,
-          price: item.price,
-          desc: item.desc,
-          category: item.category,
-          sku: item.sku,
-          multi: item.multi
-        }));
-
-        console.log('Transformed TV:', transformedProducts);
-
-        // Cache the products for this provider using the specific cache key
-        productCache.set(cacheKey, transformedProducts);
-        setProducts(transformedProducts);
-      } else {
-        console.log('Unexpected response structure:', response.data);
-        Alert.alert('Error', 'Struktur data tidak sesuai. Silakan hubungi administrator.');
-      }
-    } catch (error) {
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response,
-        status: error.response?.status,
-        data: error.response?.data
-      });
-
-      if (error.response?.status === 405) {
-        Alert.alert('Error', 'Metode tidak diizinkan. Endpoint mungkin salah atau tidak mendukung metode POST.');
-      } else if (error.response?.status === 401) {
-        Alert.alert('Error', 'Autentikasi gagal. Token mungkin sudah kadaluarsa.');
-      } else if (error.response?.status === 404) {
-        Alert.alert('Error', 'Endpoint tidak ditemukan. Silakan periksa kembali alamat API.');
-      } else {
-        Alert.alert('Error', `Gagal memuat produk TV: ${error.message}\nStatus: ${error.response?.status || 'Unknown'}`);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetInput = () => {
-    setCustomerNo('');
-  };
+  const [showModal, setShowModal] = useState(false);
 
   const handleContinue = () => {
-    if (!customer_no) {
-      Alert.alert('Error', 'Silakan masukkan nomor pelanggan');
-      return;
+    if (!validateInputs()) {
+      // If validation fails, scroll to the top to show the error indicators
+      scrollViewRef.current?.scrollTo({ x: 0, y: 0, animated: true });
+    } else {
+      // If validation passes, show confirmation modal
+      setShowModal(true);
     }
-    if (!selectItem) {
-      Alert.alert('Error', 'Silakan pilih produk terlebih dahulu');
-      return;
-    }
-
-    // Show confirmation modal
-    setShowConfirmation(true);
   };
 
   const confirmOrder = async () => {
@@ -162,14 +90,6 @@ export default function TopupTV({route}) {
     }
   };
 
-  if (loading) {
-    return (
-      <View style={[styles.container, {flex: 1, justifyContent: 'center', alignItems: 'center'}]}>
-        <ActivityIndicator size="large" color="#138EE9" />
-      </View>
-    );
-  }
-
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND, paddingBottom: 100}}>
       {/* Fixed Header and Input Section */}
@@ -189,17 +109,39 @@ export default function TopupTV({route}) {
           <Input
             value={customer_no}
             placeholder="Masukan nomor pelanggan"
-            onchange={text => setCustomerNo(text)}
+            onchange={text => {
+              setCustomerNo(text);
+              if (validationErrors.customer_no) {
+                clearValidationErrors();
+              }
+            }}
             ondelete={resetInput}
             type="numeric"
             lebar={windowWidth * 0.9}
+            hasError={!!validationErrors.customer_no}
           />
         </View>
       </View>
 
       {/* Scrollable Product List */}
-      {sortedProducts.length > 0 ? (
-        <ScrollView 
+      {loading ? (
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.productsContainer}>
+            {/* Skeleton cards while loading */}
+            {Array.from({ length: 6 }).map((_, index) => (
+              <View key={`skeleton-${index}`} style={styles.productItem}>
+                <SkeletonCard />
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      ) : sortedProducts.length > 0 ? (
+        <ScrollView
+          ref={scrollViewRef}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
@@ -235,15 +177,22 @@ export default function TopupTV({route}) {
       )}
 
       {/* Confirmation Modal */}
-      <ConfirmationModal
-        isVisible={showConfirmation}
-        onClose={() => setShowConfirmation(false)}
-        onConfirm={confirmOrder}
-        destination={customer_no}
-        product={selectItem?.label || selectItem?.name}
-        price={selectItem?.price}
-        isDarkMode={isDarkMode}
-      />
+      <BottomModal
+        visible={showModal}
+        onDismis={() => setShowModal(false)}
+        title="Detail Transaksi">
+        <TransactionDetail
+          destination={customer_no}
+          product={selectItem?.label || selectItem?.name}
+          description={selectItem?.desc}
+          price={selectItem?.price}
+          onConfirm={() => {
+            setShowModal(false);
+            confirmOrder();
+          }}
+          onCancel={() => setShowModal(false)}
+        />
+      </BottomModal>
     </SafeAreaView>
   );
 }

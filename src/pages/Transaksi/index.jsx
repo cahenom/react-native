@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,8 @@ import {
   Alert,
   useColorScheme,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { api } from '../../utils/api';
+import {useNavigation} from '@react-navigation/native';
+import {api} from '../../utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   DARK_BACKGROUND,
@@ -84,15 +84,21 @@ const Transaksi = () => {
           price: typeof transaction.price === 'number' ? transaction.price : 0,
           sn: transaction.sn || '-',
           type: transaction.type || '-',
-          created_at: transaction.created_at || '-'
+          created_at: transaction.created_at || '-',
         }));
 
         setTransactions(validatedTransactions);
 
         // Cache the transactions
-        await AsyncStorage.setItem('user_transactions', JSON.stringify(validatedTransactions));
+        await AsyncStorage.setItem(
+          'user_transactions',
+          JSON.stringify(validatedTransactions),
+        );
       } else {
-        Alert.alert('Error', response.data.message || 'Failed to fetch transactions');
+        Alert.alert(
+          'Error',
+          response.data.message || 'Failed to fetch transactions',
+        );
       }
     } catch (error) {
       console.error('Error fetching transactions:', error);
@@ -102,11 +108,21 @@ const Transaksi = () => {
       } else if (error.response?.status === 401) {
         Alert.alert('Error', 'Unauthorized access. Please login again.');
       } else if (error.response?.status === 404) {
-        Alert.alert('Error', 'Endpoint not found. Please check API configuration.');
+        Alert.alert(
+          'Error',
+          'Endpoint not found. Please check API configuration.',
+        );
       } else if (error.response?.status === 0) {
-        Alert.alert('Error', 'Gangguan koneksi jaringan. Silakan periksa koneksi internet Anda.');
+        Alert.alert(
+          'Error',
+          'Gangguan koneksi jaringan. Silakan periksa koneksi internet Anda.',
+        );
       } else {
-        Alert.alert('Error', error.response?.data?.message || 'Gangguan sistem. Silakan coba lagi nanti.');
+        Alert.alert(
+          'Error',
+          error.response?.data?.message ||
+            'Gangguan sistem. Silakan coba lagi nanti.',
+        );
       }
     }
   };
@@ -117,7 +133,7 @@ const Transaksi = () => {
     setRefreshing(false);
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     if (!dateString) return '-';
     const date = new Date(dateString);
     // Check if date is valid
@@ -127,11 +143,11 @@ const Transaksi = () => {
     return date.toLocaleDateString('id-ID', {
       day: '2-digit',
       month: 'short',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = status => {
     if (!status) return '#94A3B8'; // Gray for undefined/null
 
     switch (status.toLowerCase()) {
@@ -142,6 +158,7 @@ const Transaksi = () => {
       case 'gagal':
       case 'failed':
       case 'error':
+      case 'none':
         return '#EF4444'; // Red
       case 'pending':
       case 'diproses':
@@ -152,25 +169,16 @@ const Transaksi = () => {
     }
   };
 
-  const renderTransactionItem = ({ item }) => (
+  const renderTransactionItem = ({item}) => (
     <TouchableOpacity
-      style={[styles.transactionItem, { backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_COLOR }]}
-      onPress={() => navigation.navigate('SuccessNotif', {
-        // Map the new API response structure to match SuccessNotif expectations
-        item: {
-          ref: item.ref || '-',
-          tujuan: item.tujuan || '-',
-          sku: item.sku || '-',
-          status: item.status || '-',
-          message: item.message || '-',
-          price: item.price || 0,
-          sn: item.sn || '-',
-          type: item.type || '-',
-          created_at: item.created_at || '-',
-          // Backward compatibility fields
-          customer_no: item.tujuan || '-',
-          ref_id: item.ref || '-',
-          data: {
+      style={[
+        styles.transactionItem,
+        {backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_COLOR},
+      ]}
+      onPress={() =>
+        navigation.navigate('SuccessNotif', {
+          // Map the new API response structure to match SuccessNotif expectations
+          item: {
             ref: item.ref || '-',
             tujuan: item.tujuan || '-',
             sku: item.sku || '-',
@@ -179,54 +187,121 @@ const Transaksi = () => {
             price: item.price || 0,
             sn: item.sn || '-',
             type: item.type || '-',
-            created_at: item.created_at || '-'
-          }
-        },
-        product: {
-          product_name: item.sku || 'Transaksi',
-          name: item.sku || 'Transaksi',
-          label: item.sku || 'Transaksi',
-          product_seller_price: item.price ? `Rp ${item.price.toLocaleString('id-ID')}` : 'Rp -',
-          price: item.price ? `Rp ${item.price.toLocaleString('id-ID')}` : 'Rp -'
-        }
-      })}
-    >
+            created_at: item.created_at || '-',
+            // Backward compatibility fields
+            customer_no: item.tujuan || '-',
+            ref_id: item.ref || '-',
+            data: {
+              ref: item.ref || '-',
+              tujuan: item.tujuan || '-',
+              sku: item.sku || '-',
+              status: item.status || '-',
+              message: item.message || '-',
+              price: item.price || 0,
+              sn: item.sn || '-',
+              type: item.type || '-',
+              created_at: item.created_at || '-',
+            },
+          },
+          product: {
+            product_name: item.sku || 'Transaksi',
+            name: item.sku || 'Transaksi',
+            label: item.sku || 'Transaksi',
+            product_seller_price: item.price
+              ? `Rp ${item.price.toLocaleString('id-ID')}`
+              : 'Rp -',
+            price: item.price
+              ? `Rp ${item.price.toLocaleString('id-ID')}`
+              : 'Rp -',
+          },
+        })
+      }>
       <View style={styles.leftSection}>
-        <Text style={[styles.transactionType, { color: isDarkMode ? DARK_COLOR : LIGHT_COLOR }]}>{item.sku || 'Transaksi'}</Text>
-        <Text style={[styles.transactionNumber, { color: isDarkMode ? DARK_COLOR : SLATE_COLOR }]}>{item.tujuan || '-'}</Text>
-        <Text style={[styles.transactionDate, { color: isDarkMode ? DARK_COLOR : SLATE_COLOR }]}>
-          {formatDate(item.created_at)} • {item.created_at ? new Date(item.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}
+        <Text
+          style={[
+            styles.transactionType,
+            {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
+          ]}>
+          {item.sku || 'Transaksi'}
+        </Text>
+        <Text
+          style={[
+            styles.transactionNumber,
+            {color: isDarkMode ? DARK_COLOR : SLATE_COLOR},
+          ]}>
+          {item.tujuan || '-'}
+        </Text>
+        <Text
+          style={[
+            styles.transactionDate,
+            {color: isDarkMode ? DARK_COLOR : SLATE_COLOR},
+          ]}>
+          {formatDate(item.created_at)} •{' '}
+          {item.created_at
+            ? new Date(item.created_at).toLocaleTimeString('id-ID', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : '-'}
         </Text>
       </View>
       <View style={styles.rightSection}>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+        <View
+          style={[
+            styles.statusBadge,
+            {backgroundColor: getStatusColor(item.status)},
+          ]}>
           <Text style={styles.statusText}>{item.status}</Text>
         </View>
-        <Text style={[styles.transactionAmount, { color: isDarkMode ? DARK_COLOR : LIGHT_COLOR }]}>Rp {item.price ? item.price.toLocaleString('id-ID') : '-'}</Text>
+        <Text
+          style={[
+            styles.transactionAmount,
+            {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
+          ]}>
+          Rp {item.price ? item.price.toLocaleString('id-ID') : '-'}
+        </Text>
       </View>
     </TouchableOpacity>
   );
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: isDarkMode ? DARK_BACKGROUND : LIGHT_BACKGROUND }]}>
+      <View
+        style={[
+          styles.loadingContainer,
+          {backgroundColor: isDarkMode ? DARK_BACKGROUND : LIGHT_BACKGROUND},
+        ]}>
         <ActivityIndicator size="large" color="#138EE9" />
-        <Text style={[styles.loadingText, { color: isDarkMode ? DARK_COLOR : LIGHT_COLOR }]}>Memuat transaksi...</Text>
+        <Text
+          style={[
+            styles.loadingText,
+            {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
+          ]}>
+          Memuat transaksi...
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: isDarkMode ? DARK_BACKGROUND : LIGHT_BACKGROUND }]}>
+    <View
+      style={[
+        styles.container,
+        {backgroundColor: isDarkMode ? DARK_BACKGROUND : LIGHT_BACKGROUND},
+      ]}>
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: isDarkMode ? DARK_COLOR : LIGHT_COLOR }]}>Riwayat Transaksi</Text>
-        <Text style={[styles.headerSubtitle, { color: isDarkMode ? DARK_COLOR : SLATE_COLOR }]}>Daftar transaksi Anda</Text>
+        <Text style={styles.headerTitle(isDarkMode)}>Riwayat Transaksi</Text>
+        <Text style={styles.headerSubtitle(isDarkMode)}>
+          Daftar transaksi Anda
+        </Text>
       </View>
 
       <FlatList
         data={transactions}
         renderItem={renderTransactionItem}
-        keyExtractor={(item, index) => (item.ref ? item.ref.toString() : index.toString())}
+        keyExtractor={(item, index) =>
+          item.ref ? item.ref.toString() : index.toString()
+        }
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -234,7 +309,13 @@ const Transaksi = () => {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, { color: isDarkMode ? DARK_COLOR : SLATE_COLOR }]}>Belum pernah transaksi</Text>
+            <Text
+              style={[
+                styles.emptyText,
+                {color: isDarkMode ? DARK_COLOR : SLATE_COLOR},
+              ]}>
+              Belum pernah transaksi
+            </Text>
           </View>
         }
       />
@@ -259,14 +340,16 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 20,
   },
-  headerTitle: {
+  headerTitle: isDarkMode => ({
     fontSize: 24,
     fontWeight: 'bold',
-  },
-  headerSubtitle: {
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+  }),
+  headerSubtitle: isDarkMode => ({
     fontSize: 14,
     marginTop: 4,
-  },
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+  }),
   listContainer: {
     paddingBottom: 20,
   },
@@ -294,18 +377,21 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'flex-start',
   },
-  transactionType: {
+  transactionType: isDarkMode => ({
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  transactionNumber: {
+    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR,
+  }),
+  transactionNumber: isDarkMode => ({
     fontSize: 14,
     marginTop: 4,
-  },
-  transactionDate: {
+    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR,
+  }),
+  transactionDate: isDarkMode => ({
     fontSize: 12,
     marginTop: 2,
-  },
+    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR,
+  }),
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -318,20 +404,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  transactionAmount: {
+  transactionAmount: isDarkMode => ({
     fontSize: 16,
     fontWeight: 'bold',
     marginTop: 8,
-  },
+    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR,
+  }),
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 50,
   },
-  emptyText: {
+  emptyText: isDarkMode => ({
     fontSize: 16,
-  },
+    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR,
+  }),
 });
 
 export default Transaksi;

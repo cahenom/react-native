@@ -12,13 +12,14 @@ import {
   WHITE_COLOR,
 } from '../../utils/const';
 
-const ConfirmationModal = ({ 
-  isVisible, 
-  onClose, 
-  onConfirm, 
-  destination, 
-  product, 
-  price, 
+const ConfirmationModal = ({
+  isVisible,
+  onClose,
+  onConfirm,
+  destination,
+  product,
+  price,
+  description,
   isDarkMode = false,
   title = "Konfirmasi Pesanan",
   confirmText = "Lanjutkan",
@@ -34,24 +35,31 @@ const ConfirmationModal = ({
       <View style={styles.centeredView}>
         <View style={[styles.modalView, {backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}]}>
           <Text style={[styles.modalTitle, {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR}]}>{title}</Text>
-          
+
           <View style={styles.modalContent}>
             <View style={styles.modalRow}>
               <Text style={[styles.modalLabel, {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR}]}>Tujuan:</Text>
               <Text style={[styles.modalValue, {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR}]}>{destination}</Text>
             </View>
-            
+
             <View style={styles.modalRow}>
               <Text style={[styles.modalLabel, {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR}]}>Produk:</Text>
               <Text style={[styles.modalValue, {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR}]}>{product}</Text>
             </View>
-            
+
+            {description && (
+              <View style={styles.modalRow}>
+                <Text style={[styles.modalLabel, {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR}]}>Deskripsi:</Text>
+                <Text style={[styles.modalValue, {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR}]}>{description}</Text>
+              </View>
+            )}
+
             <View style={styles.modalRow}>
               <Text style={[styles.modalLabel, {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR}]}>Harga:</Text>
               <Text style={[styles.modalValue, {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR}]}>Rp. {price?.toLocaleString()}</Text>
             </View>
           </View>
-          
+
           <View style={styles.modalButtons}>
             <TouchableOpacity
               style={[styles.modalButton, styles.cancelButton]}
@@ -59,7 +67,7 @@ const ConfirmationModal = ({
             >
               <Text style={styles.modalButtonText}>{cancelText}</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={[styles.modalButton, styles.confirmButton]}
               onPress={onConfirm}

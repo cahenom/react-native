@@ -1,0 +1,106 @@
+import { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const BACKGROUND_REFRESH_THRESHOLD = 1 * 60 * 60 * 1000; // 1 hour - refresh in background if older than this
+
+const usePersistentState = (key, defaultValue) => {
+  const [state, setState] = useState(defaultValue);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false); // Track background refresh
+
+  useEffect(() => {
+    const loadPersistedState = async () => {
+      try {
+        const persistedData = await AsyncStorage.getItem(key);
+        if (persistedData !== null) {
+          const parsedData = JSON.parse(persistedData);
+          const currentTime = Date.now();
+          const age = currentTime - parsedData.timestamp;
+
+          // If cache is still valid, load it immediately
+          if (parsedData.timestamp && age < CACHE_DURATION) {
+            setState(parsedData.value);
+
+            // If cache is older than threshold, refresh in background
+            if (age > BACKGROUND_REFRESH_THRESHOLD) {
+              setIsRefreshing(true);
+              // Note: Actual background refresh should be triggered by the component
+              // when it detects this condition
+            }
+          } else {
+            // Cache expired, remove it
+            await AsyncStorage.removeItem(key);
+          }
+        }
+      } catch (error) {
+        console.error(`Error loading persisted state for key "${key}":`, error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPersistedState();
+  }, [key]);
+
+  const setPersistentState = async (newValue) => {
+    try {
+      const valueToStore = newValue instanceof Function ? newValue(state) : newValue;
+      setState(valueToStore);
+      // Store with timestamp
+      await AsyncStorage.setItem(key, JSON.stringify({
+        value: valueToStore,
+        timestamp: Date.now()
+      }));
+    } catch (error) {
+      console.error(`Error saving persisted state for key "${key}":`, error);
+    }
+  };
+
+  // Function to force clear the cache
+  const clearPersistentState = async () => {
+    try {
+      await AsyncStorage.removeItem(key);
+      setState(defaultValue);
+    } catch (error) {
+      console.error(`Error clearing persisted state for key "${key}":`, error);
+    }
+  };
+
+  // Function to check if cache needs background refresh
+  const needsBackgroundRefresh = async () => {
+    try {
+      const persistedData = await AsyncStorage.getItem(key);
+      if (persistedData !== null) {
+        const parsedData = JSON.parse(persistedData);
+        const currentTime = Date.now();
+        const age = currentTime - parsedData.timestamp;
+        return age > BACKGROUND_REFRESH_THRESHOLD && age < CACHE_DURATION;
+      }
+      return false; // If no data, no need for background refresh
+    } catch (error) {
+      console.error(`Error checking background refresh for key "${key}":`, error);
+      return false;
+    }
+  };
+
+  // Function to check if cache is expired
+  const isCacheExpired = async () => {
+    try {
+      const persistedData = await AsyncStorage.getItem(key);
+      if (persistedData !== null) {
+        const parsedData = JSON.parse(persistedData);
+        const currentTime = Date.now();
+        return (currentTime - parsedData.timestamp) >= CACHE_DURATION;
+      }
+      return true; // If no data, consider it expired
+    } catch (error) {
+      console.error(`Error checking cache expiration for key "${key}":`, error);
+      return true;
+    }
+  };
+
+  return [state, setPersistentState, isLoading, clearPersistentState, isCacheExpired, needsBackgroundRefresh, isRefreshing];
+};
+
+export default usePersistentState;

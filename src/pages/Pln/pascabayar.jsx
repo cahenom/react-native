@@ -232,12 +232,12 @@ const styles = StyleSheet.create({
   label: isDarkMode => ({
     fontFamily: MEDIUM_FONT,
     fontSize: FONT_SEDANG,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR, // Changed to ensure contrast
   }),
   value: isDarkMode => ({
     fontFamily: REGULAR_FONT,
     fontSize: FONT_NORMAL,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR, // Changed to ensure contrast
   }),
   billingDetail: isDarkMode => ({
     marginTop: 15,
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   sectionTitle: isDarkMode => ({
     fontFamily: MEDIUM_FONT,
     fontSize: FONT_SEDANG,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR, // Changed to ensure contrast
     marginBottom: 10,
   }),
   detailRow: {
@@ -263,13 +263,13 @@ const styles = StyleSheet.create({
   detailLabel: isDarkMode => ({
     fontFamily: REGULAR_FONT,
     fontSize: FONT_KECIL,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR, // Changed to ensure contrast
     opacity: 0.7,
   }),
   detailValue: isDarkMode => ({
     fontFamily: REGULAR_FONT,
     fontSize: FONT_KECIL,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR, // Changed to ensure contrast
   }),
 
   bottomInline: isDarkMode => ({
