@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   },
   serviceItem: {
     flex: 1,
-    alignItems: 'flex-start',
+    alignItems: 'center',
     paddingVertical: 12,
     margin: 4,
   },
@@ -115,6 +115,6 @@ const styles = StyleSheet.create({
   serviceLabel: {
     fontSize: 11,
     fontWeight: '600',
-    textAlign: 'left',
+    textAlign: 'center',
   },
 });

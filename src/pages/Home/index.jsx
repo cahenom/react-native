@@ -9,7 +9,7 @@ import {
   Image,
   RefreshControl,
 } from 'react-native';
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {BellIkon} from '../../assets';
 import {
   BOLD_FONT,
@@ -29,6 +29,7 @@ import {
 } from '../../utils/const';
 import {mainmenus} from '../../data/mainmenu';
 import {useAuth} from '../../context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -44,8 +45,9 @@ export default function HomeScreen({navigation}) {
     }, 1000);
   };
 
-  // Sample recent activities data
-  const recentActivities = [
+  // State for recent activities
+  const [recentActivities, setRecentActivities] = useState([
+    // Default/fallback data in case cache is empty
     {
       id: 1,
       service: 'Telkomsel 10GB',
@@ -76,7 +78,72 @@ export default function HomeScreen({navigation}) {
       type: 'credit',
       color: '#10b981',
     },
-  ];
+  ]);
+
+  // Load recent activities from transaction cache
+  useEffect(() => {
+    const loadRecentActivities = async () => {
+      try {
+        const cachedData = await AsyncStorage.getItem('user_transactions');
+        if (cachedData) {
+          const parsedData = JSON.parse(cachedData);
+          if (Array.isArray(parsedData)) {
+            // Take only the 3 most recent transactions
+            const recentTransactions = parsedData.slice(0, 3).map((transaction, index) => ({
+              id: index + 1,
+              service: transaction.sku || transaction.product_name || 'Transaksi',
+              time: transaction.created_at
+                ? new Date(transaction.created_at).toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  }) + ', ' +
+                  new Date(transaction.created_at).toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : 'Unknown Time',
+              amount: (transaction.price >= 0 ? '+' : '-') + 'Rp ' +
+                Math.abs(transaction.price || 0).toLocaleString('id-ID'),
+              status: transaction.status || 'Unknown',
+              icon: getTransactionIcon(transaction.sku || ''),
+              type: transaction.type || 'debit',
+              color: transaction.status?.toLowerCase() === 'berhasil' ||
+                     transaction.status?.toLowerCase() === 'sukses' ||
+                     transaction.status?.toLowerCase() === 'success'
+                     ? '#10b981' : '#ef4444',
+            }));
+
+            setRecentActivities(recentTransactions);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading recent activities from cache:', error);
+        // Keep default data if there's an error
+      }
+    };
+
+    loadRecentActivities();
+  }, []);
+
+  // Helper function to get transaction icon
+  const getTransactionIcon = (sku) => {
+    if (sku.toLowerCase().includes('pulsa') || sku.toLowerCase().includes('data')) {
+      return '📶';
+    } else if (sku.toLowerCase().includes('pln')) {
+      return '⚡';
+    } else if (sku.toLowerCase().includes('pdam')) {
+      return '💧';
+    } else if (sku.toLowerCase().includes('wallet') || sku.toLowerCase().includes('dompet')) {
+      return '💳';
+    } else if (sku.toLowerCase().includes('game') || sku.toLowerCase().includes('games')) {
+      return '🎮';
+    } else if (sku.toLowerCase().includes('bpjs')) {
+      return '🏥';
+    } else {
+      return '📦';
+    }
+  };
 
   // Services data based on mainmenus
   const services = mainmenus.map((item, index) => ({
@@ -342,7 +409,7 @@ export default function HomeScreen({navigation}) {
               ]}>
               Recent Activity
             </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Transaksi')}>
               <Text style={[styles.seeAll, {color: BLUE_COLOR}]}>See All</Text>
             </TouchableOpacity>
           </View>
@@ -355,7 +422,26 @@ export default function HomeScreen({navigation}) {
                   styles.activityItem,
                   {backgroundColor: isDarkMode ? '#1a2332' : WHITE_BACKGROUND},
                 ]}
-                onPress={() => navigation.navigate('History')}>
+                onPress={() => navigation.navigate('SuccessNotif', {
+                  item: {
+                    ref: activity.id,
+                    tujuan: activity.service,
+                    sku: activity.service,
+                    status: activity.status,
+                    message: activity.status,
+                    price: activity.amount.includes('+') ? parseInt(activity.amount.replace(/[^\d]/g, '')) : -parseInt(activity.amount.replace(/[^\d]/g, '')),
+                    sn: activity.service,
+                    type: activity.type,
+                    created_at: activity.time,
+                  },
+                  product: {
+                    product_name: activity.service,
+                    name: activity.service,
+                    label: activity.service,
+                    product_seller_price: activity.amount,
+                    price: activity.amount,
+                  },
+                })}>
                 <View
                   style={[
                     styles.activityIcon,
