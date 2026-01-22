@@ -21,6 +21,7 @@ import LoginPage from './Auth/login';
 import RegisterPage from './Auth/register';
 import ProfilScreen from './Profil';
 import SettingsScreen from './Settings';
+import LihatSemuaScreen from './LihatSemua';
 export {
   HomeScreen,
   Pulsa,
@@ -44,5 +45,6 @@ export {
   LoginPage,
   RegisterPage,
   ProfilScreen,
-  SettingsScreen
+  SettingsScreen,
+  LihatSemuaScreen
 };

@@ -11,6 +11,7 @@ import {
   HomeScreen,
   Internet,
   LayananPLN,
+  LihatSemuaScreen,
   MasaAktif,
   PDAM,
   PLNPascabayar,
@@ -202,6 +203,13 @@ function ProtectedRoute() {
         component={Internet}
         options={{
           title: 'Internet Pasca',
+        }}
+      />
+      <Stack.Screen
+        name="LihatSemua"
+        component={LihatSemuaScreen}
+        options={{
+          title: 'Semua Layanan',
         }}
       />
     </Stack.Navigator>
