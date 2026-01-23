@@ -105,12 +105,13 @@ export default function SuccessNotif({route}) {
           <View style={styles.modalData(isDarkMode)}>
             <Text style={styles.labelModalData(isDarkMode)}>Harga</Text>
             <Text style={styles.valueModalData(isDarkMode)}>
-              {typeof responseData?.price === 'number'
-                ? `Rp ${responseData?.price?.toLocaleString('id-ID')}`
-                : responseData?.price ||
-                  product?.product_seller_price ||
-                  product?.price ||
-                  '-'}
+              {responseData?.price !== undefined && responseData?.price !== null
+                ? (typeof responseData?.price === 'number'
+                  ? `Rp ${responseData?.price?.toLocaleString('id-ID')}`
+                  : (typeof responseData?.price === 'string'
+                    ? `Rp ${parseFloat(responseData?.price)?.toLocaleString('id-ID') || responseData?.price}`
+                    : responseData?.price))
+                : (product?.product_seller_price || product?.price || '-')}
             </Text>
           </View>
 

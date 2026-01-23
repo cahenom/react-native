@@ -103,8 +103,13 @@ export default function HomeScreen({navigation}) {
                     minute: '2-digit',
                   })
                 : 'Unknown Time',
-              amount: (transaction.price >= 0 ? '+' : '-') + 'Rp ' +
-                Math.abs(transaction.price || 0).toLocaleString('id-ID'),
+              amount: (transaction.price !== undefined && transaction.price !== null
+                ? (typeof transaction.price === 'number'
+                  ? (transaction.price >= 0 ? '+' : '-') + 'Rp ' + Math.abs(transaction.price).toLocaleString('id-ID')
+                  : (typeof transaction.price === 'string'
+                    ? (parseFloat(transaction.price) >= 0 ? '+' : '-') + 'Rp ' + Math.abs(parseFloat(transaction.price)).toLocaleString('id-ID')
+                    : '+Rp 0'))
+                : '+Rp 0'),
               status: transaction.status || 'Unknown',
               icon: getTransactionIcon(transaction.sku || ''),
               type: transaction.type || 'debit',

@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useColorScheme } from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {useColorScheme} from 'react-native';
 import {
   BLUE_COLOR,
   DARK_BACKGROUND,
@@ -15,15 +15,15 @@ import {
   WHITE_BACKGROUND,
   WHITE_COLOR,
 } from '../utils/const';
-import { numberWithCommas } from '../utils/formatter';
+import {numberWithCommas} from '../utils/formatter';
 
-const TransactionDetail = ({ 
-  destination, 
-  product, 
-  description, 
-  price, 
+const TransactionDetail = ({
+  destination,
+  product,
+  description,
+  price,
   onConfirm,
-  onCancel
+  onCancel,
 }) => {
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -35,16 +35,12 @@ const TransactionDetail = ({
       </View>
       <View style={styles.modalData(isDarkMode)}>
         <Text style={styles.labelModalData(isDarkMode)}>Produk</Text>
-        <Text style={styles.valueModalData(isDarkMode)}>
-          {product}
-        </Text>
+        <Text style={styles.valueModalData(isDarkMode)}>{product}</Text>
       </View>
       {description && (
         <View style={styles.modalData(isDarkMode)}>
           <Text style={styles.labelModalData(isDarkMode)}>Deskripsi</Text>
-          <Text style={styles.valueModalData(isDarkMode)}>
-            {description}
-          </Text>
+          <Text style={styles.valueModalData(isDarkMode)}>{description}</Text>
         </View>
       )}
       <View style={styles.modalData(isDarkMode)}>
@@ -54,9 +50,7 @@ const TransactionDetail = ({
         </Text>
       </View>
       <View style={styles.bottom(isDarkMode)}>
-        <TouchableOpacity
-          style={styles.bottomButton}
-          onPress={onConfirm}>
+        <TouchableOpacity style={styles.bottomButton} onPress={onConfirm}>
           <Text style={styles.buttonLabel}>Bayar</Text>
         </TouchableOpacity>
       </View>
@@ -83,12 +77,12 @@ const styles = StyleSheet.create({
   labelModalData: isDarkMode => ({
     fontFamily: MEDIUM_FONT,
     fontSize: FONT_SEDANG,
-    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR, // Changed to ensure contrast
+    color: isDarkMode ? LIGHT_COLOR : LIGHT_COLOR, // Changed to ensure contrast
   }),
   valueModalData: isDarkMode => ({
     fontFamily: REGULAR_FONT,
     fontSize: FONT_NORMAL,
-    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR, // Changed to ensure contrast
+    color: isDarkMode ? LIGHT_COLOR : LIGHT_COLOR, // Changed to ensure contrast
   }),
   buttonLabel: {
     fontFamily: REGULAR_FONT,
