@@ -1,4 +1,4 @@
-package com.ppob_app;
+package com.punya_kios;
 
 import android.os.Bundle;
 import com.facebook.react.ReactActivity;
@@ -14,7 +14,7 @@ public class MainActivity extends ReactActivity {
    */
   @Override
   protected String getMainComponentName() {
-    return "ppob_app";
+    return "punya_kios";
   }
 
   @Override

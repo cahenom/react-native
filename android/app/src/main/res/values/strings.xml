@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">ppob_app</string>
+    <string name="app_name">punya kios</string>
+    <string name="default_notification_channel_id">fcm_default_channel</string>
 </resources>
