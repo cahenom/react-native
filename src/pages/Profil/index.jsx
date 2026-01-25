@@ -65,7 +65,7 @@ export default function ProfilScreen({navigation}) {
     }
   };
 
-  const cardBackgroundColor = isDarkMode ? WHITE_BACKGROUND : DARK_BACKGROUND;
+  const cardBackgroundColor = isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND;
 
   const styles = StyleSheet.create({
     profileHeader: {
@@ -100,7 +100,7 @@ export default function ProfilScreen({navigation}) {
     label: {
       fontFamily: REGULAR_FONT,
       fontSize: FONT_NORMAL,
-      color: isDarkMode ? LIGHT_COLOR : DARK_COLOR,
+      color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
     },
     value: {
       fontFamily: REGULAR_FONT,
@@ -108,7 +108,7 @@ export default function ProfilScreen({navigation}) {
       textAlign: 'right',
       flex: 1,
       marginLeft: 20,
-      color: isDarkMode ? LIGHT_COLOR : DARK_COLOR,
+      color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
     },
     divider: {
       height: 1,

@@ -48,6 +48,7 @@ export default function TopupTV({route}) {
   } = useTopupProducts(provider, title, '/api/product/tv', 'tv');
 
   const [showModal, setShowModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); // Loading state to prevent spam clicks
 
   const handleContinue = () => {
     if (!validateInputs()) {
@@ -60,6 +61,10 @@ export default function TopupTV({route}) {
   };
 
   const confirmOrder = async () => {
+    if (isProcessing) return; // Prevent multiple clicks
+
+    setIsProcessing(true); // Set loading state to prevent spam clicks
+
     try {
       const response = await api.post('/api/order/topup', {
         sku: selectItem.sku,
@@ -69,7 +74,7 @@ export default function TopupTV({route}) {
       console.log('Topup response:', response.data);
 
       // Close confirmation modal
-      setShowConfirmation(false);
+      setShowModal(false);
 
       // Navigate to success screen with the response data
       navigation.navigate('SuccessNotif', {
@@ -85,8 +90,10 @@ export default function TopupTV({route}) {
       });
     } catch (error) {
       console.error('Topup error:', error);
-      setShowConfirmation(false);
+      setShowModal(false);
       Alert.alert('Error', error.response?.data?.message || 'Gagal melakukan topup. Silakan coba lagi.');
+    } finally {
+      setIsProcessing(false); // Reset loading state
     }
   };
 
@@ -191,6 +198,7 @@ export default function TopupTV({route}) {
             confirmOrder();
           }}
           onCancel={() => setShowModal(false)}
+          isLoading={isProcessing}
         />
       </BottomModal>
     </SafeAreaView>

@@ -5,6 +5,7 @@ import { Eye, EyeCros } from '../../assets'
 import {api} from '../../utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useAuth} from '../../context/AuthContext';
+import {getFcmToken} from '../../utils/notifications';
 
 export default function RegisterPage({navigation}) {
     const {setIsLoggedIn, setLoggedInState} = useAuth();
@@ -30,12 +31,22 @@ export default function RegisterPage({navigation}) {
       setLoading(true)
 
       try {
-        const response = await api.post(`/api/auth/register`, {
+        // Dapatkan FCM token
+        const fcmToken = await getFcmToken();
+
+        const registerData = {
           name,
           email,
           password,
           password_confirmation: passwordConfirmation
-        });
+        };
+
+        // Tambahkan FCM token ke data registrasi jika tersedia
+        if (fcmToken) {
+          registerData.fcm_token = fcmToken;
+        }
+
+        const response = await api.post(`/api/auth/register`, registerData);
 
         console.log('Register response:', response.data); // Debug log
 

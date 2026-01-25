@@ -246,6 +246,7 @@ export default function PLNPrabayar({navigation}) {
 
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); // Loading state to prevent spam clicks
 
   const handleContinue = () => {
     if (!customer_no) {
@@ -265,6 +266,10 @@ export default function PLNPrabayar({navigation}) {
   };
 
   const confirmOrder = async () => {
+    if (isProcessing) return; // Prevent multiple clicks
+
+    setIsProcessing(true); // Set loading state to prevent spam clicks
+
     try {
       const response = await api.post('/api/order/topup', {
         sku: selectItem.sku,
@@ -274,7 +279,7 @@ export default function PLNPrabayar({navigation}) {
       console.log('PLN Topup response:', response.data);
 
       // Close confirmation modal
-      setShowConfirmation(false);
+      setShowModal(false);
 
       // Navigate to success screen with the response data
       navigation.navigate('SuccessNotif', {
@@ -290,8 +295,10 @@ export default function PLNPrabayar({navigation}) {
       });
     } catch (error) {
       console.error('PLN Topup error:', error);
-      setShowConfirmation(false);
+      setShowModal(false);
       Alert.alert('Error', error.response?.data?.message || 'Gagal melakukan pembayaran PLN. Silakan coba lagi.');
+    } finally {
+      setIsProcessing(false); // Reset loading state
     }
   };
 
@@ -367,6 +374,7 @@ export default function PLNPrabayar({navigation}) {
             confirmOrder();
           }}
           onCancel={() => setShowModal(false)}
+          isLoading={isProcessing}
         />
       </BottomModal>
     </SafeAreaView>

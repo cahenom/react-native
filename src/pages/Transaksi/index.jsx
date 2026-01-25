@@ -81,13 +81,14 @@ const Transaksi = () => {
           sku: transaction.sku || '-',
           status: transaction.status || '-',
           message: transaction.message || '-',
-          price: transaction.price !== undefined && transaction.price !== null
-            ? (typeof transaction.price === 'number'
-              ? transaction.price
-              : (typeof transaction.price === 'string'
+          price:
+            transaction.price !== undefined && transaction.price !== null
+              ? typeof transaction.price === 'number'
+                ? transaction.price
+                : typeof transaction.price === 'string'
                 ? parseFloat(transaction.price) || 0
-                : 0))
-            : 0,
+                : 0
+              : 0,
           sn: transaction.sn || '-',
           type: transaction.type || '-',
           created_at: transaction.created_at || '-',
@@ -264,12 +265,13 @@ const Transaksi = () => {
             styles.transactionAmount,
             {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
           ]}>
-          Rp {item.price ?
-            (typeof item.price === 'number'
+          Rp{' '}
+          {item.price
+            ? typeof item.price === 'number'
               ? item.price.toLocaleString('id-ID')
-              : (typeof item.price === 'string'
-                ? parseFloat(item.price).toLocaleString('id-ID')
-                : item.price))
+              : typeof item.price === 'string'
+              ? parseFloat(item.price).toLocaleString('id-ID')
+              : item.price
             : '-'}
         </Text>
       </View>

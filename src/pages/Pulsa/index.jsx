@@ -116,12 +116,22 @@ export default function Pulsa({navigation}) {
     }
   };
 
+  const [isProcessing, setIsProcessing] = useState(false); // Loading state to prevent spam clicks
+
   const handleTopup = async () => {
+    if (isProcessing) return; // Prevent multiple clicks
+
+    setIsProcessing(true); // Set loading state to prevent spam clicks
+
     try {
       const response = await api.post(`/api/payment/pulsa`, {
         customer_no: nomorTujuan,
         sku: selectItem?.sku || selectItem?.product_sku,
       });
+
+      // Close the modal before navigating
+      setShowModal(false);
+
       navigation.navigate('SuccessNotif', {
         item: response.data,
         product: selectItem,
@@ -129,6 +139,8 @@ export default function Pulsa({navigation}) {
       console.log('response topup : ', response.data);
     } catch (error) {
       console.log('response error : ', error);
+    } finally {
+      setIsProcessing(false); // Reset loading state
     }
   };
 
@@ -317,8 +329,16 @@ export default function Pulsa({navigation}) {
         <View style={styles.bottom(isDarkMode)}>
           <TouchableOpacity
             style={styles.bottomButton}
-            onPress={() => handleTopup()}>
-            <Text style={styles.buttonLabel}>Bayar</Text>
+            onPress={() => handleTopup()}
+            disabled={isProcessing}>
+            {isProcessing ? (
+              <View style={styles.loadingButtonContent}>
+                <ActivityIndicator size="small" color="#ffffff" />
+                <Text style={styles.buttonLabel}>Memproses...</Text>
+              </View>
+            ) : (
+              <Text style={styles.buttonLabel}>Bayar</Text>
+            )}
           </TouchableOpacity>
         </View>
       </BottomModal>
@@ -396,4 +416,10 @@ const styles = StyleSheet.create({
     fontSize: FONT_NORMAL,
     color: isDarkMode ? LIGHT_COLOR : DARK_COLOR, // Changed to ensure contrast
   }),
+  loadingButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    columnGap: 10,
+  },
 });

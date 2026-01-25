@@ -26,9 +26,10 @@ import {Eye, EyeCros} from '../../assets';
 import {api} from '../../utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useAuth} from '../../context/AuthContext';
+import {getFcmToken} from '../../utils/notifications';
 
 export default function LoginPage({navigation}) {
-  const {setIsLoggedIn, setLoggedInState} = useAuth();
+  const {loginWithFallback, setIsLoggedIn, setLoggedInState} = useAuth();
   const isDarkMode = useColorScheme() === 'dark';
   const [isSecure, setIsSecure] = useState(true);
   const [email, setEmail] = useState('');
@@ -45,31 +46,27 @@ export default function LoginPage({navigation}) {
     setLoading(true);
 
     try {
-      const response = await api.post(`/api/auth/login`, {
-        email,
-        password,
-      });
+      // Gunakan fungsi login baru dengan fallback
+      const result = await loginWithFallback(email, password);
 
-      console.log('Login response:', response.data); // Debug log
-
-      const token = response.data.data?.token;
-      const user = response.data.data?.user;
-
-      if (!token) {
-        throw new Error('Token tidak ditemukan dalam respons');
+      if (result.success) {
+        if (result.usingLocalData) {
+          Alert.alert('Info', 'Login menggunakan data lokal karena koneksi ke server gagal.');
+        } else {
+          Alert.alert('Success', 'Login berhasil');
+        }
+      } else if (result.error === 'retry_needed') {
+        // Jika pengguna memilih untuk mencoba lagi
+        setLoading(false);
+        // Panggil fungsi login lagi
+        await handleLogin();
+      } else if (result.error === 'cancelled') {
+        // Jika pengguna membatalkan login
+        setLoading(false);
+      } else {
+        // Jika ada error lain
+        setLoading(false);
       }
-
-      // SIMPAN TOKEN
-      await AsyncStorage.setItem('token', token);
-
-      // SIMPAN USER
-      await AsyncStorage.setItem('user', JSON.stringify(user));
-
-      // Update the context state with user data
-      setLoggedInState(user);
-
-      Alert.alert('Success', 'Login berhasil');
-
     } catch (error) {
       console.log('Login error details:', {
         message: error.message,
@@ -82,19 +79,6 @@ export default function LoginPage({navigation}) {
         } : undefined
       });
 
-      // Handle different error scenarios
-      if (error.response?.status === 401) {
-        Alert.alert('Error', 'Email atau password salah');
-      } else if (error.response?.status === 422) {
-        // Validation error
-        const errors = error.response.data.errors || error.response.data.message;
-        Alert.alert('Error Validasi', typeof errors === 'string' ? errors : JSON.stringify(errors));
-      } else if (error.code === 'NETWORK_ERROR') {
-        Alert.alert('Error Jaringan', 'Tidak dapat terhubung ke server. Pastikan jaringan internet Anda stabil.');
-      } else {
-        Alert.alert('Error', error.response?.data?.message || 'Terjadi kesalahan saat login. Silakan coba lagi.');
-      }
-    } finally {
       setLoading(false);
     }
   };

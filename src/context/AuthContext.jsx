@@ -1,12 +1,14 @@
 import React, {createContext, useContext, useState, useEffect} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {api} from '../utils/api'; // Import the API utility
+import {Alert} from 'react-native';
 
 const AuthContext = createContext();
 
 const AuthProvider = ({children}) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true); // State untuk menandakan proses pengecekan otentikasi
 
   // Function to reload user data from storage
   const reloadUserData = async () => {
@@ -40,25 +42,47 @@ const AuthProvider = ({children}) => {
           setUser(userProfile);
           setIsLoggedIn(true);
         } else {
-          setIsLoggedIn(false);
-          setUser(null);
+          // Jika API mengembalikan data kosong, fallback ke local storage
+          const userData = await AsyncStorage.getItem('user');
+          if (userData) {
+            setUser(JSON.parse(userData));
+            setIsLoggedIn(true);
+          } else {
+            setIsLoggedIn(false);
+            setUser(null);
+          }
         }
       } catch (error) {
         console.error('Error fetching user profile on init:', error);
-        // Fallback to local storage if API fails
-        const userData = await AsyncStorage.getItem('user');
-        if (userData) {
-          setUser(JSON.parse(userData));
-          setIsLoggedIn(true);
-        } else {
-          setIsLoggedIn(false);
-          setUser(null);
-        }
+
+        // Tampilkan notifikasi bahwa fetch API gagal
+        Alert.alert(
+          'Kesalahan Jaringan',
+          'Gagal mengambil data profil. Aplikasi akan menggunakan data lokal.',
+          [
+            {
+              text: 'OK',
+              onPress: async () => {
+                // Fallback to local storage if API fails
+                const userData = await AsyncStorage.getItem('user');
+                if (userData) {
+                  setUser(JSON.parse(userData));
+                  setIsLoggedIn(true);
+                } else {
+                  setIsLoggedIn(false);
+                  setUser(null);
+                }
+              }
+            }
+          ]
+        );
       }
     } else {
       setIsLoggedIn(false);
       setUser(null);
     }
+
+    setIsCheckingAuth(false); // Selesai pengecekan otentikasi
   };
 
   const logout = async () => {
@@ -69,12 +93,13 @@ const AuthProvider = ({children}) => {
   };
 
   // Function to update login state manually when user logs in
-  const setLoggedInState = async (userData) => {
-    await AsyncStorage.setItem('user', JSON.stringify(userData));
-    // Token should already be set by the login process
-    const token = await AsyncStorage.getItem('token');
-
+  const setLoggedInState = async (userData, token) => {
     if (token) {
+      await AsyncStorage.setItem('token', token);
+    }
+
+    if (userData) {
+      await AsyncStorage.setItem('user', JSON.stringify(userData));
       setIsLoggedIn(true);
       setUser(userData);
     }
@@ -93,12 +118,141 @@ const AuthProvider = ({children}) => {
       }
     } catch (error) {
       console.error('Error refreshing user profile:', error);
+
+      // Tampilkan notifikasi bahwa refresh gagal
+      Alert.alert(
+        'Kesalahan Jaringan',
+        'Gagal memperbarui profil. Aplikasi akan menggunakan data lokal.',
+        [
+          {
+            text: 'OK',
+            onPress: async () => {
+              // Ambil data dari local storage jika refresh gagal
+              const userData = await AsyncStorage.getItem('user');
+              if (userData) {
+                setUser(JSON.parse(userData));
+              }
+            }
+          }
+        ]
+      );
+
       throw error;
     }
   };
 
+  // Function to login with fallback mechanism
+  const loginWithFallback = async (email, password) => {
+    try {
+      // Dapatkan FCM token
+      const fcmToken = await import('../utils/notifications').then(module => module.getFcmToken());
+
+      const loginData = {
+        email,
+        password,
+      };
+
+      // Tambahkan FCM token ke data login jika tersedia
+      if (fcmToken) {
+        loginData.fcm_token = fcmToken;
+      }
+
+      const response = await api.post(`/api/auth/login`, loginData);
+
+      console.log('Login response:', response.data); // Debug log
+
+      const token = response.data.data?.token;
+      const user = response.data.data?.user;
+
+      if (!token) {
+        throw new Error('Token tidak ditemukan dalam respons');
+      }
+
+      // SIMPAN TOKEN
+      await AsyncStorage.setItem('token', token);
+
+      // SIMPAN USER
+      await AsyncStorage.setItem('user', JSON.stringify(user));
+
+      // Update the context state with user data
+      setIsLoggedIn(true);
+      setUser(user);
+
+      return { success: true, user, token };
+    } catch (error) {
+      console.log('Login error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: error.config ? {
+          url: error.config.url,
+          method: error.config.method,
+          data: error.config.data
+        } : undefined
+      });
+
+      // Jika login API gagal, tawarkan fallback ke data lokal jika tersedia
+      const storedToken = await AsyncStorage.getItem('token');
+      const storedUser = await AsyncStorage.getItem('user');
+
+      if (storedToken && storedUser) {
+        // Tampilkan notifikasi bahwa login API gagal tapi bisa gunakan data lokal
+        return new Promise((resolve) => {
+          Alert.alert(
+            'Kesalahan Jaringan',
+            'Login ke server gagal. Gunakan data lokal?',
+            [
+              {
+                text: 'Gunakan Data Lokal',
+                onPress: async () => {
+                  try {
+                    // Gunakan data yang tersimpan
+                    setIsLoggedIn(true);
+                    setUser(JSON.parse(storedUser));
+                    resolve({ success: true, user: JSON.parse(storedUser), token: storedToken, usingLocalData: true });
+                  } catch (parseError) {
+                    console.error('Error parsing stored user data:', parseError);
+                    resolve({ success: false, error: 'Data lokal rusak' });
+                  }
+                }
+              },
+              {
+                text: 'Coba Lagi',
+                onPress: () => {
+                  resolve({ success: false, error: 'retry_needed' });
+                }
+              },
+              {
+                text: 'Batalkan',
+                style: 'cancel',
+                onPress: () => {
+                  resolve({ success: false, error: 'cancelled' });
+                }
+              }
+            ]
+          );
+        });
+      } else {
+        // Handle different error scenarios
+        if (error.response?.status === 401) {
+          Alert.alert('Error', 'Email atau password salah');
+        } else if (error.response?.status === 422) {
+          // Validation error
+          const errors = error.response.data.errors || error.response.data.message;
+          Alert.alert('Error Validasi', typeof errors === 'string' ? errors : JSON.stringify(errors));
+        } else if (error.code === 'NETWORK_ERROR') {
+          Alert.alert('Error Jaringan', 'Tidak dapat terhubung ke server. Pastikan jaringan internet Anda stabil.');
+        } else {
+          Alert.alert('Error', error.response?.data?.message || 'Terjadi kesalahan saat login. Silakan coba lagi.');
+        }
+
+        return { success: false, error: error.message };
+      }
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{isLoggedIn, setIsLoggedIn, user, setUser, logout, setLoggedInState, reloadUserData, refreshUserProfile}}>
+    <AuthContext.Provider value={{isLoggedIn, setIsLoggedIn, user, setUser, logout, setLoggedInState, reloadUserData, refreshUserProfile, loginWithFallback, isCheckingAuth}}>
       {children}
     </AuthContext.Provider>
   );

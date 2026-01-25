@@ -24,6 +24,7 @@ const TransactionDetail = ({
   price,
   onConfirm,
   onCancel,
+  isLoading = false, // Add loading prop
 }) => {
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -50,8 +51,19 @@ const TransactionDetail = ({
         </Text>
       </View>
       <View style={styles.bottom(isDarkMode)}>
-        <TouchableOpacity style={styles.bottomButton} onPress={onConfirm}>
-          <Text style={styles.buttonLabel}>Bayar</Text>
+        <TouchableOpacity
+          style={styles.bottomButton}
+          onPress={onConfirm}
+          disabled={isLoading} // Disable button when loading
+        >
+          {isLoading ? (
+            <View style={styles.loadingButtonContent}>
+              <ActivityIndicator size="small" color="#ffffff" />
+              <Text style={styles.buttonLabel}>Memproses...</Text>
+            </View>
+          ) : (
+            <Text style={styles.buttonLabel}>Bayar</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -67,6 +79,12 @@ const styles = StyleSheet.create({
     backgroundColor: BLUE_COLOR,
     padding: 10,
     borderRadius: 5,
+  },
+  loadingButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    columnGap: 10,
   },
   modalData: isDarkMode => ({
     borderBottomWidth: 1,
