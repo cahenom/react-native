@@ -27,8 +27,13 @@ import {
   TopupVoucher,
   TV,
   Voucher,
+  Indosat,
 } from '../pages';
 import Transaksi from '../pages/Transaksi';
+import {
+  PaymentPage,
+  PaymentSuccessPage,
+} from '../pages';
 
 
 const Stack = createNativeStackNavigator();
@@ -210,6 +215,27 @@ function ProtectedRoute() {
         component={LihatSemuaScreen}
         options={{
           title: 'Semua Layanan',
+        }}
+      />
+      <Stack.Screen
+        name="Indosat"
+        component={Indosat}
+        options={{
+          title: 'Indosat',
+        }}
+      />
+      <Stack.Screen
+        name="PaymentPage"
+        component={PaymentPage}
+        options={{
+          title: 'Detail Pembayaran',
+        }}
+      />
+      <Stack.Screen
+        name="PaymentSuccessPage"
+        component={PaymentSuccessPage}
+        options={{
+          title: 'Pembayaran Berhasil',
         }}
       />
     </Stack.Navigator>

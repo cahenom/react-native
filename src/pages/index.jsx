@@ -22,6 +22,10 @@ import RegisterPage from './Auth/register';
 import ProfilScreen from './Profil';
 import SettingsScreen from './Settings';
 import LihatSemuaScreen from './LihatSemua';
+import PaymentPage from './Merchant/PaymentPage';
+import PaymentSuccessPage from './Merchant/PaymentSuccessPage';
+import Indosat from './Indosat';
+
 export {
   HomeScreen,
   Pulsa,
@@ -46,5 +50,8 @@ export {
   RegisterPage,
   ProfilScreen,
   SettingsScreen,
-  LihatSemuaScreen
+  LihatSemuaScreen,
+  PaymentPage,
+  PaymentSuccessPage,
+  Indosat
 };

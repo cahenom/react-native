@@ -30,6 +30,7 @@ import {
 import {mainmenus} from '../../data/mainmenu';
 import {useAuth} from '../../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api } from '../../utils/api';
 
 export default function HomeScreen({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -37,12 +38,62 @@ export default function HomeScreen({navigation}) {
   const [refreshing, setRefreshing] = useState(false);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    // Simulate data refresh
-    setTimeout(() => {
+    try {
+      // Fetch fresh transaction data
+      const response = await api.post('/api/user/transaksi');
+
+      if (response.data.status) {
+        let fetchedTransactions = response.data.data || [];
+
+        // Ensure fetchedTransactions is an array
+        if (Array.isArray(fetchedTransactions)) {
+          // Cache the fresh data
+          await AsyncStorage.setItem(
+            'user_transactions',
+            JSON.stringify(fetchedTransactions),
+          );
+
+          // Update recent activities with fresh data (top 3)
+          const recentTransactions = fetchedTransactions.slice(0, 3).map((transaction, index) => ({
+            id: index + 1,
+            service: transaction.sku || transaction.product_name || 'Transaksi',
+            time: transaction.created_at
+              ? new Date(transaction.created_at).toLocaleDateString('id-ID', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                }) + ', ' +
+                new Date(transaction.created_at).toLocaleTimeString('id-ID', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : 'Unknown Time',
+            amount: (transaction.price !== undefined && transaction.price !== null
+              ? (typeof transaction.price === 'number'
+                ? (transaction.price >= 0 ? '+' : '-') + 'Rp ' + Math.abs(transaction.price).toLocaleString('id-ID')
+                : (typeof transaction.price === 'string'
+                  ? (parseFloat(transaction.price) >= 0 ? '+' : '-') + 'Rp ' + Math.abs(parseFloat(transaction.price)).toLocaleString('id-ID')
+                  : '+Rp 0'))
+              : '+Rp 0'),
+            status: transaction.status || 'Unknown',
+            icon: getTransactionIcon(transaction.sku || ''),
+            type: transaction.type || 'debit',
+            color: transaction.status?.toLowerCase() === 'berhasil' ||
+                   transaction.status?.toLowerCase() === 'sukses' ||
+                   transaction.status?.toLowerCase() === 'success'
+                   ? '#10b981' : '#ef4444',
+          }));
+
+          setRecentActivities(recentTransactions);
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing recent activities:', error);
+    } finally {
       setRefreshing(false);
-    }, 1000);
+    }
   };
 
   // State for recent activities
@@ -80,10 +131,11 @@ export default function HomeScreen({navigation}) {
     },
   ]);
 
-  // Load recent activities from transaction cache
+  // Load recent activities from API and cache
   useEffect(() => {
     const loadRecentActivities = async () => {
       try {
+        // First, try to load from cache to show immediate data
         const cachedData = await AsyncStorage.getItem('user_transactions');
         if (cachedData) {
           const parsedData = JSON.parse(cachedData);
@@ -122,8 +174,57 @@ export default function HomeScreen({navigation}) {
             setRecentActivities(recentTransactions);
           }
         }
+
+        // Then fetch fresh data from API
+        const response = await api.post('/api/user/transaksi');
+
+        if (response.data.status) {
+          let fetchedTransactions = response.data.data || [];
+
+          // Ensure fetchedTransactions is an array
+          if (Array.isArray(fetchedTransactions)) {
+            // Cache the fresh data
+            await AsyncStorage.setItem(
+              'user_transactions',
+              JSON.stringify(fetchedTransactions),
+            );
+
+            // Update recent activities with fresh data (top 3)
+            const recentTransactions = fetchedTransactions.slice(0, 3).map((transaction, index) => ({
+              id: index + 1,
+              service: transaction.sku || transaction.product_name || 'Transaksi',
+              time: transaction.created_at
+                ? new Date(transaction.created_at).toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  }) + ', ' +
+                  new Date(transaction.created_at).toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : 'Unknown Time',
+              amount: (transaction.price !== undefined && transaction.price !== null
+                ? (typeof transaction.price === 'number'
+                  ? (transaction.price >= 0 ? '+' : '-') + 'Rp ' + Math.abs(transaction.price).toLocaleString('id-ID')
+                  : (typeof transaction.price === 'string'
+                    ? (parseFloat(transaction.price) >= 0 ? '+' : '-') + 'Rp ' + Math.abs(parseFloat(transaction.price)).toLocaleString('id-ID')
+                    : '+Rp 0'))
+                : '+Rp 0'),
+              status: transaction.status || 'Unknown',
+              icon: getTransactionIcon(transaction.sku || ''),
+              type: transaction.type || 'debit',
+              color: transaction.status?.toLowerCase() === 'berhasil' ||
+                     transaction.status?.toLowerCase() === 'sukses' ||
+                     transaction.status?.toLowerCase() === 'success'
+                     ? '#10b981' : '#ef4444',
+            }));
+
+            setRecentActivities(recentTransactions);
+          }
+        }
       } catch (error) {
-        console.error('Error loading recent activities from cache:', error);
+        console.error('Error loading recent activities:', error);
         // Keep default data if there's an error
       }
     };
@@ -281,7 +382,8 @@ export default function HomeScreen({navigation}) {
                 item =>
                   item.label.toLowerCase() !== 'pdam' &&
                   item.label.toLowerCase() !== 'internet' &&
-                  item.label.toLowerCase() !== 'bpjs kesehatan',
+                  item.label.toLowerCase() !== 'bpjs kesehatan' &&
+                  item.label.toLowerCase() !== 'indosat',
               ),
               {id: 'semua', label: 'Semua', ikon: '🔍'}, // Add Semua as a service item
             ]}

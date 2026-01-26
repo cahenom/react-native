@@ -75,15 +75,7 @@ export default function RegisterPage({navigation}) {
           status: error.response?.status,
         });
 
-        if (error.response?.status === 422) {
-          // Validation error
-          const errors = error.response.data.errors || error.response.data.message;
-          Alert.alert('Error Validasi', typeof errors === 'string' ? errors : JSON.stringify(errors));
-        } else if (error.code === 'NETWORK_ERROR') {
-          Alert.alert('Error Jaringan', 'Tidak dapat terhubung ke server. Pastikan jaringan internet Anda stabil.');
-        } else {
-          Alert.alert('Error', error.response?.data?.message || 'Terjadi kesalahan saat registrasi. Silakan coba lagi.');
-        }
+        // Error will be handled by global interceptor
       } finally {
         setLoading(false)
       }

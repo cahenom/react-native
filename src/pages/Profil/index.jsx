@@ -7,8 +7,11 @@ import {
   Alert,
   ScrollView,
   RefreshControl,
+  Image,
+  Switch,
+  Linking,
 } from 'react-native';
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   BOLD_FONT,
   DARK_BACKGROUND,
@@ -20,13 +23,179 @@ import {
   WHITE_BACKGROUND,
   BLUE_COLOR,
   WHITE_COLOR,
+  GREY_COLOR,
+  SLATE_COLOR,
 } from '../../utils/const';
 import {useAuth} from '../../context/AuthContext';
+import messaging from '@react-native-firebase/messaging';
+import {PermissionsAndroid, Platform} from 'react-native';
+import RNBiometrics from 'react-native-biometrics';
 
 export default function ProfilScreen({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
   const {user, logout, refreshUserProfile} = useAuth();
   const [refreshing, setRefreshing] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+
+  // Check notification permission status on component mount
+  useEffect(() => {
+    const checkNotificationPermission = async () => {
+      try {
+        let enabled = false;
+        
+        if (Platform.OS === 'android' && parseInt(Platform.Version) >= 33) {
+          // For Android 13+, check for POST_NOTIFICATIONS permission
+          const permissionStatus = await PermissionsAndroid.check(
+            'android.permission.POST_NOTIFICATIONS'
+          );
+          enabled = permissionStatus;
+        } else {
+          // For older Android versions and iOS, use Firebase messaging
+          const settings = await messaging().getNotificationSettings();
+          enabled = settings.authorizationStatus === 1; // AUTHORIZED = 1
+        }
+        
+        setNotificationsEnabled(enabled);
+      } catch (error) {
+        console.log('Notification permission check error:', error);
+        setNotificationsEnabled(false);
+      }
+    };
+
+    checkNotificationPermission();
+  }, []);
+
+  const handleNotificationToggle = async () => {
+    try {
+      if (!notificationsEnabled) {
+        let granted = false;
+        
+        if (Platform.OS === 'android' && parseInt(Platform.Version) >= 33) {
+          // For Android 13+ (API level 33+), request POST_NOTIFICATIONS permission
+          const permissionResult = await PermissionsAndroid.request(
+            'android.permission.POST_NOTIFICATIONS'
+          );
+          
+          granted = permissionResult === PermissionsAndroid.RESULTS.GRANTED;
+        } else {
+          // For older Android versions and iOS, use Firebase messaging
+          const authStatus = await messaging().requestPermission();
+          granted = authStatus === 1; // AUTHORIZED = 1
+        }
+        
+        if (granted) {
+          setNotificationsEnabled(true);
+          Alert.alert('Sukses', 'Notifikasi telah diaktifkan');
+        } else {
+          Alert.alert('Gagal', 'Izin notifikasi ditolak. Anda tidak akan menerima notifikasi.');
+        }
+      } else {
+        // For disabling notifications, guide user to system settings
+        Alert.alert(
+          'Nonaktifkan Notifikasi',
+          'Untuk menonaktifkan notifikasi, silakan atur di pengaturan aplikasi perangkat Anda.',
+          [
+            {
+              text: 'Atur Sekarang',
+              onPress: () => {
+                // Open app settings to allow user to disable notifications
+                Linking.openSettings();
+              }
+            },
+            {
+              text: 'Nanti Saja',
+              style: 'cancel'
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      console.log('Error toggling notifications:', error);
+      Alert.alert('Error', 'Gagal mengelola izin notifikasi');
+    }
+  };
+
+  const handleBiometricToggle = async () => {
+    try {
+      if (!biometricEnabled) {
+        // Enable biometric authentication
+        try {
+          // Check if biometric hardware is available
+          const rnBiometrics = new RNBiometrics();
+          const {available, biometryType} = await rnBiometrics.isSensorAvailable();
+          
+          if (available) {
+            // Determine if it's fingerprint or face recognition
+            if (biometryType === RNBiometrics.TouchID) {
+              // Fingerprint authentication
+              const {success, error} = await rnBiometrics.simplePrompt({
+                promptMessage: 'Verifikasi sidik jari untuk mengaktifkan login sidik jari',
+                cancelButtonText: 'Batal'
+              });
+              
+              if (success) {
+                setBiometricEnabled(true);
+                Alert.alert('Sukses', 'Login sidik jari telah diaktifkan');
+              } else {
+                if (error === 'user_cancel' || error === 'userfallback') {
+                  Alert.alert('Info', 'Verifikasi sidik jari dibatalkan');
+                } else {
+                  Alert.alert('Gagal', 'Verifikasi sidik jari gagal: ' + error);
+                }
+              }
+            } else if (biometryType === RNBiometrics.FaceID) {
+              // Face recognition
+              const {success, error} = await rnBiometrics.simplePrompt({
+                promptMessage: 'Verifikasi wajah untuk mengaktifkan login wajah',
+                cancelButtonText: 'Batal'
+              });
+              
+              if (success) {
+                setBiometricEnabled(true);
+                Alert.alert('Sukses', 'Login wajah telah diaktifkan');
+              } else {
+                if (error === 'user_cancel' || error === 'userfallback') {
+                  Alert.alert('Info', 'Verifikasi wajah dibatalkan');
+                } else {
+                  Alert.alert('Gagal', 'Verifikasi wajah gagal: ' + error);
+                }
+              }
+            } else {
+              // General biometric
+              const {success, error} = await rnBiometrics.simplePrompt({
+                promptMessage: 'Verifikasi sidik jari atau wajah untuk mengaktifkan login biometrik',
+                cancelButtonText: 'Batal'
+              });
+              
+              if (success) {
+                setBiometricEnabled(true);
+                Alert.alert('Sukses', 'Login biometrik telah diaktifkan');
+              } else {
+                if (error === 'user_cancel' || error === 'userfallback') {
+                  Alert.alert('Info', 'Verifikasi biometrik dibatalkan');
+                } else {
+                  Alert.alert('Gagal', 'Verifikasi biometrik gagal: ' + error);
+                }
+              }
+            }
+          } else {
+            Alert.alert('Gagal', 'Sensor biometrik tidak tersedia pada perangkat ini');
+          }
+        } catch (error) {
+          console.log('Biometric error:', error);
+          Alert.alert('Gagal', 'Gagal mengaktifkan login biometrik. Pastikan sensor biometrik tersedia.');
+        }
+      } else {
+        // Disable biometric authentication
+        setBiometricEnabled(false);
+        Alert.alert('Info', 'Login biometrik telah dinonaktifkan');
+      }
+    } catch (error) {
+      console.log('Error toggling biometrics:', error);
+      Alert.alert('Error', 'Gagal mengelola login biometrik');
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert('Konfirmasi Logout', 'Apakah Anda yakin ingin keluar?', [
@@ -65,9 +234,17 @@ export default function ProfilScreen({navigation}) {
     }
   };
 
-  const cardBackgroundColor = isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND;
+  const cardBackgroundColor = isDarkMode ? '#1e293b' : '#ffffff'; // slate-800 or white
+  const sectionBackgroundColor = isDarkMode ? '#1e293b' : '#ffffff';
+  const dividerColor = isDarkMode ? '#334155' : '#f1f5f9'; // dark:border-slate-700 or light:border-slate-100
+  const textColor = isDarkMode ? '#f1f5f9' : '#1e293b'; // dark:text-slate-100 or light:text-slate-900
+  const secondaryTextColor = isDarkMode ? '#94a3b8' : '#64748b'; // slate-400 or slate-500
 
   const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: isDarkMode ? '#0f172a' : '#f1f5f9', // dark:bg-background-dark or light:bg-background-light
+    },
     profileHeader: {
       marginBottom: 20,
       paddingTop: 20,
@@ -76,11 +253,12 @@ export default function ProfilScreen({navigation}) {
       fontSize: FONT_NORMAL + 4,
       fontFamily: BOLD_FONT,
       color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+      textAlign: 'center',
     },
-    profileInfo: {
+    profileCard: {
       backgroundColor: cardBackgroundColor,
-      borderRadius: 10,
-      padding: 15,
+      borderRadius: 18, // rounded-2xl
+      padding: 24, // p-6
       marginBottom: 20,
       elevation: 3,
       shadowColor: '#000',
@@ -88,114 +266,294 @@ export default function ProfilScreen({navigation}) {
         width: 0,
         height: 1,
       },
-      shadowOpacity: 0.22,
-      shadowRadius: 2.22,
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      position: 'relative',
+      overflow: 'hidden',
     },
-    infoRow: {
+    profileCardBackground: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: 96, // h-24
+      backgroundColor: '#1d4ed8', // from-primary/10
+      opacity: 0.1,
+    },
+    profileCardContent: {
+      zIndex: 10,
+      alignItems: 'center',
+      gap: 12, // gap-3
+    },
+    profileImageContainer: {
+      position: 'relative',
+    },
+    profileImage: {
+      width: 96, // w-24
+      height: 96, // h-24
+      borderRadius: 9999, // rounded-full
+      borderWidth: 4,
+      borderColor: isDarkMode ? '#1e293b' : '#ffffff', // dark:border-slate-800 or border-white
+    },
+    editIconContainer: {
+      position: 'absolute',
+      bottom: 0,
+      right: 0,
+      backgroundColor: '#1d4ed8', // primary
+      borderRadius: 9999, // rounded-full
+      padding: 4,
+      borderWidth: 4,
+      borderColor: isDarkMode ? '#1e293b' : '#ffffff', // dark:border-slate-800 or border-white
+    },
+    editIcon: {
+      color: WHITE_COLOR,
+      fontSize: 16,
+    },
+    profileTextContainer: {
+      alignItems: 'center',
+    },
+    profileName: {
+      fontSize: FONT_NORMAL + 4,
+      fontFamily: BOLD_FONT,
+      color: isDarkMode ? '#f1f5f9' : '#1e293b', // dark:text-white or text-slate-900
+    },
+    profilePhone: {
+      fontSize: FONT_NORMAL - 2,
+      color: secondaryTextColor, // slate-500 or dark:text-slate-400
+      marginTop: 2,
+    },
+    badgeContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: '#dbeafe', // primary/10
+      opacity: isDarkMode ? 0.2 : 1,
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: 9999, // rounded-full
+      marginTop: 8,
+    },
+    badgeText: {
+      fontSize: FONT_NORMAL - 4,
+      fontFamily: BOLD_FONT,
+      color: '#1d4ed8', // primary
+      textTransform: 'uppercase',
+      letterSpacing: 1.5,
+    },
+    quickActionsGrid: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingVertical: 8,
+      marginBottom: 20,
     },
-    label: {
-      fontFamily: REGULAR_FONT,
-      fontSize: FONT_NORMAL,
-      color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
-    },
-    value: {
-      fontFamily: REGULAR_FONT,
-      fontSize: FONT_NORMAL,
-      textAlign: 'right',
+    quickActionItem: {
       flex: 1,
-      marginLeft: 20,
-      color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+      marginHorizontal: 5,
+      backgroundColor: cardBackgroundColor,
+      borderRadius: 12, // rounded-xl
+      padding: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 1,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 2,
+      borderWidth: 1,
+      borderColor: dividerColor,
+    },
+    quickActionText: {
+      fontSize: FONT_NORMAL - 4,
+      fontFamily: BOLD_FONT,
+      color: secondaryTextColor, // slate-700 or dark:text-slate-300
+    },
+    sectionTitle: {
+      fontSize: FONT_NORMAL - 4,
+      fontFamily: BOLD_FONT,
+      color: secondaryTextColor, // slate-500 or dark:text-slate-400
+      textTransform: 'uppercase',
+      letterSpacing: 1.5,
+      marginBottom: 8,
+      paddingLeft: 4,
+    },
+    sectionCard: {
+      backgroundColor: sectionBackgroundColor,
+      borderRadius: 12, // rounded-xl
+      marginBottom: 20,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: dividerColor,
+    },
+    listItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16, // gap-4
+      paddingHorizontal: 16,
+      paddingVertical: 14, // py-3.5
+    },
+    listItemText: {
+      flex: 1,
+      fontSize: FONT_NORMAL,
+      fontFamily: REGULAR_FONT,
+      color: textColor, // slate-900 or dark:text-white
+    },
+    chevronText: {
+      color: secondaryTextColor, // slate-400
+      fontSize: 16,
     },
     divider: {
       height: 1,
-      backgroundColor: isDarkMode ? 'rgb(255, 255, 255)' : '#000000',
-      marginVertical: 8,
+      backgroundColor: dividerColor,
+    },
+    switchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    switch: {
+      transform: [{scaleX: 0.8}, {scaleY: 0.8}],
     },
     logoutSection: {
       flex: 1,
       justifyContent: 'flex-end',
       marginBottom: 30,
     },
-    settingsSection: {
-      marginBottom: 10,
-    },
-    settingsButton: {
-      backgroundColor: BLUE_COLOR,
-      padding: 15,
-      borderRadius: 10,
-      alignItems: 'center',
-    },
-    settingsButtonText: {
-      color: WHITE_COLOR,
-      fontFamily: BOLD_FONT,
-      fontSize: FONT_NORMAL,
-    },
     logoutButton: {
-      backgroundColor: '#ff4444',
-      padding: 15,
-      borderRadius: 10,
+      backgroundColor: '#fee2e2', // red-50
+      opacity: isDarkMode ? 0.1 : 1,
+      padding: 14, // py-3.5
+      borderRadius: 12, // rounded-xl
       alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 8,
+      borderWidth: 1,
+      borderColor: '#fecaca', // red-100
     },
     logoutButtonText: {
-      color: WHITE_COLOR,
+      color: '#dc2626', // red-600
       fontFamily: BOLD_FONT,
       fontSize: FONT_NORMAL,
+    },
+    versionText: {
+      fontSize: FONT_NORMAL - 4,
+      fontFamily: REGULAR_FONT,
+      color: secondaryTextColor, // slate-400
+      textAlign: 'center',
+      marginTop: 16,
     },
   });
 
   return (
     <ScrollView
-      style={{
-        flex: 1,
-        backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
-      }}
-      contentContainerStyle={{padding: HORIZONTAL_MARGIN}}
+      style={styles.container}
+      contentContainerStyle={{paddingHorizontal: HORIZONTAL_MARGIN, paddingBottom: 100}}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>
       <View style={styles.profileHeader}>
-        <Text style={styles.title}>Profil Pengguna</Text>
+        <Text style={styles.title}>Profile</Text>
       </View>
 
-      <View style={styles.profileInfo}>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Nama</Text>
-          <Text style={styles.value}>{user?.name || '-'}</Text>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Email</Text>
-          <Text style={styles.value}>{user?.email || '-'}</Text>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Saldo</Text>
-          <Text style={styles.value}>
-            Rp {user?.saldo ? parseFloat(user.saldo).toLocaleString() : '0'}
-          </Text>
+      <View style={styles.profileCard}>
+        <View style={styles.profileCardBackground} />
+        <View style={styles.profileCardContent}>
+          <View style={styles.profileImageContainer}>
+            <Image
+              source={{uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB0tlknUn_f2ML_udX2XZfPgf1bDwIyJlYh0WPQOOIrKDVn8IA7PyQH7JisPg5Z82CJgVB-hE80yqx63JXyH4UFDdF8849LWAOJQMzay3edKvzh8_LQTcRsmQWY_8PqjdJqMzAwcFLhOrqK0ICPD2K_Jm6loy5-fKpnqv9mOcSxc5Dp0pB2ieY27Mk32vjVKMVfs_xdy_LNA-SgJfW1ORkkPF4mnbFloadgfxZPsVWDCXlstOcZSwLAgS24xJ3oLcVrk_X7nw2T-iTs'}}
+              style={styles.profileImage}
+            />
+            <View style={styles.editIconContainer}>
+              <Text style={styles.editIcon}>edit</Text>
+            </View>
+          </View>
+          <View style={styles.profileTextContainer}>
+            <Text style={styles.profileName}>{user?.name || 'User Name'}</Text>
+            <Text style={styles.profilePhone}>{user?.email || 'user@example.com'}</Text>
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>Rp {user?.saldo ? parseFloat(user.saldo).toLocaleString() : '0'}</Text>
+            </View>
+          </View>
         </View>
       </View>
 
-      <View style={styles.settingsSection}>
-        <TouchableOpacity
-          style={styles.settingsButton}
-          onPress={() => navigation.navigate('Settings')}>
-          <Text style={styles.settingsButtonText}>Pengaturan</Text>
+      <View style={styles.quickActionsGrid}>
+        <TouchableOpacity style={styles.quickActionItem}>
+          <Text style={styles.quickActionText}>Verify ID</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.quickActionItem}>
+          <Text style={styles.quickActionText}>Support</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.quickActionItem}>
+          <Text style={styles.quickActionText}>My QR</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.sectionTitle}>Wallet & Payment</Text>
+      <View style={styles.sectionCard}>
+        <TouchableOpacity style={styles.listItem} onPress={() => Alert.alert('Payment Methods')}>
+          <Text style={styles.listItemText}>Payment Methods</Text>
+          <Text style={styles.chevronText}>›</Text>
+        </TouchableOpacity>
+        <View style={styles.divider} />
+        <TouchableOpacity style={styles.listItem} onPress={() => navigation.navigate('Transaksi')}>
+          <Text style={styles.listItemText}>Transaction History</Text>
+          <Text style={styles.chevronText}>›</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.sectionTitle}>Settings</Text>
+      <View style={styles.sectionCard}>
+        <View style={[styles.listItem, {paddingVertical: 14}]}>
+          <Text style={styles.listItemText}>Notifications</Text>
+          <Switch
+            style={styles.switch}
+            trackColor={{false: '#767577', true: '#1d4ed8'}}
+            thumbColor={notificationsEnabled ? '#ffffff' : '#f4f3f4'}
+            ios_backgroundColor="#3e3e3e"
+            onValueChange={handleNotificationToggle}
+            value={notificationsEnabled}
+          />
+        </View>
+        <View style={styles.divider} />
+        <TouchableOpacity style={styles.listItem} onPress={() => navigation.navigate('Settings')}>
+          <Text style={styles.listItemText}>Security & PIN</Text>
+          <Text style={styles.chevronText}>›</Text>
+        </TouchableOpacity>
+        <View style={styles.divider} />
+        <View style={[styles.listItem, {paddingVertical: 14}]}>
+          <Text style={styles.listItemText}>Biometric Login</Text>
+          <Switch
+            style={styles.switch}
+            trackColor={{false: '#767577', true: '#1d4ed8'}}
+            thumbColor={biometricEnabled ? '#ffffff' : '#f4f3f4'}
+            ios_backgroundColor="#3e3e3e"
+            onValueChange={handleBiometricToggle}
+            value={biometricEnabled}
+          />
+        </View>
+      </View>
+
+      <Text style={styles.sectionTitle}>General</Text>
+      <View style={styles.sectionCard}>
+        <TouchableOpacity style={styles.listItem} onPress={() => Alert.alert('Help Center')}>
+          <Text style={styles.listItemText}>Help Center</Text>
+          <Text style={styles.chevronText}>›</Text>
+        </TouchableOpacity>
+        <View style={styles.divider} />
+        <TouchableOpacity style={styles.listItem} onPress={() => Alert.alert('Privacy Policy')}>
+          <Text style={styles.listItemText}>Privacy Policy</Text>
+          <Text style={styles.chevronText}>›</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.logoutSection}>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutButtonText}>Logout</Text>
+          <Text style={styles.logoutButtonText}>Log Out</Text>
         </TouchableOpacity>
+        <Text style={styles.versionText}>Version 2.1.0</Text>
       </View>
     </ScrollView>
   );

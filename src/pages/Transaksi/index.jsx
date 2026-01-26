@@ -182,23 +182,29 @@ const Transaksi = () => {
         styles.transactionItem,
         {backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_COLOR},
       ]}
-      onPress={() =>
-        navigation.navigate('SuccessNotif', {
-          // Map the new API response structure to match SuccessNotif expectations
-          item: {
-            ref: item.ref || '-',
-            tujuan: item.tujuan || '-',
-            sku: item.sku || '-',
-            status: item.status || '-',
-            message: item.message || '-',
-            price: item.price || 0,
-            sn: item.sn || '-',
-            type: item.type || '-',
-            created_at: item.created_at || '-',
-            // Backward compatibility fields
-            customer_no: item.tujuan || '-',
-            ref_id: item.ref || '-',
-            data: {
+      onPress={() => {
+        // Jika tipe transaksi adalah merchant_request dan statusnya pending, arahkan ke halaman pembayaran
+        if (item.type === 'merchant_request' && item.status === 'pending') {
+          // Buat objek payment request untuk dikirim ke halaman pembayaran
+          // Gunakan ID internal dari payment request jika tersedia, jika tidak gunakan ref
+          const paymentRequest = {
+            id: item.internal_id || item.ref, // Gunakan ID internal jika tersedia, jika tidak gunakan ref
+            name: item.message.includes('Payment request from ')
+              ? item.message.replace('Payment request from ', '')
+              : item.sku,
+            destination: item.tujuan,
+            price: item.price,
+            email: item.tujuan, // Gunakan tujuan sebagai email
+          };
+
+          navigation.navigate('PaymentPage', {
+            paymentRequest: paymentRequest,
+          });
+        } else {
+          // Untuk transaksi biasa, arahkan ke halaman notifikasi sukses
+          navigation.navigate('SuccessNotif', {
+            // Map the new API response structure to match SuccessNotif expectations
+            item: {
               ref: item.ref || '-',
               tujuan: item.tujuan || '-',
               sku: item.sku || '-',
@@ -208,21 +214,35 @@ const Transaksi = () => {
               sn: item.sn || '-',
               type: item.type || '-',
               created_at: item.created_at || '-',
+              // Backward compatibility fields
+              customer_no: item.tujuan || '-',
+              ref_id: item.ref || '-',
+              data: {
+                ref: item.ref || '-',
+                tujuan: item.tujuan || '-',
+                sku: item.sku || '-',
+                status: item.status || '-',
+                message: item.message || '-',
+                price: item.price || 0,
+                sn: item.sn || '-',
+                type: item.type || '-',
+                created_at: item.created_at || '-',
+              },
             },
-          },
-          product: {
-            product_name: item.sku || 'Transaksi',
-            name: item.sku || 'Transaksi',
-            label: item.sku || 'Transaksi',
-            product_seller_price: item.price
-              ? `Rp ${item.price.toLocaleString('id-ID')}`
-              : 'Rp -',
-            price: item.price
-              ? `Rp ${item.price.toLocaleString('id-ID')}`
-              : 'Rp -',
-          },
-        })
-      }>
+            product: {
+              product_name: item.sku || 'Transaksi',
+              name: item.sku || 'Transaksi',
+              label: item.sku || 'Transaksi',
+              product_seller_price: item.price
+                ? `Rp ${item.price.toLocaleString('id-ID')}`
+                : 'Rp 0',
+              price: item.price
+                ? `Rp ${item.price.toLocaleString('id-ID')}`
+                : 'Rp 0',
+            },
+          });
+        }
+      }}>
       <View style={styles.leftSection}>
         <Text
           style={[
@@ -265,14 +285,8 @@ const Transaksi = () => {
             styles.transactionAmount,
             {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
           ]}>
-          Rp{' '}
-          {item.price
-            ? typeof item.price === 'number'
-              ? item.price.toLocaleString('id-ID')
-              : typeof item.price === 'string'
-              ? parseFloat(item.price).toLocaleString('id-ID')
-              : item.price
-            : '-'}
+          Rp
+          {item.price.toLocaleString('id-ID')}'
         </Text>
       </View>
     </TouchableOpacity>
@@ -314,7 +328,7 @@ const Transaksi = () => {
         data={transactions}
         renderItem={renderTransactionItem}
         keyExtractor={(item, index) =>
-          item.ref ? item.ref.toString() : index.toString()
+          `${item.type}_${item.ref ? item.ref : index}`.toString()
         }
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -394,17 +408,17 @@ const styles = StyleSheet.create({
   transactionType: isDarkMode => ({
     fontSize: 16,
     fontWeight: 'bold',
-    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR,
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   }),
   transactionNumber: isDarkMode => ({
     fontSize: 14,
     marginTop: 4,
-    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR,
+    color: isDarkMode ? DARK_COLOR : SLATE_COLOR,
   }),
   transactionDate: isDarkMode => ({
     fontSize: 12,
     marginTop: 2,
-    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR,
+    color: isDarkMode ? DARK_COLOR : SLATE_COLOR,
   }),
   statusBadge: {
     paddingHorizontal: 10,
@@ -432,7 +446,7 @@ const styles = StyleSheet.create({
   },
   emptyText: isDarkMode => ({
     fontSize: 16,
-    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR,
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   }),
 });
 

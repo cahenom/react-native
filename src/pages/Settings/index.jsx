@@ -24,6 +24,7 @@ import {
 } from '../../utils/const';
 import {useAuth} from '../../context/AuthContext';
 import {api} from '../../utils/api';
+import RNBiometrics from 'react-native-biometrics';
 
 export default function SettingsScreen({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -71,11 +72,7 @@ export default function SettingsScreen({navigation}) {
       }
     } catch (error) {
       console.error('Update error:', error);
-      if (error.response?.data?.message) {
-        Alert.alert('Error', error.response.data.message);
-      } else {
-        Alert.alert('Error', 'Gagal memperbarui profil. Silakan coba lagi.');
-      }
+      // Error will be handled by global interceptor
     } finally {
       setLoading(false);
     }

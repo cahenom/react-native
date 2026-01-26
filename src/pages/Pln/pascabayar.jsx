@@ -189,7 +189,7 @@ const handleBayarTagihan = async (billData) => {
     });
   } catch (error) {
     console.error('Error paying bill:', error);
-    Alert.alert('Error', error.response?.data?.message || 'Gagal melakukan pembayaran');
+    // Error will be handled by global interceptor
   }
 };
 

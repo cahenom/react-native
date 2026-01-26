@@ -174,28 +174,12 @@ export default function PLNPrabayar({navigation}) {
           console.log('Loaded cached PLN Prabayar products due to fetch error');
         } else {
           // Only show error if no cached data exists
-          if (error.response?.status === 405) {
-            Alert.alert('Error', 'Metode tidak diizinkan. Endpoint mungkin salah atau tidak mendukung metode POST.');
-          } else if (error.response?.status === 401) {
-            Alert.alert('Error', 'Autentikasi gagal. Token mungkin sudah kadaluarsa.');
-          } else if (error.response?.status === 404) {
-            Alert.alert('Error', 'Endpoint tidak ditemukan. Silakan periksa kembali alamat API.');
-          } else {
-            Alert.alert('Error', `Gagal memuat produk PLN: ${error.message}\nStatus: ${error.response?.status || 'Unknown'}`);
-          }
+          // Error will be handled by global interceptor
         }
       } catch (cacheError) {
         console.error('Error loading cached data as fallback:', cacheError);
         // Show error if both fetch and cache loading failed
-        if (error.response?.status === 405) {
-          Alert.alert('Error', 'Metode tidak diizinkan. Endpoint mungkin salah atau tidak mendukung metode POST.');
-        } else if (error.response?.status === 401) {
-          Alert.alert('Error', 'Autentikasi gagal. Token mungkin sudah kadaluarsa.');
-        } else if (error.response?.status === 404) {
-          Alert.alert('Error', 'Endpoint tidak ditemukan. Silakan periksa kembali alamat API.');
-        } else {
-          Alert.alert('Error', `Gagal memuat produk PLN: ${error.message}\nStatus: ${error.response?.status || 'Unknown'}`);
-        }
+        // Error will be handled by global interceptor
       }
     } finally {
       if (forceRefresh) {
@@ -296,7 +280,7 @@ export default function PLNPrabayar({navigation}) {
     } catch (error) {
       console.error('PLN Topup error:', error);
       setShowModal(false);
-      Alert.alert('Error', error.response?.data?.message || 'Gagal melakukan pembayaran PLN. Silakan coba lagi.');
+      // Error will be handled by global interceptor
     } finally {
       setIsProcessing(false); // Reset loading state
     }

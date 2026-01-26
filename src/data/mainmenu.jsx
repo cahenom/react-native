@@ -17,6 +17,11 @@ export const mainmenus = [
     path: 'Pulsa',
   },
   {
+    label: 'Indosat',
+    ikon: HandphoneIkon,
+    path: 'Indosat',
+  },
+  {
     label: 'PLN',
     ikon: PLNIkon,
     path: 'LayananPLN',

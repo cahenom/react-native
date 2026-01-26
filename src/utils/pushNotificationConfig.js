@@ -1,5 +1,5 @@
 import messaging from '@react-native-firebase/messaging';
-import {Alert, Platform} from 'react-native';
+import {Platform} from 'react-native';
 
 /**
  * Configure push notification handlers
@@ -8,25 +8,9 @@ export const configurePushNotifications = () => {
   // Handle foreground messages (when app is active)
   const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
     console.log('Foreground message received:', remoteMessage);
-    
-    // On Android, we can configure the app to show notifications even in foreground
-    // This requires additional configuration in AndroidManifest.xml and notification channel setup
-    if (Platform.OS === 'android') {
-      // For Android, we can trigger a local notification to mimic the behavior
-      // But for now, we'll show an alert as a fallback
-      Alert.alert(
-        remoteMessage.notification?.title || 'Notifikasi Baru',
-        remoteMessage.notification?.body || 'Anda memiliki notifikasi baru',
-        [{ text: 'OK' }]
-      );
-    } else {
-      // For iOS, show an alert
-      Alert.alert(
-        remoteMessage.notification?.title || 'Notifikasi Baru',
-        remoteMessage.notification?.body || 'Anda memiliki notifikasi baru',
-        [{ text: 'OK' }]
-      );
-    }
+
+    // Push notifications will be handled by the system
+    // No in-app alerts will be shown - only system notifications
   });
 
   // Handle background messages (when app is in background)

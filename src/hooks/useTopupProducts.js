@@ -9,13 +9,14 @@ import usePersistentState from './usePersistentState';
  * @param {string} title - The title to display
  * @param {string} endpoint - The API endpoint to fetch products from
  * @param {string} cacheKeyPrefix - The prefix for the cache key
+ * @param {number} cacheDuration - Duration in milliseconds to cache data (default: 1 hour instead of 24 hours)
  * @returns {Object} - The state and functions for managing topup products
  */
-export default function useTopupProducts(provider, title, endpoint, cacheKeyPrefix) {
+export default function useTopupProducts(provider, title, endpoint, cacheKeyPrefix, cacheDuration = 60 * 60 * 1000) { // 1 hour instead of 24
   const [customer_no, setCustomerNo] = useState('');
   const [selectItem, setSelectItem] = useState(null);
-  const [products, setProducts, isLoadingFromHook, , checkCacheExpired, checkNeedsBackgroundRefresh] = usePersistentState(`${cacheKeyPrefix}_${provider}_products`, []);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts, isLoadingFromHook, , checkCacheExpired, checkNeedsBackgroundRefresh] = usePersistentState(`${cacheKeyPrefix}_${provider}_products`, [], cacheDuration);
+  const [loading, setLoading] = useState(false);
   const [isCacheExpiredState, setIsCacheExpiredState] = useState(false);
   const hasFetchedRef = useRef({}); // Track if products have been fetched for each provider
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -45,9 +46,15 @@ export default function useTopupProducts(provider, title, endpoint, cacheKeyPref
         if (isMounted) {
           setIsCacheExpiredState(cacheExpired);
 
-          // Only fetch products if they haven't been loaded yet OR cache has expired AND hasn't been fetched in this session
-          if ((products.length === 0 || cacheExpired) && !hasFetchedForThisProvider) {
-            console.log('Fetching products for provider:', provider);
+          // If products are empty, show loading state immediately and fetch fresh data (unless offline)
+          if (products.length === 0) {
+            setLoading(true); // Show skeleton/loading state immediately when products are empty
+            console.log('Products are empty, fetching fresh data for provider:', provider);
+            hasFetchedRef.current[providerKey] = true; // Mark as fetched to prevent duplicate calls
+            await fetchProductsByProvider();
+          } else if (cacheExpired && !hasFetchedForThisProvider) {
+            // Only fetch if cache is expired AND hasn't been fetched in this session
+            console.log('Cache expired, fetching fresh data for provider:', provider);
             hasFetchedRef.current[providerKey] = true; // Mark as fetched to prevent duplicate calls
             await fetchProductsByProvider();
           } else {
@@ -65,12 +72,11 @@ export default function useTopupProducts(provider, title, endpoint, cacheKeyPref
     return () => {
       isMounted = false;
     };
-  }, [provider, isLoadingFromHook, checkCacheExpired, cacheKeyPrefix]); // Remove products.length from dependency array to prevent unnecessary re-fetching
+  }, [provider, isLoadingFromHook, checkCacheExpired, cacheKeyPrefix]); // Keep original dependencies to avoid infinite loops
 
   const fetchProductsByProvider = async () => {
     try {
       console.log(`Attempting to fetch products for provider: ${provider}`);
-      setLoading(true); // Set loading to true when fetching
 
       const response = await api.post(endpoint);
 
@@ -125,9 +131,18 @@ export default function useTopupProducts(provider, title, endpoint, cacheKeyPref
 
         // Save products to persistent state
         await setProducts(transformedProducts);
+
+        // If no products were found, reset the fetch flag to allow another attempt
+        if (transformedProducts.length === 0) {
+          const providerKey = `${cacheKeyPrefix}_${provider}`;
+          hasFetchedRef.current[providerKey] = false;
+        }
       } else {
         console.log('Unexpected response structure:', response.data);
         Alert.alert('Error', 'Struktur data tidak sesuai. Silakan hubungi administrator.');
+        // Reset the fetch flag to allow another attempt
+        const providerKey = `${cacheKeyPrefix}_${provider}`;
+        hasFetchedRef.current[providerKey] = false;
       }
     } catch (error) {
       console.error('Error details:', {
@@ -137,11 +152,25 @@ export default function useTopupProducts(provider, title, endpoint, cacheKeyPref
         data: error.response?.data
       });
 
-      if (error.response?.status === 401) {
+      // Check if it's a network error (offline/cannot connect)
+      if (!error.response) {
+        // This is likely a network error (offline, timeout, etc.)
+        console.warn('Network error - device might be offline:', error.message);
+        // Don't show an alert for network errors, just use cached data
+      } else if (error.response?.status === 401) {
         Alert.alert('Error', 'Autentikasi gagal. Token mungkin sudah kadaluarsa.');
+      } else {
+        // For other errors (404, 500, etc.), show a generic message
+        Alert.alert('Error', 'Gagal menghubungi server. Pastikan koneksi internet stabil.');
       }
-      // For other errors including 404 and 405, we silently handle them and let the UI show empty state
-      console.warn('Failed to load products:', error.message);
+
+      // For network errors, don't reset the fetch flag to prevent continuous retries when offline
+      if (error.response) {
+        // Reset the fetch flag to allow another attempt (only for server errors, not network errors)
+        const providerKey = `${cacheKeyPrefix}_${provider}`;
+        hasFetchedRef.current[providerKey] = false;
+      }
+      // For network errors, keep the fetch flag as true to prevent continuous retries
     } finally {
       setLoading(false); // Set loading to false when done
     }

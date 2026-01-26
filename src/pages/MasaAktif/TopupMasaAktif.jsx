@@ -93,7 +93,7 @@ export default function TopupMasaAktif({route}) {
     } catch (error) {
       console.error('Topup error:', error);
       setShowModal(false);
-      Alert.alert('Error', error.response?.data?.message || 'Gagal melakukan topup. Silakan coba lagi.');
+      // Error will be handled by global interceptor
     } finally {
       setIsProcessing(false); // Reset loading state
     }

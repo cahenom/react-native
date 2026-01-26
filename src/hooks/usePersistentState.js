@@ -4,10 +4,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 const BACKGROUND_REFRESH_THRESHOLD = 1 * 60 * 60 * 1000; // 1 hour - refresh in background if older than this
 
-const usePersistentState = (key, defaultValue) => {
+const usePersistentState = (key, defaultValue, cacheDuration = CACHE_DURATION) => {
   const [state, setState] = useState(defaultValue);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false); // Track background refresh
+  const LOCAL_CACHE_DURATION = cacheDuration;
+  const LOCAL_BACKGROUND_REFRESH_THRESHOLD = Math.min(LOCAL_CACHE_DURATION / 2, BACKGROUND_REFRESH_THRESHOLD); // Half of cache duration or max 1 hour
 
   useEffect(() => {
     const loadPersistedState = async () => {
@@ -19,11 +21,11 @@ const usePersistentState = (key, defaultValue) => {
           const age = currentTime - parsedData.timestamp;
 
           // If cache is still valid, load it immediately
-          if (parsedData.timestamp && age < CACHE_DURATION) {
+          if (parsedData.timestamp && age < LOCAL_CACHE_DURATION) {
             setState(parsedData.value);
 
             // If cache is older than threshold, refresh in background
-            if (age > BACKGROUND_REFRESH_THRESHOLD) {
+            if (age > LOCAL_BACKGROUND_REFRESH_THRESHOLD) {
               setIsRefreshing(true);
               // Note: Actual background refresh should be triggered by the component
               // when it detects this condition
@@ -41,7 +43,7 @@ const usePersistentState = (key, defaultValue) => {
     };
 
     loadPersistedState();
-  }, [key]);
+  }, [key, LOCAL_CACHE_DURATION]);
 
   const setPersistentState = async (newValue) => {
     try {
@@ -75,7 +77,7 @@ const usePersistentState = (key, defaultValue) => {
         const parsedData = JSON.parse(persistedData);
         const currentTime = Date.now();
         const age = currentTime - parsedData.timestamp;
-        return age > BACKGROUND_REFRESH_THRESHOLD && age < CACHE_DURATION;
+        return age > LOCAL_BACKGROUND_REFRESH_THRESHOLD && age < LOCAL_CACHE_DURATION;
       }
       return false; // If no data, no need for background refresh
     } catch (error) {
@@ -91,7 +93,7 @@ const usePersistentState = (key, defaultValue) => {
       if (persistedData !== null) {
         const parsedData = JSON.parse(persistedData);
         const currentTime = Date.now();
-        return (currentTime - parsedData.timestamp) >= CACHE_DURATION;
+        return (currentTime - parsedData.timestamp) >= LOCAL_CACHE_DURATION;
       }
       return true; // If no data, consider it expired
     } catch (error) {

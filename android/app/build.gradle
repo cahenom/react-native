@@ -75,6 +75,7 @@ android {
     compileSdkVersion rootProject.ext.compileSdkVersion
 
     namespace "com.punya_kios"
+
     defaultConfig {
         applicationId "com.punya_kios"
         minSdkVersion rootProject.ext.minSdkVersion

@@ -1,5 +1,4 @@
 import messaging from '@react-native-firebase/messaging';
-import {Alert, Platform} from 'react-native';
 
 // Fungsi untuk menangani notifikasi saat aplikasi dalam mode foreground
 export const handleForegroundNotifications = () => {
@@ -7,15 +6,8 @@ export const handleForegroundNotifications = () => {
   const unsubscribe = messaging().onMessage(async remoteMessage => {
     console.log('Notifikasi diterima saat foreground:', remoteMessage);
 
-    // Tampilkan alert sederhana saat notifikasi diterima di foreground
-    // Di lingkungan produksi, Anda mungkin ingin menampilkan notifikasi lokal
-    if (remoteMessage.notification) {
-      const {title, body} = remoteMessage.notification;
-      
-      // Untuk menampilkan notifikasi di tray saat foreground, kita perlu menggunakan
-      // library tambahan seperti @notifee/react-native atau react-native-push-notification
-      Alert.alert(title || 'Notifikasi Baru', body || 'Anda menerima notifikasi');
-    }
+    // Push notifications will be handled by the system
+    // No in-app alerts will be shown - only system notifications
   });
 
   return unsubscribe;
