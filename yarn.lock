@@ -6424,10 +6424,20 @@ react-is@^17.0.1:
   resolved "https://registry.npmjs.org/react-is/-/react-is-17.0.2.tgz"
   integrity sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==
 
+react-native-action-sheet@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.npmjs.org/react-native-action-sheet/-/react-native-action-sheet-2.2.0.tgz"
+  integrity sha512-4lsuxH+Cn3/aUEs1VCwqvLhEFyXNqYTkT67CzgTwlifD9Ij4OPQAIs8D+HUD9zBvWc4NtT6cyG1lhArPVMQeVw==
+
 react-native-biometrics@^3.0.1:
   version "3.0.1"
   resolved "https://registry.npmjs.org/react-native-biometrics/-/react-native-biometrics-3.0.1.tgz"
   integrity sha512-Ru80gXRa9KG04sl5AB9HyjLjVbduhqZVjA+AiOSGqr+fNqCDmCu9y5WEksnjbnniNLmq1yGcw+qcLXmR1ddLDQ==
+
+react-native-contacts@^8.0.10:
+  version "8.0.10"
+  resolved "https://registry.npmjs.org/react-native-contacts/-/react-native-contacts-8.0.10.tgz"
+  integrity sha512-9iBRf/YLYSXQxfbPvz43DwXMv0OcHeit37W/313adYJIWz/W8SypqqxmAg9B/Lg1hzD+KYEn+UpljZnwgp78OQ==
 
 react-native-css-interop@0.2.1:
   version "0.2.1"
@@ -6474,6 +6484,13 @@ react-native-screens@^3.25.0, "react-native-screens@>= 3.0.0":
     react-freeze "^1.0.0"
     warn-once "^0.1.0"
 
+react-native-select-contact@^1.6.3:
+  version "1.6.3"
+  resolved "https://registry.npmjs.org/react-native-select-contact/-/react-native-select-contact-1.6.3.tgz"
+  integrity sha512-TI+mvioD86ZZcOaBmndJAsKla1QF0dlX7Oa2aw37uUDPp8HKAkSwUWl8q/AxYtdLJohasgsLVlUskXzLK4KEjA==
+  optionalDependencies:
+    react-native-action-sheet "^2.2.0"
+
 react-native-svg-transformer@^1.1.0:
   version "1.1.0"
   resolved "https://registry.npmjs.org/react-native-svg-transformer/-/react-native-svg-transformer-1.1.0.tgz"
@@ -6509,7 +6526,7 @@ react-native-worklets@>=0.7.0:
     convert-source-map "2.0.0"
     semver "7.7.3"
 
-react-native@*, "react-native@^0.0.0-0 || 0.60 - 0.72 || 1000.0.0", react-native@>=0.46, react-native@>=0.59.0, react-native@>=0.60.0, react-native@0.72.4:
+react-native@*, "react-native@^0.0.0-0 || 0.60 - 0.72 || 1000.0.0", react-native@>=0.46, react-native@>=0.51.0, react-native@>=0.59.0, react-native@>=0.60.0, react-native@0.72.4:
   version "0.72.4"
   resolved "https://registry.npmjs.org/react-native/-/react-native-0.72.4.tgz"
   integrity sha512-+vrObi0wZR+NeqL09KihAAdVlQ9IdplwznJWtYrjnQ4UbCW6rkzZJebRsugwUneSOKNFaHFEo1uKU89HsgtYBg==

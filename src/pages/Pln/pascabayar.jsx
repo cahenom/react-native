@@ -31,6 +31,7 @@ import Input from '../../components/form/Input';
 import {product_token} from '../../data/product_pln';
 import {CheckProduct} from '../../assets';
 import {api} from '../../utils/api';
+import { makeCekTagihanCall, makeBayarTagihanCall } from '../../helpers/apiBiometricHelper';
 
 export default function PLNPascabayar() {
   const navigation = useNavigation();
@@ -50,23 +51,62 @@ export default function PLNPascabayar() {
     setLoading(true);
 
     try {
-      const response = await api.post('/api/order/cek-tagihan', {
+      const response = await makeCekTagihanCall({
         sku: 'plnpascabayar', // Using the correct SKU for PLN postpaid
         customer_no: customer_no
-      });
+      }, 'Verifikasi sidik jari atau wajah untuk melihat tagihan PLN');
 
-      console.log('Cek tagihan response:', response.data); // Debug log
+      console.log('Cek tagihan response:', response); // Debug log
 
-      if (response.data.status === 'Sukses') {
-        setBillData(response.data.data);
+      if (response.status === 'Sukses') {
+        setBillData(response.data);
       } else {
-        Alert.alert('Error', response.data.message || 'Gagal mengambil data tagihan');
+        Alert.alert('Error', response.message || 'Gagal mengambil data tagihan');
       }
     } catch (error) {
       console.error('Error checking bill:', error);
-      Alert.alert('Error', error.response?.data?.message || `Gagal menghubungi server: ${error.message}`);
+      if (error.message !== 'Biometric authentication failed') {
+        Alert.alert('Error', error.response?.data?.message || `Gagal menghubungi server: ${error.message}`);
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBayarTagihan = async (billData) => {
+    try {
+      const response = await makeBayarTagihanCall({
+        sku: 'plnpascabayar',
+        customer_no: billData.customer_no,
+        ref_id: billData.ref_id, // Include the reference ID from the bill data
+      }, 'Verifikasi sidik jari atau wajah untuk membayar tagihan PLN');
+
+      // Navigate to success screen with the response data
+      navigation.navigate('SuccessNotif', {
+        item: {
+          ...response,
+          customer_no: billData.customer_no,
+          ref: billData.ref_id,
+          tujuan: billData.customer_no,
+          sku: 'plnpascabayar',
+          status: response.status || 'Sukses',
+          message: response.message || 'Transaksi Sukses',
+          price: billData.selling_price || billData.price,
+          sn: billData.ref_id, // Using ref_id as serial number
+        },
+        product: {
+          product_name: 'PLN Pascabayar',
+          name: 'PLN Pascabayar',
+          label: 'PLN Pascabayar',
+          product_seller_price: `Rp ${billData.selling_price?.toLocaleString('id-ID')}`,
+          price: `Rp ${billData.selling_price?.toLocaleString('id-ID')}`
+        },
+      });
+    } catch (error) {
+      console.error('Error paying bill:', error);
+      if (error.message !== 'Biometric authentication failed') {
+        // Error will be handled by global interceptor
+      }
     }
   };
 
@@ -157,41 +197,6 @@ export default function PLNPascabayar() {
     </>
   );
 }
-
-const handleBayarTagihan = async (billData) => {
-  try {
-    const response = await api.post('/api/order/bayar-tagihan', {
-      sku: 'plnpascabayar',
-      customer_no: billData.customer_no,
-      ref_id: billData.ref_id, // Include the reference ID from the bill data
-    });
-
-    // Navigate to success screen with the response data
-    navigation.navigate('SuccessNotif', {
-      item: {
-        ...response.data,
-        customer_no: billData.customer_no,
-        ref: billData.ref_id,
-        tujuan: billData.customer_no,
-        sku: 'plnpascabayar',
-        status: response.data.status || 'Sukses',
-        message: response.data.message || 'Transaksi Sukses',
-        price: billData.selling_price || billData.price,
-        sn: billData.ref_id, // Using ref_id as serial number
-      },
-      product: {
-        product_name: 'PLN Pascabayar',
-        name: 'PLN Pascabayar',
-        label: 'PLN Pascabayar',
-        product_seller_price: `Rp ${billData.selling_price?.toLocaleString('id-ID')}`,
-        price: `Rp ${billData.selling_price?.toLocaleString('id-ID')}`
-      },
-    });
-  } catch (error) {
-    console.error('Error paying bill:', error);
-    // Error will be handled by global interceptor
-  }
-};
 
 const styles = StyleSheet.create({
   container: {

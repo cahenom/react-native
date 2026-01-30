@@ -13,6 +13,8 @@ import {
   RED_COLOR,
   REGULAR_FONT,
   SLATE_COLOR,
+  DARK_COLOR,
+  LIGHT_COLOR,
   WHITE_BACKGROUND,
   windowWidth,
 } from '../../utils/const';
@@ -42,15 +44,18 @@ export default function Input({
         },
         hasError && {
           borderColor: RED_COLOR, // Red border when there's an error
-        }
+        },
       ]}>
       <TextInput
         placeholder={placeholder}
-        placeholderTextColor={GREY_COLOR}
+        placeholderTextColor={isDarkMode ? SLATE_COLOR : GREY_COLOR}
         keyboardType={type ? type : 'default'}
         value={value}
         onChangeText={onchange}
-        style={{width: lebar ? lebar : ''}}
+        style={{
+          width: lebar ? lebar : '',
+          color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+        }}
       />
       {value && (
         <TouchableOpacity

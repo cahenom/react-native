@@ -1,6 +1,15 @@
 import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+  Dimensions,
+} from 'react-native';
 import {useColorScheme} from 'react-native';
+
+const {height: SCREEN_HEIGHT} = Dimensions.get('window');
 import {
   BLUE_COLOR,
   DARK_BACKGROUND,
@@ -29,26 +38,28 @@ const TransactionDetail = ({
   const isDarkMode = useColorScheme() === 'dark';
 
   return (
-    <View>
-      <View style={styles.modalData(isDarkMode)}>
-        <Text style={styles.labelModalData(isDarkMode)}>Nomor Tujuan</Text>
-        <Text style={styles.valueModalData(isDarkMode)}>{destination}</Text>
-      </View>
-      <View style={styles.modalData(isDarkMode)}>
-        <Text style={styles.labelModalData(isDarkMode)}>Produk</Text>
-        <Text style={styles.valueModalData(isDarkMode)}>{product}</Text>
-      </View>
-      {description && (
+    <View style={styles.container}>
+      <View style={styles.content}>
         <View style={styles.modalData(isDarkMode)}>
-          <Text style={styles.labelModalData(isDarkMode)}>Deskripsi</Text>
-          <Text style={styles.valueModalData(isDarkMode)}>{description}</Text>
+          <Text style={styles.labelModalData(isDarkMode)}>Nomor Tujuan</Text>
+          <Text style={styles.valueModalData(isDarkMode)}>{destination}</Text>
         </View>
-      )}
-      <View style={styles.modalData(isDarkMode)}>
-        <Text style={styles.labelModalData(isDarkMode)}>Harga </Text>
-        <Text style={styles.valueModalData(isDarkMode)}>
-          Rp.{numberWithCommas(price)}
-        </Text>
+        <View style={styles.modalData(isDarkMode)}>
+          <Text style={styles.labelModalData(isDarkMode)}>Produk</Text>
+          <Text style={styles.valueModalData(isDarkMode)}>{product}</Text>
+        </View>
+        {description && (
+          <View style={styles.modalData(isDarkMode)}>
+            <Text style={styles.labelModalData(isDarkMode)}>Deskripsi</Text>
+            <Text style={styles.valueModalData(isDarkMode)}>{description}</Text>
+          </View>
+        )}
+        <View style={styles.modalData(isDarkMode)}>
+          <Text style={styles.labelModalData(isDarkMode)}>Harga </Text>
+          <Text style={styles.valueModalData(isDarkMode)}>
+            Rp.{numberWithCommas(price)}
+          </Text>
+        </View>
       </View>
       <View style={styles.bottom(isDarkMode)}>
         <TouchableOpacity
@@ -71,14 +82,22 @@ const TransactionDetail = ({
 };
 
 const styles = StyleSheet.create({
+  container: {
+    // Remove flex: 1 to make container fit content height
+  },
+  content: {
+    // Remove flex: 1 to allow content to determine height
+  },
   bottom: isDarkMode => ({
     backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
     padding: 10,
+    paddingTop: 5,
+    marginTop: 10, // Add some space between content and button
   }),
   bottomButton: {
     backgroundColor: BLUE_COLOR,
-    padding: 10,
-    borderRadius: 5,
+    padding: 12,
+    borderRadius: 8,
   },
   loadingButtonContent: {
     flexDirection: 'row',
@@ -89,8 +108,8 @@ const styles = StyleSheet.create({
   modalData: isDarkMode => ({
     borderBottomWidth: 1,
     borderBottomColor: isDarkMode ? SLATE_COLOR : GREY_COLOR,
-    paddingVertical: 5,
-    rowGap: 5,
+    paddingVertical: 3, // Reduced padding to make items closer together
+    rowGap: 3, // Reduced gap to make items closer together
   }),
   labelModalData: isDarkMode => ({
     fontFamily: MEDIUM_FONT,

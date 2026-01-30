@@ -30,7 +30,7 @@ import {
 import {mainmenus} from '../../data/mainmenu';
 import {useAuth} from '../../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '../../utils/api';
+import {api} from '../../utils/api';
 
 export default function HomeScreen({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -56,35 +56,48 @@ export default function HomeScreen({navigation}) {
           );
 
           // Update recent activities with fresh data (top 3)
-          const recentTransactions = fetchedTransactions.slice(0, 3).map((transaction, index) => ({
-            id: index + 1,
-            service: transaction.sku || transaction.product_name || 'Transaksi',
-            time: transaction.created_at
-              ? new Date(transaction.created_at).toLocaleDateString('id-ID', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                }) + ', ' +
-                new Date(transaction.created_at).toLocaleTimeString('id-ID', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-              : 'Unknown Time',
-            amount: (transaction.price !== undefined && transaction.price !== null
-              ? (typeof transaction.price === 'number'
-                ? (transaction.price >= 0 ? '+' : '-') + 'Rp ' + Math.abs(transaction.price).toLocaleString('id-ID')
-                : (typeof transaction.price === 'string'
-                  ? (parseFloat(transaction.price) >= 0 ? '+' : '-') + 'Rp ' + Math.abs(parseFloat(transaction.price)).toLocaleString('id-ID')
-                  : '+Rp 0'))
-              : '+Rp 0'),
-            status: transaction.status || 'Unknown',
-            icon: getTransactionIcon(transaction.sku || ''),
-            type: transaction.type || 'debit',
-            color: transaction.status?.toLowerCase() === 'berhasil' ||
-                   transaction.status?.toLowerCase() === 'sukses' ||
-                   transaction.status?.toLowerCase() === 'success'
-                   ? '#10b981' : '#ef4444',
-          }));
+          const recentTransactions = fetchedTransactions
+            .slice(0, 3)
+            .map((transaction, index) => ({
+              id: index + 1,
+              service:
+                transaction.sku || transaction.product_name || 'Transaksi',
+              time: transaction.created_at
+                ? new Date(transaction.created_at).toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  }) +
+                  ', ' +
+                  new Date(transaction.created_at).toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : 'Unknown Time',
+              amount:
+                transaction.price !== undefined && transaction.price !== null
+                  ? typeof transaction.price === 'number'
+                    ? (transaction.price >= 0 ? '+' : '-') +
+                      'Rp ' +
+                      Math.abs(transaction.price).toLocaleString('id-ID')
+                    : typeof transaction.price === 'string'
+                    ? (parseFloat(transaction.price) >= 0 ? '+' : '-') +
+                      'Rp ' +
+                      Math.abs(parseFloat(transaction.price)).toLocaleString(
+                        'id-ID',
+                      )
+                    : '+Rp 0'
+                  : '+Rp 0',
+              status: transaction.status || 'Unknown',
+              icon: getTransactionIcon(transaction.sku || ''),
+              type: transaction.type || 'debit',
+              color:
+                transaction.status?.toLowerCase() === 'berhasil' ||
+                transaction.status?.toLowerCase() === 'sukses' ||
+                transaction.status?.toLowerCase() === 'success'
+                  ? '#10b981'
+                  : '#ef4444',
+            }));
 
           setRecentActivities(recentTransactions);
         }
@@ -141,35 +154,54 @@ export default function HomeScreen({navigation}) {
           const parsedData = JSON.parse(cachedData);
           if (Array.isArray(parsedData)) {
             // Take only the 3 most recent transactions
-            const recentTransactions = parsedData.slice(0, 3).map((transaction, index) => ({
-              id: index + 1,
-              service: transaction.sku || transaction.product_name || 'Transaksi',
-              time: transaction.created_at
-                ? new Date(transaction.created_at).toLocaleDateString('id-ID', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  }) + ', ' +
-                  new Date(transaction.created_at).toLocaleTimeString('id-ID', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                : 'Unknown Time',
-              amount: (transaction.price !== undefined && transaction.price !== null
-                ? (typeof transaction.price === 'number'
-                  ? (transaction.price >= 0 ? '+' : '-') + 'Rp ' + Math.abs(transaction.price).toLocaleString('id-ID')
-                  : (typeof transaction.price === 'string'
-                    ? (parseFloat(transaction.price) >= 0 ? '+' : '-') + 'Rp ' + Math.abs(parseFloat(transaction.price)).toLocaleString('id-ID')
-                    : '+Rp 0'))
-                : '+Rp 0'),
-              status: transaction.status || 'Unknown',
-              icon: getTransactionIcon(transaction.sku || ''),
-              type: transaction.type || 'debit',
-              color: transaction.status?.toLowerCase() === 'berhasil' ||
-                     transaction.status?.toLowerCase() === 'sukses' ||
-                     transaction.status?.toLowerCase() === 'success'
-                     ? '#10b981' : '#ef4444',
-            }));
+            const recentTransactions = parsedData
+              .slice(0, 3)
+              .map((transaction, index) => ({
+                id: index + 1,
+                service:
+                  transaction.sku || transaction.product_name || 'Transaksi',
+                time: transaction.created_at
+                  ? new Date(transaction.created_at).toLocaleDateString(
+                      'id-ID',
+                      {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      },
+                    ) +
+                    ', ' +
+                    new Date(transaction.created_at).toLocaleTimeString(
+                      'id-ID',
+                      {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      },
+                    )
+                  : 'Unknown Time',
+                amount:
+                  transaction.price !== undefined && transaction.price !== null
+                    ? typeof transaction.price === 'number'
+                      ? (transaction.price >= 0 ? '+' : '-') +
+                        'Rp ' +
+                        Math.abs(transaction.price).toLocaleString('id-ID')
+                      : typeof transaction.price === 'string'
+                      ? (parseFloat(transaction.price) >= 0 ? '+' : '-') +
+                        'Rp ' +
+                        Math.abs(parseFloat(transaction.price)).toLocaleString(
+                          'id-ID',
+                        )
+                      : '+Rp 0'
+                    : '+Rp 0',
+                status: transaction.status || 'Unknown',
+                icon: getTransactionIcon(transaction.sku || ''),
+                type: transaction.type || 'debit',
+                color:
+                  transaction.status?.toLowerCase() === 'berhasil' ||
+                  transaction.status?.toLowerCase() === 'sukses' ||
+                  transaction.status?.toLowerCase() === 'success'
+                    ? '#10b981'
+                    : '#ef4444',
+              }));
 
             setRecentActivities(recentTransactions);
           }
@@ -190,35 +222,54 @@ export default function HomeScreen({navigation}) {
             );
 
             // Update recent activities with fresh data (top 3)
-            const recentTransactions = fetchedTransactions.slice(0, 3).map((transaction, index) => ({
-              id: index + 1,
-              service: transaction.sku || transaction.product_name || 'Transaksi',
-              time: transaction.created_at
-                ? new Date(transaction.created_at).toLocaleDateString('id-ID', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  }) + ', ' +
-                  new Date(transaction.created_at).toLocaleTimeString('id-ID', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                : 'Unknown Time',
-              amount: (transaction.price !== undefined && transaction.price !== null
-                ? (typeof transaction.price === 'number'
-                  ? (transaction.price >= 0 ? '+' : '-') + 'Rp ' + Math.abs(transaction.price).toLocaleString('id-ID')
-                  : (typeof transaction.price === 'string'
-                    ? (parseFloat(transaction.price) >= 0 ? '+' : '-') + 'Rp ' + Math.abs(parseFloat(transaction.price)).toLocaleString('id-ID')
-                    : '+Rp 0'))
-                : '+Rp 0'),
-              status: transaction.status || 'Unknown',
-              icon: getTransactionIcon(transaction.sku || ''),
-              type: transaction.type || 'debit',
-              color: transaction.status?.toLowerCase() === 'berhasil' ||
-                     transaction.status?.toLowerCase() === 'sukses' ||
-                     transaction.status?.toLowerCase() === 'success'
-                     ? '#10b981' : '#ef4444',
-            }));
+            const recentTransactions = fetchedTransactions
+              .slice(0, 3)
+              .map((transaction, index) => ({
+                id: index + 1,
+                service:
+                  transaction.sku || transaction.product_name || 'Transaksi',
+                time: transaction.created_at
+                  ? new Date(transaction.created_at).toLocaleDateString(
+                      'id-ID',
+                      {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      },
+                    ) +
+                    ', ' +
+                    new Date(transaction.created_at).toLocaleTimeString(
+                      'id-ID',
+                      {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      },
+                    )
+                  : 'Unknown Time',
+                amount:
+                  transaction.price !== undefined && transaction.price !== null
+                    ? typeof transaction.price === 'number'
+                      ? (transaction.price >= 0 ? '+' : '-') +
+                        'Rp ' +
+                        Math.abs(transaction.price).toLocaleString('id-ID')
+                      : typeof transaction.price === 'string'
+                      ? (parseFloat(transaction.price) >= 0 ? '+' : '-') +
+                        'Rp ' +
+                        Math.abs(parseFloat(transaction.price)).toLocaleString(
+                          'id-ID',
+                        )
+                      : '+Rp 0'
+                    : '+Rp 0',
+                status: transaction.status || 'Unknown',
+                icon: getTransactionIcon(transaction.sku || ''),
+                type: transaction.type || 'debit',
+                color:
+                  transaction.status?.toLowerCase() === 'berhasil' ||
+                  transaction.status?.toLowerCase() === 'sukses' ||
+                  transaction.status?.toLowerCase() === 'success'
+                    ? '#10b981'
+                    : '#ef4444',
+              }));
 
             setRecentActivities(recentTransactions);
           }
@@ -233,16 +284,25 @@ export default function HomeScreen({navigation}) {
   }, []);
 
   // Helper function to get transaction icon
-  const getTransactionIcon = (sku) => {
-    if (sku.toLowerCase().includes('pulsa') || sku.toLowerCase().includes('data')) {
+  const getTransactionIcon = sku => {
+    if (
+      sku.toLowerCase().includes('pulsa') ||
+      sku.toLowerCase().includes('data')
+    ) {
       return '📶';
     } else if (sku.toLowerCase().includes('pln')) {
       return '⚡';
     } else if (sku.toLowerCase().includes('pdam')) {
       return '💧';
-    } else if (sku.toLowerCase().includes('wallet') || sku.toLowerCase().includes('dompet')) {
+    } else if (
+      sku.toLowerCase().includes('wallet') ||
+      sku.toLowerCase().includes('dompet')
+    ) {
       return '💳';
-    } else if (sku.toLowerCase().includes('game') || sku.toLowerCase().includes('games')) {
+    } else if (
+      sku.toLowerCase().includes('game') ||
+      sku.toLowerCase().includes('games')
+    ) {
       return '🎮';
     } else if (sku.toLowerCase().includes('bpjs')) {
       return '🏥';
@@ -330,7 +390,13 @@ export default function HomeScreen({navigation}) {
             </View>
           </View>
           <TouchableOpacity style={styles.notificationButton}>
-            <Text style={{color: isDarkMode ? DARK_COLOR : LIGHT_COLOR, fontSize: 24}}>🔔</Text>
+            <Text
+              style={{
+                color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+                fontSize: 24,
+              }}>
+              🔔
+            </Text>
             <View style={styles.notificationBadge} />
           </TouchableOpacity>
         </View>
@@ -529,26 +595,30 @@ export default function HomeScreen({navigation}) {
                   styles.activityItem,
                   {backgroundColor: isDarkMode ? '#1a2332' : WHITE_BACKGROUND},
                 ]}
-                onPress={() => navigation.navigate('SuccessNotif', {
-                  item: {
-                    ref: activity.id,
-                    tujuan: activity.service,
-                    sku: activity.service,
-                    status: activity.status,
-                    message: activity.status,
-                    price: activity.amount.includes('+') ? parseInt(activity.amount.replace(/[^\d]/g, '')) : -parseInt(activity.amount.replace(/[^\d]/g, '')),
-                    sn: activity.service,
-                    type: activity.type,
-                    created_at: activity.time,
-                  },
-                  product: {
-                    product_name: activity.service,
-                    name: activity.service,
-                    label: activity.service,
-                    product_seller_price: activity.amount,
-                    price: activity.amount,
-                  },
-                })}>
+                onPress={() =>
+                  navigation.navigate('SuccessNotif', {
+                    item: {
+                      ref: activity.id,
+                      tujuan: activity.service,
+                      sku: activity.service,
+                      status: activity.status,
+                      message: activity.status,
+                      price: activity.amount.includes('+')
+                        ? parseInt(activity.amount.replace(/[^\d]/g, ''))
+                        : -parseInt(activity.amount.replace(/[^\d]/g, '')),
+                      sn: activity.service,
+                      type: activity.type,
+                      created_at: activity.time,
+                    },
+                    product: {
+                      product_name: activity.service,
+                      name: activity.service,
+                      label: activity.service,
+                      product_seller_price: activity.amount,
+                      price: activity.amount,
+                    },
+                  })
+                }>
                 <View
                   style={[
                     styles.activityIcon,

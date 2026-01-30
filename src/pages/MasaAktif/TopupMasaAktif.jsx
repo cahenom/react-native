@@ -18,13 +18,14 @@ import {
 } from '../../utils/const';
 import Input from '../../components/form/Input';
 import BottomButton from '../../components/BottomButton';
-import ProductList from '../../components/ProductList';
+import ProductCard from '../../components/ProductCard';
 import SkeletonCard from '../../components/SkeletonCard';
 import BottomModal from '../../components/BottomModal';
 import TransactionDetail from '../../components/TransactionDetail';
 import useTopupProducts from '../../hooks/useTopupProducts';
 import { api } from '../../utils/api';
 import {numberWithCommas} from '../../utils/formatter';
+import { makeTopupCall } from '../../helpers/apiBiometricHelper';
 
 export default function TopupMasaAktif({route}) {
   const {provider, title} = route.params;
@@ -66,12 +67,12 @@ export default function TopupMasaAktif({route}) {
     setIsProcessing(true); // Set loading state to prevent spam clicks
 
     try {
-      const response = await api.post('/api/order/topup', {
+      const response = await makeTopupCall({
         sku: selectItem.sku,
         customer_no: customer_no,
-      });
+      }, 'Verifikasi sidik jari atau wajah untuk melakukan topup masa aktif');
 
-      console.log('Topup response:', response.data);
+      console.log('Topup response:', response);
 
       // Close confirmation modal
       setShowModal(false);
@@ -79,10 +80,10 @@ export default function TopupMasaAktif({route}) {
       // Navigate to success screen with the response data
       navigation.navigate('SuccessNotif', {
         item: {
-          ...response.data,
+          ...response,
           customer_no: customer_no,
-          status: response.data.status || 'Berhasil', // Map status appropriately
-          data: { status: response.data.status || 'Berhasil' } // Also include in data object for SuccessNotif checks
+          status: response.status || 'Berhasil', // Map status appropriately
+          data: { status: response.status || 'Berhasil' } // Also include in data object for SuccessNotif checks
         },
         product: {
           ...selectItem,
@@ -156,13 +157,13 @@ export default function TopupMasaAktif({route}) {
         >
           <View style={styles.productsContainer}>
             {sortedProducts.map((p, index) => (
-              <View key={`${p.id}-${index}`} style={styles.productItem}>
-                <ProductList
-                  selectItem={selectItem?.id}
-                  data={p}
-                  action={() => setSelectItem(p)}
-                />
-              </View>
+              <ProductCard
+                key={`${p.id}-${index}`}
+                product={p}
+                isSelected={selectItem?.id === p.id}
+                onSelect={setSelectItem}
+                style={styles.productItem}
+              />
             ))}
           </View>
         </ScrollView>

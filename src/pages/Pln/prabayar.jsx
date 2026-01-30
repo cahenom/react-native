@@ -32,7 +32,8 @@ import {
 import Input from '../../components/form/Input';
 import {CheckProduct} from '../../assets';
 import {api} from '../../utils/api';
-import ProductList from '../../components/ProductList';
+import { makeTopupCall } from '../../helpers/apiBiometricHelper';
+import ProductCard from '../../components/ProductCard';
 import BottomButton from '../../components/BottomButton';
 import BottomModal from '../../components/BottomModal';
 import TransactionDetail from '../../components/TransactionDetail';
@@ -255,12 +256,12 @@ export default function PLNPrabayar({navigation}) {
     setIsProcessing(true); // Set loading state to prevent spam clicks
 
     try {
-      const response = await api.post('/api/order/topup', {
+      const response = await makeTopupCall({
         sku: selectItem.sku,
         customer_no: customer_no,
-      });
+      }, 'Verifikasi sidik jari atau wajah untuk melakukan topup PLN prabayar');
 
-      console.log('PLN Topup response:', response.data);
+      console.log('PLN Topup response:', response);
 
       // Close confirmation modal
       setShowModal(false);
@@ -268,7 +269,7 @@ export default function PLNPrabayar({navigation}) {
       // Navigate to success screen with the response data
       navigation.navigate('SuccessNotif', {
         item: {
-          ...response.data,
+          ...response,
           customer_no: customer_no
         },
         product: {
@@ -314,13 +315,13 @@ export default function PLNPrabayar({navigation}) {
         >
           <View style={styles.productsContainer}>
             {sortedProducts.map((p, index) => (
-              <View key={`${p.id}-${index}`} style={styles.productItem}>
-                <ProductList
-                  selectItem={selectItem?.id}
-                  data={p}
-                  action={() => setSelectItem(p)}
-                />
-              </View>
+              <ProductCard
+                key={`${p.id}-${index}`}
+                product={p}
+                isSelected={selectItem?.id === p.id}
+                onSelect={setSelectItem}
+                style={styles.productItem}
+              />
             ))}
           </View>
         </ScrollView>

@@ -249,7 +249,7 @@ const Transaksi = () => {
             styles.transactionType,
             {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
           ]}>
-          {item.sku || 'Transaksi'}
+          {item.produk || 'Transaksi'}
         </Text>
         <Text
           style={[
@@ -285,8 +285,7 @@ const Transaksi = () => {
             styles.transactionAmount,
             {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
           ]}>
-          Rp
-          {item.price.toLocaleString('id-ID')}'
+          Rp. {item.price.toLocaleString('id-ID')}
         </Text>
       </View>
     </TouchableOpacity>

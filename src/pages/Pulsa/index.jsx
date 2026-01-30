@@ -7,6 +7,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  Alert,
+  PermissionsAndroid,
+  Platform,
+  Linking,
 } from 'react-native';
 import React, {useState, useMemo} from 'react';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -26,11 +30,13 @@ import {
   WHITE_BACKGROUND,
 } from '../../utils/const';
 import {product_data, product_pulsa} from '../../data/product_pulsa';
-import {CheckProduct} from '../../assets';
 import BottomModal from '../../components/BottomModal';
 import Input from '../../components/form/Input';
+import TransactionDetail from '../../components/TransactionDetail';
+import ProductCard from '../../components/ProductCard';
 import {numberWithCommas} from '../../utils/formatter';
 import {api} from '../../utils/api';
+import {makePaymentCall, makeTopupCall} from '../../helpers/apiBiometricHelper';
 
 // Cache to store fetched products
 const productCache = new Map();
@@ -44,6 +50,11 @@ export default function Pulsa({navigation}) {
   const [data_pulsa, setPulsa] = useState([]);
   const [paket_data, setPaketData] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const openContactPicker = () => {
+    // Fitur dari kontak dihapus
+    Alert.alert('Info', 'Fitur pemilihan dari kontak telah dihapus.');
+  };
 
   const product_type = useMemo(() => ['Pulsa', 'Data'], []);
 
@@ -90,7 +101,7 @@ export default function Pulsa({navigation}) {
         // Cache the products for this customer number
         productCache.set(cacheKey, {
           pulsa: pulsaProducts,
-          paket_data: paketDataProducts
+          paket_data: paketDataProducts,
         });
 
         setPulsa(pulsaProducts);
@@ -103,7 +114,7 @@ export default function Pulsa({navigation}) {
         // Cache the products for this customer number
         productCache.set(cacheKey, {
           pulsa: pulsaProducts,
-          paket_data: paketDataProducts
+          paket_data: paketDataProducts,
         });
 
         setPulsa(pulsaProducts);
@@ -124,21 +135,36 @@ export default function Pulsa({navigation}) {
     setIsProcessing(true); // Set loading state to prevent spam clicks
 
     try {
-      const response = await api.post(`/api/payment/pulsa`, {
-        customer_no: nomorTujuan,
-        sku: selectItem?.sku || selectItem?.product_sku,
-      });
+      const response = await makeTopupCall(
+        {
+          customer_no: nomorTujuan,
+          sku: selectItem?.sku || selectItem?.product_sku,
+          type: 'pulsa', // Specify the type for the unified endpoint
+        },
+        'Verifikasi sidik jari atau wajah untuk melakukan isi pulsa',
+      );
 
       // Close the modal before navigating
       setShowModal(false);
 
       navigation.navigate('SuccessNotif', {
-        item: response.data,
-        product: selectItem,
+        item: {
+          ...response,
+          customer_no: nomorTujuan,
+        },
+        product: {
+          ...selectItem,
+          product_name: selectItem?.name || selectItem?.product_name,
+          product_seller_price:
+            selectItem?.price || selectItem?.product_seller_price,
+        },
       });
-      console.log('response topup : ', response.data);
+      console.log('response topup : ', response);
     } catch (error) {
       console.log('response error : ', error);
+      if (error.message !== 'Biometric authentication failed') {
+        // Error will be handled by global interceptor
+      }
     } finally {
       setIsProcessing(false); // Reset loading state
     }
@@ -146,8 +172,18 @@ export default function Pulsa({navigation}) {
 
   return (
     <>
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ flex: 1, marginHorizontal: HORIZONTAL_MARGIN, marginTop: 15 }}>
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
+        }}>
+        <View
+          style={{
+            flex: 1,
+            marginHorizontal: HORIZONTAL_MARGIN,
+            marginTop: 15,
+            backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
+          }}>
           <View
             style={{
               rowGap: 10,
@@ -211,8 +247,8 @@ export default function Pulsa({navigation}) {
           {/* PRODUK */}
           <ScrollView
             showsVerticalScrollIndicator={false}
-            style={{ flex: 1, marginTop: 10 }}
-            contentContainerStyle={{ paddingBottom: 100 }}>
+            style={{flex: 1, marginTop: 10}}
+            contentContainerStyle={{paddingBottom: 100}}>
             <View
               style={{
                 flexDirection: 'row',
@@ -224,34 +260,13 @@ export default function Pulsa({navigation}) {
                 <>
                   {data_pulsa.map(p => {
                     return (
-                      <TouchableOpacity
+                      <ProductCard
                         key={p.id}
-                        style={[
-                          styles.productWrapper(isDarkMode),
-                          selectItem?.id === p.id
-                            ? {
-                                borderColor: GREEN_COLOR,
-                              }
-                            : '',
-                        ]}
-                        onPress={() => setSelectItem(p)}>
-                        <Text style={styles.productLabel(isDarkMode)}>
-                          {p.name || p.product_name}
-                        </Text>
-                        <Text style={styles.productPrice(isDarkMode)}>
-                          Rp.{numberWithCommas(p.price || p.product_seller_price)}
-                        </Text>
-                        {selectItem?.id === p.id && (
-                          <CheckProduct
-                            width={20}
-                            style={{
-                              position: 'absolute',
-                              right: 7,
-                              top: 2,
-                            }}
-                          />
-                        )}
-                      </TouchableOpacity>
+                        product={p}
+                        isSelected={selectItem?.id === p.id}
+                        onSelect={setSelectItem}
+                        style={{width: '45%'}}
+                      />
                     );
                   })}
                 </>
@@ -259,34 +274,13 @@ export default function Pulsa({navigation}) {
                 <>
                   {paket_data.map(d => {
                     return (
-                      <TouchableOpacity
+                      <ProductCard
                         key={d.id}
-                        style={[
-                          styles.productWrapper(isDarkMode),
-                          selectItem?.id === d.id
-                            ? {
-                                borderColor: GREEN_COLOR,
-                              }
-                            : '',
-                        ]}
-                        onPress={() => setSelectItem(d)}>
-                        <Text style={styles.productLabel(isDarkMode)}>
-                          {d.name || d.product_name}
-                        </Text>
-                        <Text style={styles.productPrice(isDarkMode)}>
-                          Rp.{numberWithCommas(d.price || d.product_seller_price)}
-                        </Text>
-                        {selectItem?.id === d.id && (
-                          <CheckProduct
-                            width={20}
-                            style={{
-                              position: 'absolute',
-                              right: 7,
-                              top: 2,
-                            }}
-                          />
-                        )}
-                      </TouchableOpacity>
+                        product={d}
+                        isSelected={selectItem?.id === d.id}
+                        onSelect={setSelectItem}
+                        style={{width: '45%'}}
+                      />
                     );
                   })}
                 </>
@@ -308,45 +302,24 @@ export default function Pulsa({navigation}) {
         visible={showModal}
         onDismis={() => setShowModal(!showModal)}
         title="Detail Transaksi">
-        <View>
-          <View style={styles.modalData(isDarkMode)}>
-            <Text style={styles.labelModalData(isDarkMode)}>Nomor Tujuan</Text>
-            <Text style={styles.valueModalData(isDarkMode)}>{nomorTujuan}</Text>
-          </View>
-          <View style={styles.modalData(isDarkMode)}>
-            <Text style={styles.labelModalData(isDarkMode)}>Produk</Text>
-            <Text style={styles.valueModalData(isDarkMode)}>
-              {selectItem?.name || selectItem?.product_name}
-            </Text>
-          </View>
-          <View style={styles.modalData(isDarkMode)}>
-            <Text style={styles.labelModalData(isDarkMode)}>Harga </Text>
-            <Text style={styles.valueModalData(isDarkMode)}>
-              Rp.{numberWithCommas(selectItem?.price || selectItem?.product_seller_price)}
-            </Text>
-          </View>
-        </View>
-        <View style={styles.bottom(isDarkMode)}>
-          <TouchableOpacity
-            style={styles.bottomButton}
-            onPress={() => handleTopup()}
-            disabled={isProcessing}>
-            {isProcessing ? (
-              <View style={styles.loadingButtonContent}>
-                <ActivityIndicator size="small" color="#ffffff" />
-                <Text style={styles.buttonLabel}>Memproses...</Text>
-              </View>
-            ) : (
-              <Text style={styles.buttonLabel}>Bayar</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+        <TransactionDetail
+          destination={nomorTujuan}
+          product={selectItem?.name || selectItem?.product_name}
+          description={selectItem?.desc || selectItem?.product_desc}
+          price={selectItem?.price || selectItem?.product_seller_price}
+          onConfirm={() => handleTopup()}
+          onCancel={() => setShowModal(false)}
+          isLoading={isProcessing}
+        />
       </BottomModal>
     </>
   );
 }
 
 const styles = StyleSheet.create({
+  inputContainer: {
+    rowGap: 10,
+  },
   button: {
     backgroundColor: BLUE_COLOR,
     borderRadius: 5,
@@ -370,23 +343,6 @@ const styles = StyleSheet.create({
     color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
     fontFamily: REGULAR_FONT,
   }),
-  productWrapper: isDarkMode => ({
-    borderWidth: 1,
-    borderColor: isDarkMode ? SLATE_COLOR : GREY_COLOR,
-    borderRadius: 10,
-    padding: 20,
-    width: '45%',
-    backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
-  }),
-  productLabel: isDarkMode => ({
-    fontFamily: MEDIUM_FONT,
-    fontSize: FONT_NORMAL,
-    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR, // Changed to ensure contrast
-  }),
-  productPrice: isDarkMode => ({
-    fontFamily: REGULAR_FONT,
-    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR, // Changed to ensure contrast
-  }),
   bottom: isDarkMode => ({
     position: 'absolute',
     bottom: 0,
@@ -409,12 +365,12 @@ const styles = StyleSheet.create({
   labelModalData: isDarkMode => ({
     fontFamily: MEDIUM_FONT,
     fontSize: FONT_SEDANG,
-    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR, // Changed to ensure contrast
+    color: isDarkMode ? LIGHT_COLOR : LIGHT_COLOR, // Changed to ensure contrast
   }),
   valueModalData: isDarkMode => ({
     fontFamily: REGULAR_FONT,
     fontSize: FONT_NORMAL,
-    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR, // Changed to ensure contrast
+    color: isDarkMode ? LIGHT_COLOR : LIGHT_COLOR, // Changed to ensure contrast
   }),
   loadingButtonContent: {
     flexDirection: 'row',

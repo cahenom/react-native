@@ -2,6 +2,7 @@ import React, {createContext, useContext, useState, useEffect} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {api} from '../utils/api'; // Import the API utility
 import {Alert} from 'react-native';
+import { setBiometricEnabledStatus } from '../utils/biometricUtils';
 
 const AuthContext = createContext();
 
@@ -39,6 +40,12 @@ const AuthProvider = ({children}) => {
         if (response.data && response.data.data) {
           const userProfile = response.data.data;
           await AsyncStorage.setItem('user', JSON.stringify(userProfile)); // Update local storage
+
+          // Store biometric status in cache
+          if (userProfile.biometric_enabled !== undefined) {
+            await setBiometricEnabledStatus(userProfile.biometric_enabled);
+          }
+
           setUser(userProfile);
           setIsLoggedIn(true);
         } else {
@@ -47,6 +54,12 @@ const AuthProvider = ({children}) => {
           if (userData) {
             setUser(JSON.parse(userData));
             setIsLoggedIn(true);
+
+            // Also check for biometric status in the local user data
+            const parsedUserData = JSON.parse(userData);
+            if (parsedUserData.biometric_enabled !== undefined) {
+              await setBiometricEnabledStatus(parsedUserData.biometric_enabled);
+            }
           } else {
             setIsLoggedIn(false);
             setUser(null);
@@ -66,7 +79,14 @@ const AuthProvider = ({children}) => {
                 // Fallback to local storage if API fails
                 const userData = await AsyncStorage.getItem('user');
                 if (userData) {
-                  setUser(JSON.parse(userData));
+                  const parsedUserData = JSON.parse(userData);
+                  setUser(parsedUserData);
+
+                  // Also check for biometric status in the local user data
+                  if (parsedUserData.biometric_enabled !== undefined) {
+                    await setBiometricEnabledStatus(parsedUserData.biometric_enabled);
+                  }
+
                   setIsLoggedIn(true);
                 } else {
                   setIsLoggedIn(false);
@@ -100,6 +120,12 @@ const AuthProvider = ({children}) => {
 
     if (userData) {
       await AsyncStorage.setItem('user', JSON.stringify(userData));
+
+      // Store biometric status in cache
+      if (userData.biometric_enabled !== undefined) {
+        await setBiometricEnabledStatus(userData.biometric_enabled);
+      }
+
       setIsLoggedIn(true);
       setUser(userData);
     }
@@ -113,6 +139,12 @@ const AuthProvider = ({children}) => {
       if (response.data && response.data.data) {
         const userProfile = response.data.data;
         await AsyncStorage.setItem('user', JSON.stringify(userProfile));
+
+        // Store biometric status in cache
+        if (userProfile.biometric_enabled !== undefined) {
+          await setBiometricEnabledStatus(userProfile.biometric_enabled);
+        }
+
         setUser(userProfile);
         return userProfile;
       }
@@ -173,6 +205,11 @@ const AuthProvider = ({children}) => {
 
       // SIMPAN USER
       await AsyncStorage.setItem('user', JSON.stringify(user));
+
+      // Store biometric status in cache
+      if (user.biometric_enabled !== undefined) {
+        await setBiometricEnabledStatus(user.biometric_enabled);
+      }
 
       // Update the context state with user data
       setIsLoggedIn(true);

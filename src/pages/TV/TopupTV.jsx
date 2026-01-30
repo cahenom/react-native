@@ -18,13 +18,14 @@ import {
 } from '../../utils/const';
 import Input from '../../components/form/Input';
 import BottomButton from '../../components/BottomButton';
-import ProductList from '../../components/ProductList';
+import ProductCard from '../../components/ProductCard';
 import SkeletonCard from '../../components/SkeletonCard';
 import BottomModal from '../../components/BottomModal';
 import TransactionDetail from '../../components/TransactionDetail';
 import useTopupProducts from '../../hooks/useTopupProducts';
 import { api } from '../../utils/api';
 import {numberWithCommas} from '../../utils/formatter';
+import { makeTopupCall } from '../../helpers/apiBiometricHelper';
 
 export default function TopupTV({route}) {
   const navigation = useNavigation();
@@ -66,12 +67,12 @@ export default function TopupTV({route}) {
     setIsProcessing(true); // Set loading state to prevent spam clicks
 
     try {
-      const response = await api.post('/api/order/topup', {
+      const response = await makeTopupCall({
         sku: selectItem.sku,
         customer_no: customer_no,
-      });
+      }, 'Verifikasi sidik jari atau wajah untuk melakukan topup TV');
 
-      console.log('Topup response:', response.data);
+      console.log('Topup response:', response);
 
       // Close confirmation modal
       setShowModal(false);
@@ -79,7 +80,7 @@ export default function TopupTV({route}) {
       // Navigate to success screen with the response data
       navigation.navigate('SuccessNotif', {
         item: {
-          ...response.data,
+          ...response,
           customer_no: customer_no
         },
         product: {
@@ -154,13 +155,13 @@ export default function TopupTV({route}) {
         >
           <View style={styles.productsContainer}>
             {sortedProducts.map((p, index) => (
-              <View key={`${p.id}-${index}`} style={styles.productItem}>
-                <ProductList
-                  selectItem={selectItem?.id}
-                  data={p}
-                  action={() => setSelectItem(p)}
-                />
-              </View>
+              <ProductCard
+                key={`${p.id}-${index}`}
+                product={p}
+                isSelected={selectItem?.id === p.id}
+                onSelect={setSelectItem}
+                style={styles.productItem}
+              />
             ))}
           </View>
         </ScrollView>
