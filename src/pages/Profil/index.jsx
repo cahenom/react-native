@@ -594,6 +594,13 @@ export default function ProfilScreen({navigation}) {
       <View style={styles.sectionCard}>
         <TouchableOpacity
           style={styles.listItem}
+          onPress={() => navigation.navigate('DepositPage')}>
+          <Text style={styles.listItemText}>Deposit Saldo</Text>
+          <Text style={styles.chevronText}>›</Text>
+        </TouchableOpacity>
+        <View style={styles.divider} />
+        <TouchableOpacity
+          style={styles.listItem}
           onPress={() => Alert.alert('Payment Methods')}>
           <Text style={styles.listItemText}>Payment Methods</Text>
           <Text style={styles.chevronText}>›</Text>

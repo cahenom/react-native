@@ -30,11 +30,6 @@ const Transaksi = () => {
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation();
 
-  // Load cached transactions on component mount
-  useEffect(() => {
-    loadCachedTransactions();
-  }, []);
-
   const loadCachedTransactions = async () => {
     try {
       const cachedData = await AsyncStorage.getItem('user_transactions');
@@ -60,6 +55,11 @@ const Transaksi = () => {
     }
   };
 
+  // Load cached transactions on component mount
+  useEffect(() => {
+    loadCachedTransactions();
+  }, []);
+
   const fetchTransactions = async () => {
     try {
       // Using POST method as suggested
@@ -79,6 +79,7 @@ const Transaksi = () => {
           ref: transaction.ref || '-',
           tujuan: transaction.tujuan || '-',
           sku: transaction.sku || '-',
+          produk: transaction.produk || '-',
           status: transaction.status || '-',
           message: transaction.message || '-',
           price:
@@ -141,7 +142,9 @@ const Transaksi = () => {
   };
 
   const formatDate = dateString => {
-    if (!dateString) return '-';
+    if (!dateString) {
+      return '-';
+    }
     const date = new Date(dateString);
     // Check if date is valid
     if (isNaN(date.getTime())) {
@@ -155,12 +158,15 @@ const Transaksi = () => {
   };
 
   const getStatusColor = status => {
-    if (!status) return '#94A3B8'; // Gray for undefined/null
+    if (!status) {
+      return '#94A3B8';
+    } // Gray for undefined/null
 
     switch (status.toLowerCase()) {
       case 'berhasil':
       case 'sukses':
       case 'success':
+      case 'completed':
         return '#01C1A2'; // Green
       case 'gagal':
       case 'failed':
@@ -230,7 +236,7 @@ const Transaksi = () => {
               },
             },
             product: {
-              product_name: item.sku || 'Transaksi',
+              produk: item.produk || 'Transaksi',
               name: item.sku || 'Transaksi',
               label: item.sku || 'Transaksi',
               product_seller_price: item.price

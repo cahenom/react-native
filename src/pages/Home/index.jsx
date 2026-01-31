@@ -334,8 +334,12 @@ export default function HomeScreen({navigation}) {
   ];
 
   const getStatusColor = status => {
-    if (status === 'Success') return isDarkMode ? '#4ade80' : '#16a34a';
-    if (status === 'Pending') return isDarkMode ? '#fde047' : '#ca8a04';
+    if (status === 'Success') {
+      return isDarkMode ? '#4ade80' : '#16a34a';
+    }
+    if (status === 'Pending') {
+      return isDarkMode ? '#fde047' : '#ca8a04';
+    }
     return isDarkMode ? '#9ca3af' : '#6b7280';
   };
 
@@ -425,9 +429,10 @@ export default function HomeScreen({navigation}) {
               style={[
                 styles.actionButton,
                 {backgroundColor: 'rgba(255,255,255,0.2)'},
-              ]}>
+              ]}
+              onPress={() => navigation.navigate('DepositPage')}>
               <Text style={styles.actionIcon}>💳</Text>
-              <Text style={styles.actionText}>Top Up</Text>
+              <Text style={styles.actionText}>Deposit</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[

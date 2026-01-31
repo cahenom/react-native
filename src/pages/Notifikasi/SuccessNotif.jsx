@@ -106,12 +106,16 @@ export default function SuccessNotif({route}) {
             <Text style={styles.labelModalData(isDarkMode)}>Harga</Text>
             <Text style={styles.valueModalData(isDarkMode)}>
               {responseData?.price !== undefined && responseData?.price !== null
-                ? (typeof responseData?.price === 'number'
+                ? typeof responseData?.price === 'number'
                   ? `Rp ${responseData?.price?.toLocaleString('id-ID')}`
-                  : (typeof responseData?.price === 'string'
-                    ? `Rp ${parseFloat(responseData?.price)?.toLocaleString('id-ID') || responseData?.price}`
-                    : responseData?.price))
-                : (product?.product_seller_price || product?.price || '-')}
+                  : typeof responseData?.price === 'string'
+                  ? `Rp ${
+                      parseFloat(responseData?.price)?.toLocaleString(
+                        'id-ID',
+                      ) || responseData?.price
+                    }`
+                  : responseData?.price
+                : product?.product_seller_price || product?.price || '-'}
             </Text>
           </View>
 
@@ -142,7 +146,10 @@ export default function SuccessNotif({route}) {
           <View style={styles.modalData(isDarkMode)}>
             <Text style={styles.labelModalData(isDarkMode)}>Produk</Text>
             <Text style={styles.valueModalData(isDarkMode)}>
-              {product?.product_name || product?.name || product?.label || '-'}
+              {responseData?.produk ||
+                item?.produk ||
+                item?.data?.produk ||
+                '-'}
             </Text>
           </View>
         </View>

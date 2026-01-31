@@ -63,10 +63,16 @@ export default function RegisterPage({navigation}) {
         // SIMPAN USER
         await AsyncStorage.setItem('user', JSON.stringify(user));
 
-        // Update the context state with user data
-        setLoggedInState(user);
-
-        Alert.alert('Success', 'Registrasi berhasil');
+        // Don't set logged in state yet, navigate to login first
+        Alert.alert('Success', 'Registrasi berhasil', [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Navigate to login page after successful registration
+              navigation.navigate('Login');
+            }
+          }
+        ]);
 
       } catch (error) {
         console.log('Register error details:', {
@@ -187,7 +193,7 @@ export default function RegisterPage({navigation}) {
 
             <View style={{height : 20}}/>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={{
                   backgroundColor : loading ? '#99ccff' : BLUE_COLOR,
                   padding : 10,
@@ -196,7 +202,7 @@ export default function RegisterPage({navigation}) {
                }}
                onPress={handleRegister}
                disabled={loading}>
-                <Text style={{ color : WHITE_COLOR, textAlign : 'center', fontFamily : REGULAR_FONT }}> 
+                <Text style={{ color : WHITE_COLOR, textAlign : 'center', fontFamily : REGULAR_FONT }}>
                   {loading ? 'Loading...' : 'Register'}
                 </Text>
             </TouchableOpacity>

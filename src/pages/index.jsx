@@ -25,6 +25,7 @@ import LihatSemuaScreen from './LihatSemua';
 import PaymentPage from './Merchant/PaymentPage';
 import PaymentSuccessPage from './Merchant/PaymentSuccessPage';
 import Indosat from './Indosat';
+import DepositPage from './Deposit';
 
 export {
   HomeScreen,
@@ -53,5 +54,6 @@ export {
   LihatSemuaScreen,
   PaymentPage,
   PaymentSuccessPage,
-  Indosat
+  Indosat,
+  DepositPage
 };

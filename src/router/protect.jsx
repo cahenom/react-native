@@ -28,6 +28,7 @@ import {
   TV,
   Voucher,
   Indosat,
+  DepositPage,
 } from '../pages';
 import Transaksi from '../pages/Transaksi';
 import {
@@ -236,6 +237,13 @@ function ProtectedRoute() {
         component={PaymentSuccessPage}
         options={{
           title: 'Pembayaran Berhasil',
+        }}
+      />
+      <Stack.Screen
+        name="DepositPage"
+        component={DepositPage}
+        options={{
+          title: 'Deposit Saldo',
         }}
       />
     </Stack.Navigator>
