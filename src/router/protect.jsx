@@ -29,6 +29,9 @@ import {
   Voucher,
   Indosat,
   DepositPage,
+  DataPackage,
+  DataType,
+  TopupData,
 } from '../pages';
 import Transaksi from '../pages/Transaksi';
 import {
@@ -82,7 +85,28 @@ function ProtectedRoute() {
         name="Pulsa"
         component={Pulsa}
         options={{
-          title: 'Topup Pulsa & Data',
+          title: 'Topup Pulsa',
+        }}
+      />
+      <Stack.Screen
+        name="DataPackage"
+        component={DataPackage}
+        options={{
+          title: 'Paket Data',
+        }}
+      />
+      <Stack.Screen
+        name="DataType"
+        component={DataType}
+        options={{
+          title: 'Jenis Paket Data',
+        }}
+      />
+      <Stack.Screen
+        name="TopupData"
+        component={TopupData}
+        options={{
+          title: 'Topup Paket Data',
         }}
       />
       <Stack.Screen

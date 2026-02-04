@@ -12,7 +12,7 @@ import {
   Platform,
   Linking,
 } from 'react-native';
-import React, {useState, useMemo} from 'react';
+import React, {useState} from 'react';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {
   BLUE_COLOR,
@@ -29,7 +29,7 @@ import {
   SLATE_COLOR,
   WHITE_BACKGROUND,
 } from '../../utils/const';
-import {product_data, product_pulsa} from '../../data/product_pulsa';
+import {product_pulsa} from '../../data/product_pulsa';
 import BottomModal from '../../components/BottomModal';
 import Input from '../../components/form/Input';
 import TransactionDetail from '../../components/TransactionDetail';
@@ -44,19 +44,10 @@ const productCache = new Map();
 export default function Pulsa({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
   const [nomorTujuan, setNomor] = useState(null);
-  const [type, setType] = useState('Pulsa');
   const [selectItem, setSelectItem] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [data_pulsa, setPulsa] = useState([]);
-  const [paket_data, setPaketData] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  const openContactPicker = () => {
-    // Fitur dari kontak dihapus
-    Alert.alert('Info', 'Fitur pemilihan dari kontak telah dihapus.');
-  };
-
-  const product_type = useMemo(() => ['Pulsa', 'Data'], []);
 
   const clearNomor = () => {
     setNomor(null);
@@ -77,7 +68,6 @@ export default function Pulsa({navigation}) {
       console.log('Using cached pulsa products for:', nomorTujuan);
       const cachedProducts = productCache.get(cacheKey);
       setPulsa(cachedProducts.pulsa || []);
-      setPaketData(cachedProducts.paket_data || []);
       setLoading(false);
       return;
     }
@@ -91,39 +81,31 @@ export default function Pulsa({navigation}) {
 
       if (response.data && response.data.data) {
         console.log('Pulsa products:', response.data.data.pulsa); // Debug log
-        console.log('Paket Data products:', response.data.data.paket_data); // Debug log
 
-        // The API returns both pulsa and paket_data in a single call
-        // Use separate arrays as provided by the API
+        // The API returns pulsa in the response
         const pulsaProducts = response.data.data.pulsa || [];
-        const paketDataProducts = response.data.data.paket_data || [];
 
         // Cache the products for this customer number
         productCache.set(cacheKey, {
           pulsa: pulsaProducts,
-          paket_data: paketDataProducts,
         });
 
         setPulsa(pulsaProducts);
-        setPaketData(paketDataProducts);
       } else {
         // Fallback to original structure if different
         const pulsaProducts = response.data.data?.pulsas || [];
-        const paketDataProducts = response.data.data?.paket_data || [];
 
         // Cache the products for this customer number
         productCache.set(cacheKey, {
           pulsa: pulsaProducts,
-          paket_data: paketDataProducts,
         });
 
         setPulsa(pulsaProducts);
-        setPaketData(paketDataProducts);
       }
       setLoading(false);
     } catch (error) {
       setLoading(false);
-      console.log('Error fetching products:', error);
+      console.log('Error fetching pulsa products:', error);
     }
   };
 
@@ -209,42 +191,8 @@ export default function Pulsa({navigation}) {
               </TouchableOpacity>
             )}
           </View>
-          <View
-            style={{
-              flexDirection: 'row',
-              marginTop: 15,
-              columnGap: 15,
-            }}>
-            {product_type.map(t => {
-              return (
-                <TouchableOpacity
-                  key={t}
-                  style={[
-                    styles.buttonTab,
-                    t === type
-                      ? {
-                          borderBottomColor: BLUE_COLOR,
-                          borderBottomWidth: 2,
-                        }
-                      : '',
-                  ]}
-                  onPress={() => setType(t)}>
-                  <Text
-                    style={[
-                      styles.buttonTabLabel(isDarkMode),
-                      t === type
-                        ? {
-                            color: BLUE_COLOR,
-                          }
-                        : '',
-                    ]}>
-                    {t}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-          {/* PRODUK */}
+
+          {/* PRODUK PULSA */}
           <ScrollView
             showsVerticalScrollIndicator={false}
             style={{flex: 1, marginTop: 10}}
@@ -256,35 +204,17 @@ export default function Pulsa({navigation}) {
                 justifyContent: 'space-between',
                 rowGap: 25,
               }}>
-              {type === 'Pulsa' ? (
-                <>
-                  {data_pulsa.map(p => {
-                    return (
-                      <ProductCard
-                        key={p.id}
-                        product={p}
-                        isSelected={selectItem?.id === p.id}
-                        onSelect={setSelectItem}
-                        style={{width: '45%'}}
-                      />
-                    );
-                  })}
-                </>
-              ) : (
-                <>
-                  {paket_data.map(d => {
-                    return (
-                      <ProductCard
-                        key={d.id}
-                        product={d}
-                        isSelected={selectItem?.id === d.id}
-                        onSelect={setSelectItem}
-                        style={{width: '45%'}}
-                      />
-                    );
-                  })}
-                </>
-              )}
+              {data_pulsa.map(p => {
+                return (
+                  <ProductCard
+                    key={p.id}
+                    product={p}
+                    isSelected={selectItem?.id === p.id}
+                    onSelect={setSelectItem}
+                    style={{width: '45%'}}
+                  />
+                );
+              })}
             </View>
           </ScrollView>
         </View>
@@ -332,17 +262,6 @@ const styles = StyleSheet.create({
     color: WHITE_BACKGROUND,
     textAlign: 'center',
   },
-  buttonTab: {
-    width: '47%',
-    borderBottomColor: GREY_COLOR,
-    borderBottomWidth: 1,
-    padding: 5,
-  },
-  buttonTabLabel: isDarkMode => ({
-    textAlign: 'center',
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
-    fontFamily: REGULAR_FONT,
-  }),
   bottom: isDarkMode => ({
     position: 'absolute',
     bottom: 0,

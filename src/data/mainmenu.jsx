@@ -12,9 +12,14 @@ import {
 
 export const mainmenus = [
   {
-    label: 'Pulsa & Data',
+    label: 'Pulsa',
     ikon: HandphoneIkon,
     path: 'Pulsa',
+  },
+  {
+    label: 'Paket Data',
+    ikon: HandphoneIkon,
+    path: 'DataPackage',
   },
   {
     label: 'Indosat',

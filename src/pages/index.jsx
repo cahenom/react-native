@@ -1,5 +1,8 @@
 import HomeScreen from './Home';
 import Pulsa from './Pulsa';
+import DataPackage from './Data_Package';
+import DataType from './Data_Package/dataType';
+import TopupData from './Data_Package/topupData';
 import SuccessNotif from './Notifikasi/SuccessNotif';
 import LayananPLN from './Pln';
 import PLNPascabayar from './Pln/pascabayar';
@@ -30,6 +33,9 @@ import DepositPage from './Deposit';
 export {
   HomeScreen,
   Pulsa,
+  DataPackage,
+  DataType,
+  TopupData,
   SuccessNotif,
   LayananPLN,
   PLNPascabayar,
