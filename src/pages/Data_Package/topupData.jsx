@@ -57,40 +57,52 @@ export default function TopupData({route, navigation}) {
     clearValidationErrors();
   };
 
-  // Fetch products when customer number changes
+  // Fetch products when component mounts (using provider and type from route params)
   useEffect(() => {
-    if (customer_no) {
-      fetchProducts();
-    } else {
-      setSortedProducts([]);
-    }
-  }, [customer_no]);
+    fetchProducts();
+  }, []);
 
   const fetchProducts = async () => {
-    if (!customer_no) return;
-
     setLoading(true);
     try {
+      // Fetch products based on provider (since customer_no might not be enough to determine provider)
+      // Don't send type parameter as it might cause server error
       const response = await api.post('/api/product/data', {
-        customer_no: customer_no,
+        provider: provider
       });
+
+      console.log('API Response for products:', response.data); // Debug log
 
       let allProducts = [];
 
-      if (response.data && response.data.data) {
-        if (response.data.data.paket_data) {
-          allProducts = response.data.data.paket_data;
-        } else if (Array.isArray(response.data.data)) {
-          allProducts = response.data.data;
-        } else if (response.data.data && typeof response.data.data === 'object') {
-          allProducts = Object.values(response.data.data).flat().filter(item => item && typeof item === 'object');
-        }
+      // Correctly parse the response structure: { status, message, data: { data: [...] } }
+      if (response.data && response.data.data && Array.isArray(response.data.data.data)) {
+        allProducts = response.data.data.data;
+      } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        // Fallback if the structure is slightly different
+        allProducts = response.data.data;
       }
 
-      // Filter products by type if specified
-      const filteredProducts = type
-        ? allProducts.filter(product => product.type && product.type === type)
-        : allProducts;
+      // Filter products by provider first
+      let filteredProducts = allProducts.filter(product =>
+        product.provider &&
+        (product.provider.toLowerCase() === provider.toLowerCase())
+      );
+
+      // Then, if type is specified, filter by type as well
+      if (type) {
+        const typeFiltered = filteredProducts.filter(product =>
+          product.type &&
+          (product.type === type || product.type.toLowerCase() === type.toLowerCase())
+        );
+
+        // If no products found with the specified type, show a warning but still display all products for this provider
+        if (typeFiltered.length === 0) {
+          console.log(`Warning: No products found for type "${type}" for provider "${provider}". Showing all available products for this provider.`);
+        } else {
+          filteredProducts = typeFiltered;
+        }
+      }
 
       // Sort products by price (or any other criteria)
       const sorted = [...filteredProducts].sort((a, b) => a.price - b.price);

@@ -32,6 +32,7 @@ import {
   DataPackage,
   DataType,
   TopupData,
+  TypeEmoney,
 } from '../pages';
 import Transaksi from '../pages/Transaksi';
 import {
@@ -142,6 +143,13 @@ function ProtectedRoute() {
         component={DompetElektronik}
         options={{
           title: 'Dompet Elektronik',
+        }}
+      />
+      <Stack.Screen
+        name="TypeEmoney"
+        component={TypeEmoney}
+        options={{
+          title: 'Jenis Dompet Elektronik',
         }}
       />
       <Stack.Screen

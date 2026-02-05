@@ -10,12 +10,28 @@ import {
   Linking,
   SafeAreaView,
   FlatList,
+  useColorScheme,
 } from 'react-native';
 import {useAuth} from '../../context/AuthContext';
 import {depositService} from '../../services';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  BOLD_FONT,
+  DARK_BACKGROUND,
+  DARK_COLOR,
+  FONT_NORMAL,
+  HORIZONTAL_MARGIN,
+  LIGHT_COLOR,
+  REGULAR_FONT,
+  WHITE_BACKGROUND,
+  BLUE_COLOR,
+  WHITE_COLOR,
+  GREY_COLOR,
+  SLATE_COLOR,
+} from '../../utils/const';
 
 const DepositPage = () => {
+  const isDarkMode = useColorScheme() === 'dark';
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [invoiceData, setInvoiceData] = useState(null);
@@ -142,30 +158,31 @@ const DepositPage = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Deposit Saldo</Text>
+    <SafeAreaView style={getStyles(isDarkMode).container}>
+      <ScrollView contentContainerStyle={getStyles(isDarkMode).content}>
+        <Text style={getStyles(isDarkMode).title}>Deposit Saldo</Text>
 
-        <Text style={styles.label}>Nominal Deposit</Text>
+        <Text style={getStyles(isDarkMode).label}>Nominal Deposit</Text>
         <TextInput
-          style={styles.input}
+          style={getStyles(isDarkMode).input}
           value={amount}
           onChangeText={setAmount}
           placeholder="Masukkan nominal deposit"
           keyboardType="numeric"
+          placeholderTextColor={isDarkMode ? SLATE_COLOR : GREY_COLOR}
         />
 
-        <Text style={styles.quickAmountLabel}>Pilihan Nominal Cepat:</Text>
-        <View style={styles.quickAmountContainer}>
+        <Text style={getStyles(isDarkMode).quickAmountLabel}>Pilihan Nominal Cepat:</Text>
+        <View style={getStyles(isDarkMode).quickAmountContainer}>
           {quickAmounts.map((value, index) => (
             <TouchableOpacity
               key={index}
               style={[
-                styles.quickAmountButton,
-                amount === value.toString() && styles.selectedQuickAmount,
+                getStyles(isDarkMode).quickAmountButton,
+                amount === value.toString() && getStyles(isDarkMode).selectedQuickAmount,
               ]}
               onPress={() => handleQuickAmountSelect(value)}>
-              <Text style={styles.quickAmountText}>
+              <Text style={getStyles(isDarkMode).quickAmountText}>
                 {value.toLocaleString('id-ID')}
               </Text>
             </TouchableOpacity>
@@ -173,45 +190,45 @@ const DepositPage = () => {
         </View>
 
         <TouchableOpacity
-          style={[styles.depositButton, loading && styles.disabledButton]}
+          style={[getStyles(isDarkMode).depositButton, loading && getStyles(isDarkMode).disabledButton]}
           onPress={handleDeposit}
           disabled={loading}>
-          <Text style={styles.buttonText}>
+          <Text style={getStyles(isDarkMode).buttonText}>
             {loading ? 'Memproses...' : 'Buat Invoice'}
           </Text>
         </TouchableOpacity>
 
         {invoiceData && (
-          <View style={styles.invoiceSection}>
-            <Text style={styles.invoiceTitle}>Invoice Detail</Text>
-            <Text style={styles.invoiceText}>
+          <View style={getStyles(isDarkMode).invoiceSection}>
+            <Text style={getStyles(isDarkMode).invoiceTitle}>Invoice Detail</Text>
+            <Text style={getStyles(isDarkMode).invoiceText}>
               ID Invoice: {invoiceData.invoice_id}
             </Text>
-            <Text style={styles.invoiceText}>
+            <Text style={getStyles(isDarkMode).invoiceText}>
               Nominal: Rp {parseInt(invoiceData.amount).toLocaleString('id-ID')}
             </Text>
-            <Text style={styles.invoiceText}>Status: {invoiceData.status}</Text>
-            <Text style={styles.invoiceText}>
+            <Text style={getStyles(isDarkMode).invoiceText}>Status: {invoiceData.status}</Text>
+            <Text style={getStyles(isDarkMode).invoiceText}>
               Berlaku hingga:{' '}
               {new Date(invoiceData.expiry_date).toLocaleString()}
             </Text>
-            <TouchableOpacity style={styles.payButton} onPress={handlePayNow}>
-              <Text style={styles.buttonText}>Bayar Sekarang</Text>
+            <TouchableOpacity style={getStyles(isDarkMode).payButton} onPress={handlePayNow}>
+              <Text style={getStyles(isDarkMode).buttonText}>Bayar Sekarang</Text>
             </TouchableOpacity>
-            <Text style={styles.bankTitle}>Cara pembayaran:</Text>
-            <Text style={styles.invoiceText}>
+            <Text style={getStyles(isDarkMode).bankTitle}>Cara pembayaran:</Text>
+            <Text style={getStyles(isDarkMode).invoiceText}>
               1. Klik tombol "Bayar Sekarang" untuk membuka halaman pembayaran.
             </Text>
-            <Text style={styles.invoiceText}>
+            <Text style={getStyles(isDarkMode).invoiceText}>
               2. Lakukan pembayaran sesuai dengan instruksi yang diberikan.
             </Text>
-            <Text style={styles.invoiceText}>
+            <Text style={getStyles(isDarkMode).invoiceText}>
               3. Setelah pembayaran berhasil, saldo akan otomatis terkonfirmasi.
             </Text>
-            <Text style={styles.invoiceText}>
+            <Text style={getStyles(isDarkMode).invoiceText}>
               4. Pastikan Anda telah melakukan pembayaran dengan benar.
             </Text>
-            <Text style={styles.invoiceText}>
+            <Text style={getStyles(isDarkMode).invoiceText}>
               5. Jika ada pertanyaan lebih lanjut, silakan hubungi customer
               service kami.
             </Text>
@@ -220,8 +237,8 @@ const DepositPage = () => {
 
         {/* Transaction History Section */}
         {transactions.length > 0 && (
-          <View style={styles.historySection}>
-            <Text style={styles.historyTitle}>Riwayat Deposit</Text>
+          <View style={getStyles(isDarkMode).historySection}>
+            <Text style={getStyles(isDarkMode).historyTitle}>Riwayat Deposit</Text>
             <FlatList
               data={transactions}
               renderItem={renderTransactionItem}
@@ -235,10 +252,10 @@ const DepositPage = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: isDarkMode ? DARK_BACKGROUND : '#f5f5f5',
   },
   content: {
     padding: 20,
@@ -248,25 +265,29 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   },
   label: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 10,
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: isDarkMode ? SLATE_COLOR : '#ddd',
     borderRadius: 8,
     padding: 15,
     fontSize: 16,
-    backgroundColor: '#fff',
+    backgroundColor: isDarkMode ? DARK_BACKGROUND : '#fff',
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
     marginBottom: 20,
   },
   quickAmountLabel: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 10,
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   },
   quickAmountContainer: {
     flexDirection: 'row',
@@ -275,19 +296,20 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   quickAmountButton: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: isDarkMode ? '#555' : '#e0e0e0',
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 8,
   },
   selectedQuickAmount: {
-    backgroundColor: '#007AFF',
+    backgroundColor: BLUE_COLOR,
   },
   quickAmountText: {
     fontSize: 14,
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   },
   depositButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: BLUE_COLOR,
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
@@ -302,79 +324,85 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   disabledButton: {
-    backgroundColor: '#ccc',
+    backgroundColor: isDarkMode ? '#777' : '#ccc',
   },
   buttonText: {
-    color: '#fff',
+    color: WHITE_COLOR,
     fontSize: 16,
     fontWeight: '600',
   },
   invoiceSection: {
-    backgroundColor: '#fff',
+    backgroundColor: isDarkMode ? DARK_BACKGROUND : '#fff',
     padding: 20,
     borderRadius: 10,
     marginTop: 20,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: isDarkMode ? SLATE_COLOR : '#ddd',
   },
   invoiceTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 15,
     textAlign: 'center',
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   },
   invoiceText: {
     fontSize: 14,
     marginBottom: 5,
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   },
   bankTitle: {
     fontSize: 16,
     fontWeight: '600',
     marginTop: 10,
     marginBottom: 10,
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   },
   banksContainer: {
     marginTop: 10,
   },
   bankItem: {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: isDarkMode ? '#444' : '#f9f9f9',
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: isDarkMode ? '#555' : '#eee',
   },
   bankName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: BLUE_COLOR,
     marginBottom: 5,
   },
   bankAccount: {
     fontSize: 14,
     marginBottom: 3,
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   },
   bankAmount: {
     fontSize: 14,
     marginBottom: 3,
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   },
   bankNumber: {
     fontSize: 14,
-    color: '#666',
+    color: isDarkMode ? SLATE_COLOR : '#666',
   },
   historySection: {
-    backgroundColor: '#fff',
+    backgroundColor: isDarkMode ? DARK_BACKGROUND : '#fff',
     padding: 20,
     borderRadius: 10,
     marginTop: 20,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: isDarkMode ? SLATE_COLOR : '#ddd',
   },
   historyTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 15,
     textAlign: 'center',
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   },
   transactionItem: {
     flexDirection: 'row',
@@ -382,7 +410,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: isDarkMode ? '#444' : '#eee',
   },
   transactionInfo: {
     flex: 1,
@@ -391,10 +419,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 4,
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   },
   transactionTime: {
     fontSize: 12,
-    color: '#666',
+    color: isDarkMode ? SLATE_COLOR : '#666',
   },
   transactionAmountContainer: {
     alignItems: 'flex-end',

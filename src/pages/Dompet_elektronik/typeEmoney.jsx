@@ -22,7 +22,7 @@ import {
 import {ArrowRight} from '../../assets';
 import { api } from '../../utils/api';
 
-export default function DataType({route, navigation}) {
+export default function TypeEmoney({route, navigation}) {
   const {provider, title} = route.params;
   const isDarkMode = useColorScheme() === 'dark';
   const [types, setTypes] = useState([]);
@@ -36,27 +36,27 @@ export default function DataType({route, navigation}) {
   const fetchTypes = async () => {
     try {
       setLoading(true);
-      console.log('Fetching types for provider:', provider); // Debug log
+      console.log('Fetching types for e-money provider:', provider); // Debug log
 
-      const response = await api.post('/api/product/data', {
+      const response = await api.post('/api/product/emoney', {
         provider: provider.toLowerCase(), // Pass the selected provider in lowercase
       });
 
-      console.log('API Response:', response.data); // Debug log
+      console.log('API Response for e-money types:', response.data); // Debug log
 
       if (response.data && response.data.data) {
         // Extract unique types from the data
         let allProducts = [];
 
-        // Handle the correct response structure: { status, message, data: { data: [...] } }
-        if (response.data.data && Array.isArray(response.data.data.data)) {
-          allProducts = response.data.data.data;
+        // Handle the correct response structure: { status, message, data: { emoney: [...] } }
+        if (response.data.data && Array.isArray(response.data.data.emoney)) {
+          allProducts = response.data.data.emoney;
         } else if (Array.isArray(response.data.data)) {
           // Fallback if the structure is slightly different
           allProducts = response.data.data;
         }
 
-        console.log('All products:', allProducts); // Debug log
+        console.log('All e-money products:', allProducts); // Debug log
 
         // Filter to ensure we only have objects with a 'type' property and belong to the selected provider
         const validProducts = allProducts.filter(item =>
@@ -64,12 +64,12 @@ export default function DataType({route, navigation}) {
           item.provider.toLowerCase() === provider.toLowerCase()
         );
 
-        console.log('Valid products for provider:', validProducts); // Debug log
+        console.log('Valid e-money products for provider:', validProducts); // Debug log
 
         // Extract unique types
         const uniqueTypes = [...new Set(validProducts.map(item => item.type))];
 
-        console.log('Unique types:', uniqueTypes); // Debug log
+        console.log('Unique e-money types:', uniqueTypes); // Debug log
 
         // Format the types for display
         const formattedTypes = uniqueTypes
@@ -86,12 +86,12 @@ export default function DataType({route, navigation}) {
     } catch (err) {
       setError(err.message);
       setLoading(false);
-      console.error('Error fetching types:', err);
+      console.error('Error fetching e-money types:', err);
     }
   };
 
   const handleTypePress = (selectedType) => {
-    navigation.navigate('TopupData', {
+    navigation.navigate('TopupDompet', {
       provider: provider,
       type: selectedType.name,
       title: `${provider} ${selectedType.name}`,
@@ -134,7 +134,7 @@ export default function DataType({route, navigation}) {
   return (
     <View style={styles.wrapper(isDarkMode)}>
       <View style={styles.container(isDarkMode)}>
-        <Text style={styles.title(isDarkMode)}>Pilih Jenis Paket {provider}</Text>
+        <Text style={styles.title(isDarkMode)}>Pilih Jenis {provider}</Text>
         <FlatList
           data={types}
           renderItem={renderTypeItem}

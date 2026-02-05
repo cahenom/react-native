@@ -106,7 +106,7 @@ export default function DompetElektronik({navigation}) {
   };
 
   const handleProviderPress = (provider) => {
-    navigation.navigate('TopupDompet', {
+    navigation.navigate('TypeEmoney', {
       provider: provider,
       title: `${provider} Product`,
     });

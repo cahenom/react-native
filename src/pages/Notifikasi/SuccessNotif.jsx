@@ -146,10 +146,7 @@ export default function SuccessNotif({route}) {
           <View style={styles.modalData(isDarkMode)}>
             <Text style={styles.labelModalData(isDarkMode)}>Produk</Text>
             <Text style={styles.valueModalData(isDarkMode)}>
-              {responseData?.produk ||
-                item?.produk ||
-                item?.data?.produk ||
-                '-'}
+              {responseData?.produk || product?.produk || '-'}
             </Text>
           </View>
         </View>

@@ -9,18 +9,26 @@ import {
   ActivityIndicator,
   Alert,
   useColorScheme,
+  ScrollView,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {api} from '../../utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  BOLD_FONT,
   DARK_BACKGROUND,
   DARK_COLOR,
-  LIGHT_BACKGROUND,
+  FONT_NORMAL,
+  FONT_SEDANG,
+  HORIZONTAL_MARGIN,
   LIGHT_COLOR,
-  WHITE_COLOR,
-  GREY_COLOR,
+  MEDIUM_FONT,
+  REGULAR_FONT,
   SLATE_COLOR,
+  WHITE_COLOR,
+  BLUE_COLOR,
+  WHITE_BACKGROUND,
+  GREY_COLOR,
 } from '../../utils/const';
 
 const Transaksi = () => {
@@ -182,48 +190,36 @@ const Transaksi = () => {
     }
   };
 
-  const renderTransactionItem = ({item}) => (
-    <TouchableOpacity
-      style={[
-        styles.transactionItem,
-        {backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_COLOR},
-      ]}
-      onPress={() => {
-        // Jika tipe transaksi adalah merchant_request dan statusnya pending, arahkan ke halaman pembayaran
-        if (item.type === 'merchant_request' && item.status === 'pending') {
-          // Buat objek payment request untuk dikirim ke halaman pembayaran
-          // Gunakan ID internal dari payment request jika tersedia, jika tidak gunakan ref
-          const paymentRequest = {
-            id: item.internal_id || item.ref, // Gunakan ID internal jika tersedia, jika tidak gunakan ref
-            name: item.message.includes('Payment request from ')
-              ? item.message.replace('Payment request from ', '')
-              : item.sku,
-            destination: item.tujuan,
-            price: item.price,
-            email: item.tujuan, // Gunakan tujuan sebagai email
-          };
+  const renderTransactionItem = ({item, index}) => (
+    <View>
+      <TouchableOpacity
+        style={[
+          styles.transactionItem,
+          {backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_COLOR},
+        ]}
+        onPress={() => {
+          // Jika tipe transaksi adalah merchant_request dan statusnya pending, arahkan ke halaman pembayaran
+          if (item.type === 'merchant_request' && item.status === 'pending') {
+            // Buat objek payment request untuk dikirim ke halaman pembayaran
+            // Gunakan ID internal dari payment request jika tersedia, jika tidak gunakan ref
+            const paymentRequest = {
+              id: item.internal_id || item.ref, // Gunakan ID internal jika tersedia, jika tidak gunakan ref
+              name: item.message.includes('Payment request from ')
+                ? item.message.replace('Payment request from ', '')
+                : item.sku,
+              destination: item.tujuan,
+              price: item.price,
+              email: item.tujuan, // Gunakan tujuan sebagai email
+            };
 
-          navigation.navigate('PaymentPage', {
-            paymentRequest: paymentRequest,
-          });
-        } else {
-          // Untuk transaksi biasa, arahkan ke halaman notifikasi sukses
-          navigation.navigate('SuccessNotif', {
-            // Map the new API response structure to match SuccessNotif expectations
-            item: {
-              ref: item.ref || '-',
-              tujuan: item.tujuan || '-',
-              sku: item.sku || '-',
-              status: item.status || '-',
-              message: item.message || '-',
-              price: item.price || 0,
-              sn: item.sn || '-',
-              type: item.type || '-',
-              created_at: item.created_at || '-',
-              // Backward compatibility fields
-              customer_no: item.tujuan || '-',
-              ref_id: item.ref || '-',
-              data: {
+            navigation.navigate('PaymentPage', {
+              paymentRequest: paymentRequest,
+            });
+          } else {
+            // Untuk transaksi biasa, arahkan ke halaman notifikasi sukses
+            navigation.navigate('SuccessNotif', {
+              // Map the new API response structure to match SuccessNotif expectations
+              item: {
                 ref: item.ref || '-',
                 tujuan: item.tujuan || '-',
                 sku: item.sku || '-',
@@ -233,85 +229,113 @@ const Transaksi = () => {
                 sn: item.sn || '-',
                 type: item.type || '-',
                 created_at: item.created_at || '-',
+                // Backward compatibility fields
+                customer_no: item.tujuan || '-',
+                ref_id: item.ref || '-',
+                data: {
+                  ref: item.ref || '-',
+                  tujuan: item.tujuan || '-',
+                  sku: item.sku || '-',
+                  status: item.status || '-',
+                  message: item.message || '-',
+                  price: item.price || 0,
+                  sn: item.sn || '-',
+                  type: item.type || '-',
+                  created_at: item.created_at || '-',
+                },
               },
-            },
-            product: {
-              produk: item.produk || 'Transaksi',
-              name: item.sku || 'Transaksi',
-              label: item.sku || 'Transaksi',
-              product_seller_price: item.price
-                ? `Rp ${item.price.toLocaleString('id-ID')}`
-                : 'Rp 0',
-              price: item.price
-                ? `Rp ${item.price.toLocaleString('id-ID')}`
-                : 'Rp 0',
-            },
-          });
-        }
-      }}>
-      <View style={styles.leftSection}>
-        <Text
-          style={[
-            styles.transactionType,
-            {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
-          ]}>
-          {item.produk || 'Transaksi'}
-        </Text>
-        <Text
-          style={[
-            styles.transactionNumber,
-            {color: isDarkMode ? DARK_COLOR : SLATE_COLOR},
-          ]}>
-          {item.tujuan || '-'}
-        </Text>
-        <Text
-          style={[
-            styles.transactionDate,
-            {color: isDarkMode ? DARK_COLOR : SLATE_COLOR},
-          ]}>
-          {formatDate(item.created_at)} •{' '}
-          {item.created_at
-            ? new Date(item.created_at).toLocaleTimeString('id-ID', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })
-            : '-'}
-        </Text>
-      </View>
-      <View style={styles.rightSection}>
+              product: {
+                produk: item.produk || 'Transaksi',
+                name: item.sku || 'Transaksi',
+                label: item.sku || 'Transaksi',
+                product_seller_price: item.price
+                  ? `Rp ${item.price.toLocaleString('id-ID')}`
+                  : 'Rp 0',
+                price: item.price
+                  ? `Rp ${item.price.toLocaleString('id-ID')}`
+                  : 'Rp 0',
+              },
+            });
+          }
+        }}>
+        <View style={styles.leftSection}>
+          <Text
+            style={[
+              styles.transactionType,
+              {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
+            ]}>
+            {item.produk || 'Transaksi'}
+          </Text>
+          <Text
+            style={[
+              styles.transactionNumber,
+              {color: isDarkMode ? DARK_COLOR : SLATE_COLOR},
+            ]}>
+            {item.tujuan || '-'}
+          </Text>
+          <Text
+            style={[
+              styles.transactionDate,
+              {color: isDarkMode ? DARK_COLOR : SLATE_COLOR},
+            ]}>
+            {formatDate(item.created_at)} •{' '}
+            {item.created_at
+              ? new Date(item.created_at).toLocaleTimeString('id-ID', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : '-'}
+          </Text>
+        </View>
+        <View style={styles.rightSection}>
+          <View
+            style={[
+              styles.statusBadge,
+              {backgroundColor: getStatusColor(item.status)},
+            ]}>
+            <Text style={styles.statusText}>{item.status}</Text>
+          </View>
+          <Text
+            style={[
+              styles.transactionAmount,
+              {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
+            ]}>
+            Rp. {item.price.toLocaleString('id-ID')}
+          </Text>
+        </View>
+      </TouchableOpacity>
+      {index < transactions.length - 1 && (
         <View
           style={[
-            styles.statusBadge,
-            {backgroundColor: getStatusColor(item.status)},
-          ]}>
-          <Text style={styles.statusText}>{item.status}</Text>
-        </View>
-        <Text
-          style={[
-            styles.transactionAmount,
-            {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
-          ]}>
-          Rp. {item.price.toLocaleString('id-ID')}
-        </Text>
-      </View>
-    </TouchableOpacity>
+            styles.divider,
+            {backgroundColor: isDarkMode ? '#334155' : '#f1f5f9'},
+          ]}
+        />
+      )}
+    </View>
   );
 
   if (loading) {
     return (
       <View
         style={[
-          styles.loadingContainer,
-          {backgroundColor: isDarkMode ? DARK_BACKGROUND : LIGHT_BACKGROUND},
+          styles.container,
+          {backgroundColor: isDarkMode ? '#101622' : '#f6f6f8'},
         ]}>
-        <ActivityIndicator size="large" color="#138EE9" />
-        <Text
-          style={[
-            styles.loadingText,
-            {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
-          ]}>
-          Memuat transaksi...
-        </Text>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{paddingHorizontal: HORIZONTAL_MARGIN, paddingBottom: 100}}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#138EE9" />
+            <Text
+              style={[
+                styles.loadingText,
+                {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
+              ]}>
+              Memuat transaksi...
+            </Text>
+          </View>
+        </ScrollView>
       </View>
     );
   }
@@ -320,38 +344,44 @@ const Transaksi = () => {
     <View
       style={[
         styles.container,
-        {backgroundColor: isDarkMode ? DARK_BACKGROUND : LIGHT_BACKGROUND},
+        {backgroundColor: isDarkMode ? '#101622' : '#f6f6f8'},
       ]}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle(isDarkMode)}>Riwayat Transaksi</Text>
-        <Text style={styles.headerSubtitle(isDarkMode)}>
-          Daftar transaksi Anda
-        </Text>
-      </View>
-
-      <FlatList
-        data={transactions}
-        renderItem={renderTransactionItem}
-        keyExtractor={(item, index) =>
-          `${item.type}_${item.ref ? item.ref : index}`.toString()
-        }
+      <ScrollView
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text
-              style={[
-                styles.emptyText,
-                {color: isDarkMode ? DARK_COLOR : SLATE_COLOR},
-              ]}>
-              Belum pernah transaksi
-            </Text>
-          </View>
-        }
-      />
+        contentContainerStyle={{paddingHorizontal: HORIZONTAL_MARGIN, paddingBottom: 100}}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle(isDarkMode)}>Riwayat Transaksi</Text>
+          <Text style={styles.headerSubtitle(isDarkMode)}>
+            Daftar transaksi Anda
+          </Text>
+        </View>
+
+        <View style={styles.transactionsContainer}>
+          <FlatList
+            data={transactions}
+            renderItem={renderTransactionItem}
+            keyExtractor={(item, index) =>
+              `${item.type}_${item.ref ? item.ref : index}`.toString()
+            }
+            scrollEnabled={false}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text
+                  style={[
+                    styles.emptyText,
+                    {color: isDarkMode ? DARK_COLOR : SLATE_COLOR},
+                  ]}>
+                  Belum pernah transaksi
+                </Text>
+              </View>
+            }
+          />
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -359,48 +389,42 @@ const Transaksi = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 50,
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
   },
   header: {
-    marginBottom: 20,
+    marginTop: 20,
+    marginBottom: 16,
   },
   headerTitle: isDarkMode => ({
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: FONT_NORMAL + 4,
+    fontFamily: BOLD_FONT,
     color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   }),
   headerSubtitle: isDarkMode => ({
-    fontSize: 14,
+    fontSize: FONT_NORMAL,
     marginTop: 4,
     color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   }),
-  listContainer: {
-    paddingBottom: 20,
+  transactionsContainer: {
+    marginBottom: 20,
   },
   transactionItem: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   leftSection: {
     flex: 1,
@@ -411,17 +435,17 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   transactionType: isDarkMode => ({
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
   }),
   transactionNumber: isDarkMode => ({
-    fontSize: 14,
+    fontSize: 12,
     marginTop: 4,
     color: isDarkMode ? DARK_COLOR : SLATE_COLOR,
   }),
   transactionDate: isDarkMode => ({
-    fontSize: 12,
+    fontSize: 10,
     marginTop: 2,
     color: isDarkMode ? DARK_COLOR : SLATE_COLOR,
   }),
@@ -434,15 +458,19 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: 'bold',
   },
   transactionAmount: isDarkMode => ({
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
-    marginTop: 8,
+    marginTop: 4,
     color: isDarkMode ? LIGHT_COLOR : DARK_COLOR,
   }),
+  divider: {
+    height: 1,
+    marginLeft: 16,
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -451,7 +479,7 @@ const styles = StyleSheet.create({
   },
   emptyText: isDarkMode => ({
     fontSize: 16,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    color: isDarkMode ? DARK_COLOR : SLATE_COLOR,
   }),
 });
 

@@ -1,5 +1,5 @@
 import {StyleSheet, Text, View, useColorScheme, ScrollView, FlatList, ActivityIndicator, Alert, SafeAreaView, TouchableOpacity} from 'react-native';
-import React, {useRef, useState} from 'react';
+import React, {useRef, useState, useEffect} from 'react';
 import {
   BLUE_COLOR,
   DARK_BACKGROUND,
@@ -21,30 +21,98 @@ import ProductCard from '../../components/ProductCard';
 import SkeletonCard from '../../components/SkeletonCard';
 import BottomModal from '../../components/BottomModal';
 import TransactionDetail from '../../components/TransactionDetail';
-import useTopupProducts from '../../hooks/useTopupProducts';
 import { api } from '../../utils/api';
 import {numberWithCommas} from '../../utils/formatter';
 import { makeTopupCall } from '../../helpers/apiBiometricHelper';
 
 export default function TopupDompet({route, navigation}) {
-  const {provider, title} = route.params;
+  const {provider, title, type} = route.params;
   const isDarkMode = useColorScheme() === 'dark';
   const scrollViewRef = useRef(null);
 
-  const {
-    customer_no,
-    setCustomerNo,
-    selectItem,
-    setSelectItem,
-    sortedProducts,
-    loading,
-    showConfirmation,
-    setShowConfirmation,
-    resetInput,
-    validationErrors,
-    validateInputs,
-    clearValidationErrors
-  } = useTopupProducts(provider, title, '/api/product/emoney', 'emoney');
+  // State for products
+  const [customer_no, setCustomerNo] = useState('');
+  const [selectItem, setSelectItem] = useState(null);
+  const [sortedProducts, setSortedProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+
+  // Simple validation
+  const validateInputs = () => {
+    const errors = {};
+    if (!customer_no.trim()) {
+      errors.customer_no = 'Nomor tujuan harus diisi';
+    } else if (!/^\d+$/.test(customer_no)) {
+      errors.customer_no = 'Nomor tidak valid';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const clearValidationErrors = () => setValidationErrors({});
+  const resetInput = () => {
+    setCustomerNo('');
+    setSelectItem(null);
+    clearValidationErrors();
+  };
+
+  // Fetch products when component mounts (using provider and type from route params)
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      // Fetch products based on provider
+      const response = await api.post('/api/product/emoney', {
+        provider: provider
+      });
+
+      console.log('API Response for products:', response.data); // Debug log
+
+      let allProducts = [];
+
+      // Correctly parse the response structure: { status, message, data: { emoney: [...] } }
+      if (response.data && response.data.data && Array.isArray(response.data.data.emoney)) {
+        allProducts = response.data.data.emoney;
+      } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        // Fallback if the structure is slightly different
+        allProducts = response.data.data;
+      }
+
+      // Filter products by provider first
+      let filteredProducts = allProducts.filter(product =>
+        product.provider &&
+        (product.provider.toLowerCase() === provider.toLowerCase())
+      );
+
+      // Then, if type is specified, filter by type as well
+      if (type) {
+        const typeFiltered = filteredProducts.filter(product =>
+          product.type &&
+          (product.type === type || product.type.toLowerCase() === type.toLowerCase())
+        );
+
+        // If no products found with the specified type, show a warning but still display all products for this provider
+        if (typeFiltered.length === 0) {
+          console.log(`Warning: No products found for type "${type}" for provider "${provider}". Showing all available products for this provider.`);
+        } else {
+          filteredProducts = typeFiltered;
+        }
+      }
+
+      // Sort products by price (or any other criteria)
+      const sorted = [...filteredProducts].sort((a, b) => a.price - b.price);
+
+      setSortedProducts(sorted);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const [showModal, setShowModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false); // Loading state to prevent spam clicks
@@ -166,7 +234,7 @@ export default function TopupDompet({route, navigation}) {
       ) : (
         <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20}}>
           <Text style={{fontFamily: REGULAR_FONT, color: isDarkMode ? DARK_COLOR : LIGHT_COLOR}}>
-            Tidak ada produk tersedia untuk {provider}
+            {type ? `Tidak ada produk ${type} tersedia untuk ${provider}` : `Tidak ada produk tersedia untuk ${provider}`}
           </Text>
         </View>
       )}

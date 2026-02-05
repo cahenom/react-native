@@ -9,6 +9,7 @@ import PLNPascabayar from './Pln/pascabayar';
 import PLNPrabayar from './Pln/prabayar';
 import DompetElektronik from './Dompet_elektronik';
 import TopupDompet from './Dompet_elektronik/topupDompet';
+import TypeEmoney from './Dompet_elektronik/typeEmoney';
 import Games from './Games';
 import TopupGames from './Games/TopupGames';
 import MasaAktif from './MasaAktif';
@@ -42,6 +43,7 @@ export {
   PLNPrabayar,
   DompetElektronik,
   TopupDompet,
+  TypeEmoney,
   Games,
   TopupGames,
   MasaAktif,

@@ -454,7 +454,8 @@ export default function HomeScreen({navigation}) {
                   item.label.toLowerCase() !== 'pdam' &&
                   item.label.toLowerCase() !== 'internet' &&
                   item.label.toLowerCase() !== 'bpjs kesehatan' &&
-                  item.label.toLowerCase() !== 'indosat',
+                  item.label.toLowerCase() !== 'indosat' &&
+                  item.label.toLowerCase() !== 'voucher',
               ),
               {id: 'semua', label: 'Semua', ikon: '🔍'}, // Add Semua as a service item
             ]}
