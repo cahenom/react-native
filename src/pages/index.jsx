@@ -30,6 +30,8 @@ import PaymentPage from './Merchant/PaymentPage';
 import PaymentSuccessPage from './Merchant/PaymentSuccessPage';
 import Indosat from './Indosat';
 import DepositPage from './Deposit';
+import DepositSuccess from './Deposit/DepositSuccess';
+import DepositFailed from './Deposit/DepositFailed';
 
 export {
   HomeScreen,
@@ -63,5 +65,7 @@ export {
   PaymentPage,
   PaymentSuccessPage,
   Indosat,
-  DepositPage
+  DepositPage,
+  DepositSuccess,
+  DepositFailed
 };

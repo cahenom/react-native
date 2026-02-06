@@ -60,8 +60,22 @@ function App() {
     initApp();
   }, []);
 
+  const linking = {
+    prefixes: ['punyakios://'],
+    config: {
+      screens: {
+        ProtectedRoute: {
+          screens: {
+            DepositSuccess: 'deposit/success',
+            DepositFailed: 'deposit/failed',
+          },
+        },
+      },
+    },
+  };
+
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <AuthProvider>
         <Router />
       </AuthProvider>

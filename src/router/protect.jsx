@@ -33,6 +33,8 @@ import {
   DataType,
   TopupData,
   TypeEmoney,
+  DepositSuccess,
+  DepositFailed,
 } from '../pages';
 import Transaksi from '../pages/Transaksi';
 import {
@@ -276,6 +278,22 @@ function ProtectedRoute() {
         component={DepositPage}
         options={{
           title: 'Deposit Saldo',
+        }}
+      />
+      <Stack.Screen
+        name="DepositSuccess"
+        component={DepositSuccess}
+        options={{
+          title: 'Deposit Berhasil',
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="DepositFailed"
+        component={DepositFailed}
+        options={{
+          title: 'Deposit Gagal',
+          headerShown: false,
         }}
       />
     </Stack.Navigator>
