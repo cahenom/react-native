@@ -22,6 +22,10 @@ import {
 } from '../../utils/const';
 import {ArrowRight} from '../../assets';
 import {fetchProviderList} from '../../helpers/providerHelper';
+import CustomHeader from '../../components/CustomHeader';
+import ModernButton from '../../components/ModernButton';
+import SkeletonCard from '../../components/SkeletonCard';
+import {SafeAreaView} from 'react-native';
 
 export default function MasaAktif({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -119,41 +123,43 @@ export default function MasaAktif({navigation}) {
     </TouchableOpacity>
   );
 
-  if (loading && !error) {
-    return (
-      <View style={[styles.wrapper(isDarkMode), {justifyContent: 'center', alignItems: 'center'}]}>
-        <ActivityIndicator size="large" color="#138EE9" />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={[styles.wrapper(isDarkMode), {justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20}]}>
-        <Text style={[styles.buttonText(isDarkMode), {textAlign: 'center', marginBottom: 20}]}>
-          {error}
-        </Text>
-        <TouchableOpacity
-          style={[styles.layananButton(isDarkMode), {backgroundColor: '#138EE9', alignItems: 'center'}]}
-          onPress={handleRetry}
-        >
-          <Text style={[styles.buttonText(isDarkMode), {color: 'white'}]}>Coba Lagi</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.wrapper(isDarkMode)}>
-      <View style={styles.container(isDarkMode)}>
-        <FlatList
-          data={providers}
-          renderItem={renderProviderItem}
-          keyExtractor={(item) => item}
-          showsVerticalScrollIndicator={false}
-        />
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
+      }}>
+      <CustomHeader title="Masa Aktif" />
+      <View style={styles.wrapper(isDarkMode)}>
+        <View style={styles.container(isDarkMode)}>
+          {loading && !error ? (
+            <FlatList
+              data={[1, 2, 3, 4, 5, 6]}
+              renderItem={() => <SkeletonCard style={{height: 50, marginBottom: 15}} />}
+              keyExtractor={(item) => item.toString()}
+              showsVerticalScrollIndicator={false}
+            />
+          ) : error ? (
+            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20}}>
+              <Text style={[styles.buttonText(isDarkMode), {textAlign: 'center', marginBottom: 20}]}>
+                {error}
+              </Text>
+              <ModernButton
+                label="Coba Lagi"
+                onPress={handleRetry}
+              />
+            </View>
+          ) : (
+            <FlatList
+              data={providers}
+              renderItem={renderProviderItem}
+              keyExtractor={(item) => item}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -165,6 +171,7 @@ const styles = StyleSheet.create({
   container: isDarkMode => ({
     marginHorizontal: HORIZONTAL_MARGIN,
     marginTop: 15,
+    flex: 1,
   }),
   layananButton: isDarkMode => ({
     flexDirection: 'row',

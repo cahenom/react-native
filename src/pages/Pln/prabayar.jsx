@@ -6,9 +6,10 @@ import {
   useColorScheme,
   ScrollView,
   ActivityIndicator,
-  Alert,
   SafeAreaView,
+  RefreshControl,
 } from 'react-native';
+import {Alert} from '../../utils/alert';
 import React, {useState, useEffect, useMemo, useRef} from 'react';
 import usePersistentState from '../../hooks/usePersistentState';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -38,9 +39,13 @@ import BottomButton from '../../components/BottomButton';
 import BottomModal from '../../components/BottomModal';
 import TransactionDetail from '../../components/TransactionDetail';
 import {numberWithCommas} from '../../utils/formatter';
+import CustomHeader from '../../components/CustomHeader';
+import SkeletonCard from '../../components/SkeletonCard';
+import ModernButton from '../../components/ModernButton';
 
-// Cache to store fetched products
+// Cache to store fetched products with timestamp
 const productCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 export default function PLNPrabayar({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -49,6 +54,7 @@ export default function PLNPrabayar({navigation}) {
   const [selectItem, setSelectItem] = useState(null);
   const [products, setProducts, isLoadingFromHook, , isCacheExpired, needsBackgroundRefresh, isRefreshing] = usePersistentState('pln_prabayar_products', []);
   const [loading, setLoading] = useState(true);
+  const [isRefreshingState, setIsRefreshingState] = useState(false);
   const hasLoaded = useRef(false); // Track if data has been loaded in this session
 
   // Memoized sorted products to avoid re-sorting on every render
@@ -61,9 +67,9 @@ export default function PLNPrabayar({navigation}) {
   };
 
   const handleRefresh = async () => {
-    setLoading(true);
+    setIsRefreshingState(true);
     await fetchProducts(true); // Force refresh when user wants to update data
-    setLoading(false);
+    setIsRefreshingState(false);
   };
 
   const fetchProducts = async (forceRefresh = false) => {
@@ -72,15 +78,16 @@ export default function PLNPrabayar({navigation}) {
       setLoading(true);
     }
 
-    // Check if products are already cached in memory
+    // Check if products are already cached in memory and not expired
     if (productCache.has('pln_prabayar') && !forceRefresh) {
-      console.log('Using cached PLN Prabayar products without fetching');
-      const cachedProducts = productCache.get('pln_prabayar');
-      await setProducts(cachedProducts);
-      if (forceRefresh) {
+      const cachedEntry = productCache.get('pln_prabayar');
+      const now = Date.now();
+      if (now - cachedEntry.timestamp < CACHE_TTL) {
+        console.log('Using cached PLN Prabayar products without fetching');
+        await setProducts(cachedEntry.products);
         setLoading(false);
+        return;
       }
-      return;
     }
 
     // Check if products are cached in AsyncStorage
@@ -153,7 +160,10 @@ export default function PLNPrabayar({navigation}) {
         console.log('Transformed PLN prepaid products:', transformedProducts);
 
         // Cache the products in memory
-        productCache.set('pln_prabayar', transformedProducts);
+        productCache.set('pln_prabayar', {
+          products: transformedProducts,
+          timestamp: Date.now()
+        });
 
         // Cache the products in AsyncStorage for persistence
         await AsyncStorage.setItem('pln_prabayar_cache', JSON.stringify(transformedProducts));
@@ -289,6 +299,8 @@ export default function PLNPrabayar({navigation}) {
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND, paddingBottom: 100}}>
+      <CustomHeader title="PLN Prabayar" />
+      
       {/* Fixed Header and Input Section */}
       <View style={[styles.container, {paddingBottom: 10, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}]}>
         <View style={styles.formGroup}>
@@ -304,34 +316,59 @@ export default function PLNPrabayar({navigation}) {
       </View>
 
       {/* Scrollable Product List */}
-      {loading ? (
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 50}}>
-          <ActivityIndicator size="large" color="#138EE9" />
-        </View>
-      ) : sortedProducts.length > 0 ? (
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.productsContainer}>
-            {sortedProducts.map((p, index) => (
-              <ProductCard
-                key={`${p.id}-${index}`}
-                product={p}
-                isSelected={selectItem?.id === p.id}
-                onSelect={setSelectItem}
-                style={styles.productItem}
+      <View style={{flex: 1}}>
+        {loading ? (
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshingState}
+                onRefresh={handleRefresh}
+                colors={[BLUE_COLOR]}
+                tintColor={BLUE_COLOR}
               />
-            ))}
+            }>
+            <View style={styles.productsContainer}>
+              {Array.from({length: 6}).map((_, index) => (
+                <View key={`skeleton-${index}`} style={styles.productItem}>
+                  <SkeletonCard style={{height: 100}} />
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+        ) : sortedProducts.length > 0 ? (
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshingState}
+                onRefresh={handleRefresh}
+                colors={[BLUE_COLOR]}
+                tintColor={BLUE_COLOR}
+              />
+            }>
+            <View style={styles.productsContainer}>
+              {sortedProducts.map((p, index) => (
+                <ProductCard
+                  key={`${p.id}-${index}`}
+                  product={p}
+                  isSelected={selectItem?.id === p.id}
+                  onSelect={setSelectItem}
+                  style={styles.productItem}
+                />
+              ))}
+            </View>
+          </ScrollView>
+        ) : (
+          <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20}}>
+            <Text style={{fontFamily: REGULAR_FONT, color: isDarkMode ? DARK_COLOR : LIGHT_COLOR}}>
+              Tidak ada produk PLN Prabayar tersedia
+            </Text>
           </View>
-        </ScrollView>
-      ) : (
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20}}>
-          <Text style={{fontFamily: REGULAR_FONT, color: isDarkMode ? DARK_COLOR : LIGHT_COLOR}}>
-            Tidak ada produk PLN Prabayar tersedia
-          </Text>
-        </View>
-      )}
+        )}
+      </View>
 
       {/* Fixed Bottom Button */}
       {selectItem && (
@@ -355,7 +392,6 @@ export default function PLNPrabayar({navigation}) {
           description={selectItem?.desc}
           price={selectItem?.price}
           onConfirm={() => {
-            setShowModal(false);
             confirmOrder();
           }}
           onCancel={() => setShowModal(false)}

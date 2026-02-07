@@ -7,12 +7,15 @@ import {
   RefreshControl,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   useColorScheme,
   ScrollView,
+  SafeAreaView,
 } from 'react-native';
+import {Alert} from '../../utils/alert';
 import {useNavigation} from '@react-navigation/native';
 import {api} from '../../utils/api';
+import CustomHeader from '../../components/CustomHeader';
+import SkeletonCard from '../../components/SkeletonCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   BOLD_FONT,
@@ -165,60 +168,71 @@ const Transaksi = () => {
     });
   };
 
-  const getStatusColor = status => {
+  const getStatusTheme = (status, isDarkMode) => {
     if (!status) {
-      return '#94A3B8';
-    } // Gray for undefined/null
-
-    switch (status.toLowerCase()) {
-      case 'berhasil':
-      case 'sukses':
-      case 'success':
-      case 'completed':
-        return '#01C1A2'; // Green
-      case 'gagal':
-      case 'failed':
-      case 'error':
-      case 'none':
-        return '#EF4444'; // Red
-      case 'pending':
-      case 'diproses':
-      case 'processing':
-        return '#F59E0B'; // Yellow
-      default:
-        return '#94A3B8'; // Gray
+      return {
+        bg: isDarkMode ? '#1e293b' : '#f1f5f9',
+        text: isDarkMode ? '#94a3b8' : '#64748b',
+      };
     }
+
+    const s = status.toLowerCase();
+    if (['berhasil', 'sukses', 'success', 'completed'].includes(s)) {
+      return {
+        bg: isDarkMode ? 'rgba(1, 193, 162, 0.15)' : 'rgba(1, 193, 162, 0.1)',
+        text: '#01C1A2',
+      };
+    }
+    if (['gagal', 'failed', 'error', 'none'].includes(s)) {
+      return {
+        bg: isDarkMode ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)',
+        text: '#EF4444',
+      };
+    }
+    if (['pending', 'diproses', 'processing'].includes(s)) {
+      return {
+        bg: isDarkMode ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)',
+        text: '#F59E0B',
+      };
+    }
+
+    return {
+      bg: isDarkMode ? '#1e293b' : '#f1f5f9',
+      text: isDarkMode ? '#94a3b8' : '#64748b',
+    };
   };
 
-  const renderTransactionItem = ({item, index}) => (
-    <View>
+  const renderTransactionItem = ({item}) => {
+    const statusTheme = getStatusTheme(item.status, isDarkMode);
+
+    return (
       <TouchableOpacity
+        activeOpacity={0.7}
         style={[
-          styles.transactionItem,
-          {backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_COLOR},
+          styles.transactionCard,
+          {
+            backgroundColor: isDarkMode ? '#1e293b' : WHITE_COLOR,
+            borderColor: isDarkMode ? '#334155' : '#f1f5f9',
+          },
         ]}
         onPress={() => {
           // Jika tipe transaksi adalah merchant_request dan statusnya pending, arahkan ke halaman pembayaran
           if (item.type === 'merchant_request' && item.status === 'pending') {
-            // Buat objek payment request untuk dikirim ke halaman pembayaran
-            // Gunakan ID internal dari payment request jika tersedia, jika tidak gunakan ref
             const paymentRequest = {
-              id: item.internal_id || item.ref, // Gunakan ID internal jika tersedia, jika tidak gunakan ref
+              id: item.internal_id || item.ref,
               name: item.message.includes('Payment request from ')
                 ? item.message.replace('Payment request from ', '')
                 : item.sku,
               destination: item.tujuan,
               price: item.price,
-              email: item.tujuan, // Gunakan tujuan sebagai email
+              email: item.tujuan,
             };
 
             navigation.navigate('PaymentPage', {
               paymentRequest: paymentRequest,
             });
           } else {
-            // Untuk transaksi biasa, arahkan ke halaman notifikasi sukses
             navigation.navigate('SuccessNotif', {
-              // Map the new API response structure to match SuccessNotif expectations
               item: {
                 ref: item.ref || '-',
                 tujuan: item.tujuan || '-',
@@ -229,7 +243,6 @@ const Transaksi = () => {
                 sn: item.sn || '-',
                 type: item.type || '-',
                 created_at: item.created_at || '-',
-                // Backward compatibility fields
                 customer_no: item.tujuan || '-',
                 ref_id: item.ref || '-',
                 data: {
@@ -258,131 +271,109 @@ const Transaksi = () => {
             });
           }
         }}>
-        <View style={styles.leftSection}>
-          <Text
-            style={[
-              styles.transactionType,
-              {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
-            ]}>
-            {item.produk || 'Transaksi'}
-          </Text>
-          <Text
-            style={[
-              styles.transactionNumber,
-              {color: isDarkMode ? DARK_COLOR : SLATE_COLOR},
-            ]}>
-            {item.tujuan || '-'}
-          </Text>
-          <Text
-            style={[
-              styles.transactionDate,
-              {color: isDarkMode ? DARK_COLOR : SLATE_COLOR},
-            ]}>
-            {formatDate(item.created_at)} •{' '}
-            {item.created_at
-              ? new Date(item.created_at).toLocaleTimeString('id-ID', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-              : '-'}
-          </Text>
-        </View>
-        <View style={styles.rightSection}>
+        <View style={styles.cardHeader}>
+          <View style={styles.typeBadge}>
+            <Text style={[styles.typeBadgeText, {color: isDarkMode ? '#94a3b8' : '#64748b'}]}>
+              {item.produk || 'Transaksi'}
+            </Text>
+          </View>
           <View
             style={[
               styles.statusBadge,
-              {backgroundColor: getStatusColor(item.status)},
+              {backgroundColor: statusTheme.bg},
             ]}>
-            <Text style={styles.statusText}>{item.status}</Text>
-          </View>
-          <Text
-            style={[
-              styles.transactionAmount,
-              {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
-            ]}>
-            Rp. {item.price.toLocaleString('id-ID')}
-          </Text>
-        </View>
-      </TouchableOpacity>
-      {index < transactions.length - 1 && (
-        <View
-          style={[
-            styles.divider,
-            {backgroundColor: isDarkMode ? '#334155' : '#f1f5f9'},
-          ]}
-        />
-      )}
-    </View>
-  );
-
-  if (loading) {
-    return (
-      <View
-        style={[
-          styles.container,
-          {backgroundColor: isDarkMode ? '#101622' : '#f6f6f8'},
-        ]}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{paddingHorizontal: HORIZONTAL_MARGIN, paddingBottom: 100}}>
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#138EE9" />
-            <Text
-              style={[
-                styles.loadingText,
-                {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
-              ]}>
-              Memuat transaksi...
+            <Text style={[styles.statusText, {color: statusTheme.text}]}>
+              {item.status}
             </Text>
           </View>
-        </ScrollView>
-      </View>
+        </View>
+
+        <View style={styles.cardBody}>
+          <View style={styles.productInfo}>
+            <Text
+              style={[
+                styles.transactionNumber,
+                {color: isDarkMode ? WHITE_COLOR : LIGHT_COLOR},
+              ]}>
+              {item.tujuan || '-'}
+            </Text>
+            <Text
+              style={[
+                styles.transactionDate,
+                {color: isDarkMode ? '#94a3b8' : SLATE_COLOR},
+              ]}>
+              {formatDate(item.created_at)} •{' '}
+              {item.created_at
+                ? new Date(item.created_at).toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : '-'}
+            </Text>
+          </View>
+          <View style={styles.priceInfo}>
+            <Text
+              style={[
+                styles.transactionAmount,
+                {color: isDarkMode ? WHITE_COLOR : DARK_COLOR},
+              ]}>
+              Rp {item.price.toLocaleString('id-ID')}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
     );
-  }
+  };
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
-        {backgroundColor: isDarkMode ? '#101622' : '#f6f6f8'},
+        {backgroundColor: isDarkMode ? '#0f172a' : '#f8fafc'},
       ]}>
+      <CustomHeader title="Riwayat Transaksi" showBackButton={false} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={BLUE_COLOR} colors={[BLUE_COLOR]} />
         }
-        contentContainerStyle={{paddingHorizontal: HORIZONTAL_MARGIN, paddingBottom: 100}}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle(isDarkMode)}>Riwayat Transaksi</Text>
-          <Text style={styles.headerSubtitle(isDarkMode)}>
-            Daftar transaksi Anda
-          </Text>
-        </View>
-
-        <View style={styles.transactionsContainer}>
-          <FlatList
-            data={transactions}
-            renderItem={renderTransactionItem}
-            keyExtractor={(item, index) =>
-              `${item.type}_${item.ref ? item.ref : index}`.toString()
-            }
-            scrollEnabled={false}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text
-                  style={[
-                    styles.emptyText,
-                    {color: isDarkMode ? DARK_COLOR : SLATE_COLOR},
-                  ]}>
-                  Belum pernah transaksi
-                </Text>
-              </View>
-            }
-          />
-        </View>
+        contentContainerStyle={{
+          paddingHorizontal: HORIZONTAL_MARGIN,
+          paddingTop: 15,
+          paddingBottom: 120,
+        }}>
+        {loading ? (
+          <View style={styles.transactionsContainer}>
+            {[1, 2, 3, 4, 5, 6].map((_, index) => (
+              <SkeletonCard key={index} style={{height: 100, marginBottom: 15, borderRadius: 16}} />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.transactionsContainer}>
+            <FlatList
+              data={transactions}
+              renderItem={renderTransactionItem}
+              keyExtractor={(item, index) =>
+                `${item.type}_${item.ref ? item.ref : index}`.toString()
+              }
+              scrollEnabled={false}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Text
+                    style={[
+                      styles.emptyText,
+                      {color: isDarkMode ? '#64748b' : SLATE_COLOR},
+                    ]}>
+                    Belum ada riwayat transaksi
+                  </Text>
+                </View>
+              }
+            />
+          </View>
+        )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -390,97 +381,81 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 50,
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-  },
-  header: {
-    marginTop: 20,
-    marginBottom: 16,
-  },
-  headerTitle: isDarkMode => ({
-    fontSize: FONT_NORMAL + 4,
-    fontFamily: BOLD_FONT,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
-  }),
-  headerSubtitle: isDarkMode => ({
-    fontSize: FONT_NORMAL,
-    marginTop: 4,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
-  }),
   transactionsContainer: {
-    marginBottom: 20,
+    rowGap: 12,
   },
-  transactionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
+  transactionCard: {
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 12,
   },
-  leftSection: {
-    flex: 1,
-    marginRight: 12,
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  rightSection: {
-    alignItems: 'flex-end',
-    justifyContent: 'flex-start',
+  typeBadge: {
+    paddingVertical: 4,
   },
-  transactionType: isDarkMode => ({
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
-  }),
-  transactionNumber: isDarkMode => ({
+  typeBadgeText: {
     fontSize: 12,
-    marginTop: 4,
-    color: isDarkMode ? DARK_COLOR : SLATE_COLOR,
-  }),
-  transactionDate: isDarkMode => ({
-    fontSize: 10,
-    marginTop: 2,
-    color: isDarkMode ? DARK_COLOR : SLATE_COLOR,
-  }),
+    fontFamily: MEDIUM_FONT,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 8,
     minWidth: 70,
     alignItems: 'center',
   },
   statusText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: 'bold',
+    fontSize: 11,
+    fontFamily: BOLD_FONT,
+    textTransform: 'capitalize',
   },
-  transactionAmount: isDarkMode => ({
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginTop: 4,
-    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR,
-  }),
-  divider: {
-    height: 1,
-    marginLeft: 16,
+  cardBody: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
+  productInfo: {
+    flex: 1,
+  },
+  transactionNumber: {
+    fontSize: 15,
+    fontFamily: BOLD_FONT,
+    marginBottom: 4,
+  },
+  transactionDate: {
+    fontSize: 12,
+    fontFamily: REGULAR_FONT,
+  },
+  priceInfo: {
+    alignItems: 'flex-end',
+  },
+  transactionAmount: {
+    fontSize: 16,
+    fontFamily: BOLD_FONT,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 50,
+    paddingTop: 100,
   },
-  emptyText: isDarkMode => ({
+  emptyText: {
     fontSize: 16,
-    color: isDarkMode ? DARK_COLOR : SLATE_COLOR,
-  }),
+    fontFamily: MEDIUM_FONT,
+  },
 });
 
 export default Transaksi;

@@ -5,8 +5,9 @@ import {
   TextInput,
   useColorScheme,
   TouchableOpacity,
+  Animated,
 } from 'react-native';
-import React from 'react';
+import React, {useRef, useEffect} from 'react';
 import {
   DARK_BACKGROUND,
   GREY_COLOR,
@@ -16,7 +17,10 @@ import {
   DARK_COLOR,
   LIGHT_COLOR,
   WHITE_BACKGROUND,
-  windowWidth,
+  BLUE_COLOR,
+  BORDER_RADIUS,
+  SPACING,
+  SHADOWS,
 } from '../../utils/const';
 import {XClose} from '../../assets';
 
@@ -30,54 +34,134 @@ export default function Input({
   hasError = false,
 }) {
   const isDarkMode = useColorScheme() === 'dark';
+  const [isFocused, setIsFocused] = React.useState(false);
+  const labelAnimation = useRef(new Animated.Value(value ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(labelAnimation, {
+      toValue: isFocused || value ? 1 : 0,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  }, [isFocused, value]);
+
+  const labelStyle = {
+    top: labelAnimation.interpolate({
+      inputRange: [0, 1],
+      outputRange: [16, -8],
+    }),
+    fontSize: labelAnimation.interpolate({
+      inputRange: [0, 1],
+      outputRange: [14, 12],
+    }),
+  };
+
   return (
-    <View
-      style={[
-        {
-          borderWidth: 1,
-          borderRadius: 5,
-          borderColor: isDarkMode ? SLATE_COLOR : GREY_COLOR,
-          backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
-          fontFamily: REGULAR_FONT,
-          flexDirection: 'row',
-          alignItems: 'center',
-        },
-        hasError && {
-          borderColor: RED_COLOR, // Red border when there's an error
-        },
-      ]}>
-      <TextInput
-        placeholder={placeholder}
-        placeholderTextColor={isDarkMode ? SLATE_COLOR : GREY_COLOR}
-        keyboardType={type ? type : 'default'}
-        value={value}
-        onChangeText={onchange}
-        style={{
-          width: lebar ? lebar : '',
-          color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
-        }}
-      />
-      {value && (
-        <TouchableOpacity
-          style={{
-            position: 'absolute',
-            right: 10,
-          }}
-          onPress={ondelete}>
-          <XClose width={15} height={15} />
-        </TouchableOpacity>
-      )}
-      {hasError && (
-        <View
-          style={{
-            position: 'absolute',
-            right: 35, // Positioned to the left of the close button
-          }}>
-          <Text style={{color: RED_COLOR, fontWeight: 'bold'}}>!</Text>
-        </View>
-      )}
+    <View style={styles.container}>
+      <View
+        style={[
+          styles.inputWrapper(isDarkMode, isFocused),
+          hasError && styles.errorBorder,
+          lebar && {width: lebar},
+        ]}>
+        <Animated.Text
+          style={[
+            styles.label(isDarkMode, isFocused, hasError),
+            labelStyle,
+          ]}>
+          {placeholder}
+        </Animated.Text>
+        <TextInput
+          placeholder={isFocused ? '' : placeholder}
+          placeholderTextColor={isDarkMode ? SLATE_COLOR : GREY_COLOR}
+          keyboardType={type ? type : 'default'}
+          value={value}
+          onChangeText={onchange}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          style={styles.input(isDarkMode)}
+        />
+        {value && (
+          <TouchableOpacity
+            style={styles.clearButton}
+            onPress={ondelete}>
+            <XClose width={15} height={15} />
+          </TouchableOpacity>
+        )}
+        {hasError && (
+          <View style={styles.errorIndicator}>
+            <Text style={styles.errorIcon}>!</Text>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: SPACING.sm,
+  },
+  inputWrapper: (isDarkMode, isFocused) => ({
+    borderWidth: isFocused ? 2 : 1,
+    borderRadius: BORDER_RADIUS.medium,
+    borderColor: isFocused
+      ? BLUE_COLOR
+      : isDarkMode
+      ? SLATE_COLOR
+      : GREY_COLOR,
+    backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.sm,
+    position: 'relative',
+    minHeight: 56,
+    ...(isFocused ? SHADOWS.small : {}),
+  }),
+  errorBorder: {
+    borderColor: RED_COLOR,
+    borderWidth: 2,
+  },
+  label: (isDarkMode, isFocused, hasError) => ({
+    position: 'absolute',
+    left: SPACING.lg,
+    backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
+    paddingHorizontal: SPACING.xs,
+    color: hasError
+      ? RED_COLOR
+      : isFocused
+      ? BLUE_COLOR
+      : isDarkMode
+      ? SLATE_COLOR
+      : GREY_COLOR,
+    fontFamily: REGULAR_FONT,
+    zIndex: 1,
+  }),
+  input: isDarkMode => ({
+    fontFamily: REGULAR_FONT,
+    fontSize: 14,
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    padding: 0,
+    margin: 0,
+    paddingRight: 40,
+  }),
+  clearButton: {
+    position: 'absolute',
+    right: SPACING.md,
+    top: '50%',
+    transform: [{translateY: -7.5}],
+    padding: SPACING.xs,
+  },
+  errorIndicator: {
+    position: 'absolute',
+    right: 40,
+    top: '50%',
+    transform: [{translateY: -10}],
+  },
+  errorIcon: {
+    color: RED_COLOR,
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+});
+

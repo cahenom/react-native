@@ -7,7 +7,9 @@ import {
   FlatList,
   ScrollView,
   Image,
+  SafeAreaView,
 } from 'react-native';
+import CustomHeader from '../../components/CustomHeader';
 import React from 'react';
 import {
   BOLD_FONT,
@@ -39,8 +41,10 @@ export default function LihatSemuaScreen({navigation}) {
   }));
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      <View style={styles.servicesSection}>
+    <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}}>
+      <CustomHeader title="Semua Layanan" />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.servicesSection}>
         <FlatList
           data={services}
           numColumns={4}
@@ -68,8 +72,9 @@ export default function LihatSemuaScreen({navigation}) {
           scrollEnabled={false}
           contentContainerStyle={styles.gridContent}
         />
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

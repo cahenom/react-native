@@ -24,6 +24,7 @@ import {
   WHITE_BACKGROUND,
   WHITE_COLOR,
 } from '../utils/const';
+import ModernButton from './ModernButton';
 import {numberWithCommas} from '../utils/formatter';
 
 const TransactionDetail = ({
@@ -33,7 +34,7 @@ const TransactionDetail = ({
   price,
   onConfirm,
   onCancel,
-  isLoading = false, // Add loading prop
+  isLoading = false,
 }) => {
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -55,27 +56,33 @@ const TransactionDetail = ({
           </View>
         )}
         <View style={styles.modalData(isDarkMode)}>
-          <Text style={styles.labelModalData(isDarkMode)}>Harga </Text>
-          <Text style={styles.valueModalData(isDarkMode)}>
-            Rp.{numberWithCommas(price)}
+          <Text style={styles.labelModalData(isDarkMode)}>Harga Total</Text>
+          <Text style={[styles.valueModalData(isDarkMode), {color: BLUE_COLOR, fontWeight: '700', fontSize: 18}]}>
+            {typeof price === 'string' && price.includes('Rp') ? price : `Rp ${numberWithCommas(price)}`}
           </Text>
         </View>
       </View>
       <View style={styles.bottom(isDarkMode)}>
-        <TouchableOpacity
-          style={styles.bottomButton}
+        <ModernButton
+          label="Bayar Sekarang"
           onPress={onConfirm}
-          disabled={isLoading} // Disable button when loading
-        >
-          {isLoading ? (
-            <View style={styles.loadingButtonContent}>
-              <ActivityIndicator size="small" color="#ffffff" />
-              <Text style={styles.buttonLabel}>Memproses...</Text>
-            </View>
-          ) : (
-            <Text style={styles.buttonLabel}>Bayar</Text>
-          )}
-        </TouchableOpacity>
+          isLoading={isLoading}
+        />
+        {onCancel && (
+          <TouchableOpacity 
+            onPress={onCancel} 
+            style={{marginTop: 10, paddingVertical: 10}}
+            disabled={isLoading}
+          >
+            <Text style={{
+              textAlign: 'center', 
+              color: isDarkMode ? '#94a3b8' : '#64748b',
+              fontFamily: MEDIUM_FONT
+            }}>
+              Batalkan Transaksi
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -83,49 +90,38 @@ const TransactionDetail = ({
 
 const styles = StyleSheet.create({
   container: {
-    // Remove flex: 1 to make container fit content height
+    paddingBottom: 30, // Increased bottom padding
+    paddingTop: 10,    // Added top padding
   },
   content: {
-    // Remove flex: 1 to allow content to determine height
+    paddingHorizontal: 10,
   },
   bottom: isDarkMode => ({
-    backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
-    padding: 10,
-    paddingTop: 5,
-    marginTop: 10, // Add some space between content and button
+    backgroundColor: 'transparent',
+    paddingTop: 30,    // Increased spacing before button
+    marginTop: 15,
   }),
-  bottomButton: {
-    backgroundColor: BLUE_COLOR,
-    padding: 12,
-    borderRadius: 8,
-  },
-  loadingButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    columnGap: 10,
-  },
   modalData: isDarkMode => ({
     borderBottomWidth: 1,
-    borderBottomColor: isDarkMode ? SLATE_COLOR : GREY_COLOR,
-    paddingVertical: 3, // Reduced padding to make items closer together
-    rowGap: 3, // Reduced gap to make items closer together
+    borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+    paddingVertical: 18, // Increased vertical padding for rows
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   }),
   labelModalData: isDarkMode => ({
-    fontFamily: MEDIUM_FONT,
-    fontSize: FONT_SEDANG,
-    color: isDarkMode ? LIGHT_COLOR : LIGHT_COLOR, // Changed to ensure contrast
+    fontFamily: REGULAR_FONT,
+    fontSize: 15, // Slightly larger font
+    color: isDarkMode ? '#94a3b8' : '#64748b',
   }),
   valueModalData: isDarkMode => ({
-    fontFamily: REGULAR_FONT,
-    fontSize: FONT_NORMAL,
-    color: isDarkMode ? LIGHT_COLOR : LIGHT_COLOR, // Changed to ensure contrast
+    fontFamily: MEDIUM_FONT,
+    fontSize: 16, // Slightly larger font
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    textAlign: 'right',
+    flex: 1,
+    marginLeft: 20,
   }),
-  buttonLabel: {
-    fontFamily: REGULAR_FONT,
-    color: WHITE_COLOR,
-    textAlign: 'center',
-  },
 });
 
 export default TransactionDetail;

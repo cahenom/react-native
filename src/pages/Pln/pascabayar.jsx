@@ -4,9 +4,11 @@ import {
   View,
   TouchableOpacity,
   useColorScheme,
-  Alert,
+  ScrollView,
   ActivityIndicator,
+  SafeAreaView,
 } from 'react-native';
+import {Alert} from '../../utils/alert';
 import React, {useState} from 'react';
 import { useNavigation } from '@react-navigation/native';
 import {
@@ -32,6 +34,8 @@ import {product_token} from '../../data/product_pln';
 import {CheckProduct} from '../../assets';
 import {api} from '../../utils/api';
 import { makeCekTagihanCall, makeBayarTagihanCall } from '../../helpers/apiBiometricHelper';
+import CustomHeader from '../../components/CustomHeader';
+import ModernButton from '../../components/ModernButton';
 
 export default function PLNPascabayar() {
   const navigation = useNavigation();
@@ -111,7 +115,9 @@ export default function PLNPascabayar() {
   };
 
   return (
-    <>
+    <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}}>
+      <CustomHeader title="PLN Pascabayar" />
+      
       <View style={styles.container}>
         <View style={styles.formGroup}>
           <Input
@@ -121,17 +127,13 @@ export default function PLNPascabayar() {
             ondelete={() => setCustomerNo('')}
             type="numeric"
           />
-          <TouchableOpacity
-            style={[styles.button, loading && styles.disabledButton]}
-            onPress={handleCekTagihan}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={WHITE_COLOR} />
-            ) : (
-              <Text style={styles.buttonText}>Cek</Text>
-            )}
-          </TouchableOpacity>
+          <View style={{marginTop: 10}}>
+            <ModernButton
+              label="Cek"
+              onPress={handleCekTagihan}
+              loading={loading}
+            />
+          </View>
         </View>
 
         {billData && (
@@ -186,15 +188,14 @@ export default function PLNPascabayar() {
 
       {billData && (
         <View style={styles.bottomInline(isDarkMode)}>
-          <TouchableOpacity
-            style={styles.bottomButton}
+          <ModernButton
+            label="Bayar Tagihan"
             onPress={() => handleBayarTagihan(billData)}
-          >
-            <Text style={styles.buttonText}>Bayar Tagihan</Text>
-          </TouchableOpacity>
+            loading={isProcessing}
+          />
         </View>
       )}
-    </>
+    </SafeAreaView>
   );
 }
 

@@ -88,196 +88,196 @@ function ProtectedRoute() {
         name="Pulsa"
         component={Pulsa}
         options={{
-          title: 'Topup Pulsa',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="DataPackage"
         component={DataPackage}
         options={{
-          title: 'Paket Data',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="DataType"
         component={DataType}
         options={{
-          title: 'Jenis Paket Data',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="TopupData"
         component={TopupData}
         options={{
-          title: 'Topup Paket Data',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="LayananPLN"
         component={LayananPLN}
         options={{
-          title: 'Pilih Layanan PLN',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="PLNPrabayar"
         component={PLNPrabayar}
         options={{
-          title: 'PLN Prabayar',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="PLNPascabayar"
         component={PLNPascabayar}
         options={{
-          title: 'PLN Pascabayar',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="SuccessNotif"
         component={SuccessNotif}
         options={{
-          title: '',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="DompetElektronik"
         component={DompetElektronik}
         options={{
-          title: 'Dompet Elektronik',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="TypeEmoney"
         component={TypeEmoney}
         options={{
-          title: 'Jenis Dompet Elektronik',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="TopupDompet"
         component={TopupDompet}
         options={{
-          title: 'Topup Dompet Elektronik',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="Games"
         component={Games}
         options={{
-          title: 'Topup Games',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="TopupGames"
         component={TopupGames}
         options={{
-          title: 'Topup Games',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="MasaAktif"
         component={MasaAktif}
         options={{
-          title: 'Masa Aktif',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="TopupMasaAktif"
         component={TopupMasaAktif}
         options={{
-          title: 'Topup Masa Aktif',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="TV"
         component={TV}
         options={{
-          title: 'TV Berlangganan',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="TopupTV"
         component={TopupTV}
         options={{
-          title: 'Topup TV',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="Voucher"
         component={Voucher}
         options={{
-          title: 'Voucher',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="TopupVoucher"
         component={TopupVoucher}
         options={{
-          title: 'Topup Voucher',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="Settings"
         component={SettingsScreen}
         options={{
-          title: 'Pengaturan Profil',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="BpjsKesehatan"
         component={BpjsKesehatan}
         options={{
-          title: 'Bpjs Kesehatan',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="PDAM"
         component={PDAM}
         options={{
-          title: 'PDAM',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="Internet"
         component={Internet}
         options={{
-          title: 'Internet Pasca',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="LihatSemua"
         component={LihatSemuaScreen}
         options={{
-          title: 'Semua Layanan',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="Indosat"
         component={Indosat}
         options={{
-          title: 'Indosat',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="PaymentPage"
         component={PaymentPage}
         options={{
-          title: 'Detail Pembayaran',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="PaymentSuccessPage"
         component={PaymentSuccessPage}
         options={{
-          title: 'Pembayaran Berhasil',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="DepositPage"
         component={DepositPage}
         options={{
-          title: 'Deposit Saldo',
+          headerShown: false,
         }}
       />
       <Stack.Screen

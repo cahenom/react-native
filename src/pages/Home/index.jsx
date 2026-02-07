@@ -8,9 +8,11 @@ import {
   ScrollView,
   Image,
   RefreshControl,
+  SafeAreaView,
 } from 'react-native';
 import React, {useState, useEffect} from 'react';
 import {BellIkon} from '../../assets';
+import CustomHeader from '../../components/CustomHeader';
 import {
   BOLD_FONT,
   DARK_BACKGROUND,
@@ -353,58 +355,46 @@ export default function HomeScreen({navigation}) {
       : '#dc2626';
   };
 
+  const renderProfile = (
+    <View style={styles.userProfile}>
+      <View
+        style={[
+          styles.avatar,
+          {backgroundColor: isDarkMode ? '#2d3748' : 'rgba(255,255,255,0.2)'},
+        ]}>
+        <Text style={[styles.avatarText, {color: WHITE_COLOR}]}>
+          {user?.name?.charAt(0) || 'U'}
+        </Text>
+      </View>
+      <View>
+        <Text style={[styles.greeting, {color: 'rgba(255,255,255,0.8)'}]}>
+          Good Morning,
+        </Text>
+        <Text style={[styles.userName, {color: WHITE_COLOR}]}>
+          {user?.name || user?.email || 'User'}
+        </Text>
+      </View>
+    </View>
+  );
+
+  const renderNotifications = (
+    <TouchableOpacity style={styles.notificationButton}>
+      <Text style={{color: WHITE_COLOR, fontSize: 24}}>🔔</Text>
+      <View style={styles.notificationBadge} />
+    </TouchableOpacity>
+  );
+
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         {backgroundColor: isDarkMode ? '#101622' : '#f6f6f8'},
       ]}>
-      {/* Header */}
-      <View
-        style={[
-          styles.header,
-          {backgroundColor: isDarkMode ? '#1a2332' : '#ffffff'},
-        ]}>
-        <View style={styles.headerContent}>
-          <View style={styles.userProfile}>
-            <View
-              style={[
-                styles.avatar,
-                {backgroundColor: isDarkMode ? '#2d3748' : '#e2e8f0'},
-              ]}>
-              <Text style={styles.avatarText}>
-                {user?.name?.charAt(0) || 'U'}
-              </Text>
-            </View>
-            <View>
-              <Text
-                style={[
-                  styles.greeting,
-                  {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
-                ]}>
-                Good Morning,
-              </Text>
-              <Text
-                style={[
-                  styles.userName,
-                  {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
-                ]}>
-                {user?.name || user?.email || 'User'}
-              </Text>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <Text
-              style={{
-                color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
-                fontSize: 24,
-              }}>
-              🔔
-            </Text>
-            <View style={styles.notificationBadge} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <CustomHeader
+        showBackButton={false}
+        leftComponent={renderProfile}
+        rightComponent={renderNotifications}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -681,7 +671,7 @@ export default function HomeScreen({navigation}) {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

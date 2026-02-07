@@ -1,4 +1,4 @@
-import {StyleSheet, Text, View, useColorScheme, ScrollView, FlatList, ActivityIndicator, Alert, SafeAreaView, TouchableOpacity} from 'react-native';
+import {StyleSheet, Text, View, useColorScheme, ScrollView, FlatList, ActivityIndicator, Alert, SafeAreaView, TouchableOpacity, RefreshControl} from 'react-native';
 import React, {useState, useEffect, useRef} from 'react';
 import {
   BLUE_COLOR,
@@ -24,6 +24,7 @@ import TransactionDetail from '../../components/TransactionDetail';
 import { api } from '../../utils/api';
 import {numberWithCommas} from '../../utils/formatter';
 import { makeTopupCall } from '../../helpers/apiBiometricHelper';
+import CustomHeader from '../../components/CustomHeader';
 
 export default function TopupData({route, navigation}) {
   const {provider, title, type} = route.params;
@@ -35,6 +36,7 @@ export default function TopupData({route, navigation}) {
   const [selectItem, setSelectItem] = useState(null);
   const [sortedProducts, setSortedProducts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
 
   // Simple validation
@@ -62,8 +64,10 @@ export default function TopupData({route, navigation}) {
     fetchProducts();
   }, []);
 
-  const fetchProducts = async () => {
-    setLoading(true);
+  const fetchProducts = async (forceRefresh = false) => {
+    if (forceRefresh) setIsRefreshing(true);
+    else setLoading(true);
+    
     try {
       // Fetch products based on provider (since customer_no might not be enough to determine provider)
       // Don't send type parameter as it might cause server error
@@ -112,7 +116,12 @@ export default function TopupData({route, navigation}) {
       console.error('Error fetching products:', error);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    fetchProducts(true);
   };
 
   const [showModal, setShowModal] = useState(false);
@@ -167,6 +176,8 @@ export default function TopupData({route, navigation}) {
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND, paddingBottom: 100}}>
+      <CustomHeader title={title || "Topup Paket Data"} />
+      
       {/* Fixed Header and Input Section */}
       <View style={[styles.container, {paddingBottom: 10, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}]}>
         <View style={{marginBottom: 15}}>
@@ -176,7 +187,7 @@ export default function TopupData({route, navigation}) {
               fontSize: 16,
               color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
             }}>
-            {title || provider}
+            Pilih Paket {provider}
           </Text>
         </View>
 
@@ -204,6 +215,14 @@ export default function TopupData({route, navigation}) {
           ref={scrollViewRef}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={onRefresh}
+              colors={[BLUE_COLOR]}
+              tintColor={BLUE_COLOR}
+            />
+          }
         >
           <View style={styles.productsContainer}>
             {/* Skeleton cards while loading */}
@@ -219,6 +238,14 @@ export default function TopupData({route, navigation}) {
           ref={scrollViewRef}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={onRefresh}
+              colors={[BLUE_COLOR]}
+              tintColor={BLUE_COLOR}
+            />
+          }
         >
           <View style={styles.productsContainer}>
             {sortedProducts.map((p, index) => (
@@ -262,7 +289,6 @@ export default function TopupData({route, navigation}) {
           description={selectItem?.desc}
           price={selectItem?.price}
           onConfirm={() => {
-            setShowModal(false);
             confirmOrder();
           }}
           onCancel={() => setShowModal(false)}

@@ -24,6 +24,7 @@ import TransactionDetail from '../../components/TransactionDetail';
 import { api } from '../../utils/api';
 import {numberWithCommas} from '../../utils/formatter';
 import { makeTopupCall } from '../../helpers/apiBiometricHelper';
+import CustomHeader from '../../components/CustomHeader';
 
 export default function TopupDompet({route, navigation}) {
   const {provider, title, type} = route.params;
@@ -138,9 +139,7 @@ export default function TopupDompet({route, navigation}) {
         customer_no: customer_no,
       }, 'Verifikasi sidik jari atau wajah untuk melakukan topup dompet elektronik');
 
-      console.log('Topup response:', response);
-
-      // Close confirmation modal
+      // Close confirmation modal after response
       setShowModal(false);
 
       // Navigate to success screen with the response data
@@ -166,6 +165,8 @@ export default function TopupDompet({route, navigation}) {
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND, paddingBottom: 100}}>
+      <CustomHeader title={title || "Topup Dompet Elektronik"} />
+      
       {/* Fixed Header and Input Section */}
       <View style={[styles.container, {paddingBottom: 10, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}]}>
         <View style={{marginBottom: 15}}>
@@ -175,7 +176,7 @@ export default function TopupDompet({route, navigation}) {
               fontSize: 16,
               color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
             }}>
-            {title || provider}
+            Pilih nominal {provider}
           </Text>
         </View>
 
@@ -261,7 +262,6 @@ export default function TopupDompet({route, navigation}) {
           description={selectItem?.desc}
           price={selectItem?.price}
           onConfirm={() => {
-            setShowModal(false);
             confirmOrder();
           }}
           onCancel={() => setShowModal(false)}

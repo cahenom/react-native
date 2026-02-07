@@ -4,14 +4,16 @@ import {
   View,
   useColorScheme,
   TouchableOpacity,
-  Alert,
   ScrollView,
   RefreshControl,
   Image,
   Switch,
   Linking,
+  SafeAreaView,
 } from 'react-native';
+import {Alert} from '../../utils/alert';
 import React, {useState, useEffect} from 'react';
+import CustomHeader from '../../components/CustomHeader';
 import {
   BOLD_FONT,
   DARK_BACKGROUND,
@@ -27,6 +29,7 @@ import {
   SLATE_COLOR,
 } from '../../utils/const';
 import {useAuth} from '../../context/AuthContext';
+import {useAlert} from '../../context/AlertContext';
 import messaging from '@react-native-firebase/messaging';
 import {PermissionsAndroid, Platform} from 'react-native';
 import RNBiometrics from 'react-native-biometrics';
@@ -35,6 +38,7 @@ import {setBiometricEnabledStatus} from '../../utils/biometricUtils';
 export default function ProfilScreen({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
   const {user, logout, refreshUserProfile} = useAuth();
+  const {showAlert} = useAlert();
   const [refreshing, setRefreshing] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
@@ -540,18 +544,17 @@ export default function ProfilScreen({navigation}) {
   });
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{
-        paddingHorizontal: HORIZONTAL_MARGIN,
-        paddingBottom: 100,
-      }}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }>
-      <View style={styles.profileHeader}>
-        <Text style={styles.title}>Profile</Text>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <CustomHeader title="Profile" showBackButton={false} />
+      <ScrollView
+        style={{flex: 1}}
+        contentContainerStyle={{
+          paddingHorizontal: HORIZONTAL_MARGIN,
+          paddingBottom: 100,
+        }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
 
       <View style={styles.profileCard}>
         <View style={styles.profileCardBackground} />
@@ -671,6 +674,7 @@ export default function ProfilScreen({navigation}) {
         </TouchableOpacity>
         <Text style={styles.versionText}>Version 2.1.0</Text>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

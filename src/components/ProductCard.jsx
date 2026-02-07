@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   useColorScheme,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import {CheckProduct} from '../assets';
 import {
   DARK_BACKGROUND,
@@ -18,6 +19,10 @@ import {
   REGULAR_FONT,
   SLATE_COLOR,
   WHITE_BACKGROUND,
+  GRADIENTS,
+  SHADOWS,
+  BORDER_RADIUS,
+  SPACING,
 } from '../utils/const';
 import {numberWithCommas} from '../utils/formatter';
 
@@ -29,64 +34,110 @@ const ProductCard = ({
 }) => {
   const isDarkMode = useColorScheme() === 'dark';
 
+  const CardWrapper = isSelected ? LinearGradient : View;
+  const cardProps = isSelected
+    ? {
+        colors: GRADIENTS.primary,
+        start: {x: 0, y: 0},
+        end: {x: 1, y: 1},
+      }
+    : {};
+
   return (
     <TouchableOpacity
       style={[
-        styles.productWrapper(isDarkMode),
-        isSelected && {
-          borderColor: GREEN_COLOR,
-        },
+        styles.container,
         style
       ]}
-      onPress={() => onSelect && onSelect(product)}>
-      <Text style={styles.productLabel(isDarkMode)}>
-        {product.name || product.product_name || product.label}
-      </Text>
-      <Text style={styles.productPrice(isDarkMode)}>
-        Rp.{numberWithCommas(product.price || product.product_seller_price)}
-      </Text>
-      {product.desc && (
-        <Text style={styles.productDesc(isDarkMode)}>
-          {product.desc || product.product_desc}
-        </Text>
-      )}
-      {isSelected && (
-        <CheckProduct
-          width={20}
-          style={{
-            position: 'absolute',
-            right: 7,
-            top: 2,
-          }}
-        />
-      )}
+      onPress={() => onSelect && onSelect(product)}
+      activeOpacity={0.7}>
+      <CardWrapper
+        {...cardProps}
+        style={[
+          styles.productWrapper(isDarkMode, isSelected),
+          isSelected && styles.selectedCard,
+        ]}>
+        <View style={styles.contentContainer}>
+          <Text style={styles.productLabel(isDarkMode, isSelected)}>
+            {product.name || product.product_name || product.label}
+          </Text>
+          <Text style={styles.productPrice(isDarkMode, isSelected)}>
+            Rp {numberWithCommas(product.price || product.product_seller_price)}
+          </Text>
+          {product.desc && (
+            <Text style={styles.productDesc(isDarkMode, isSelected)}>
+              {product.desc || product.product_desc}
+            </Text>
+          )}
+        </View>
+        {isSelected && (
+          <View style={styles.checkIconContainer}>
+            <CheckProduct
+              width={20}
+              height={20}
+            />
+          </View>
+        )}
+      </CardWrapper>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  productWrapper: isDarkMode => ({
-    borderWidth: 1,
+  container: {
+    marginBottom: SPACING.xs,
+  },
+  productWrapper: (isDarkMode, isSelected) => ({
+    borderWidth: isSelected ? 0 : 1,
     borderColor: isDarkMode ? SLATE_COLOR : GREY_COLOR,
-    borderRadius: 10,
-    padding: 20,
-    backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
+    borderRadius: BORDER_RADIUS.large,
+    padding: SPACING.lg,
+    backgroundColor: isSelected 
+      ? 'transparent' 
+      : isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
+    minHeight: 100,
+    position: 'relative',
+    ...(isSelected ? SHADOWS.medium : SHADOWS.small),
   }),
-  productLabel: isDarkMode => ({
+  selectedCard: {
+    ...SHADOWS.colored(GRADIENTS.primary[0]),
+  },
+  contentContainer: {
+    flex: 1,
+  },
+  productLabel: (isDarkMode, isSelected) => ({
     fontFamily: MEDIUM_FONT,
     fontSize: FONT_NORMAL,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    color: isSelected 
+      ? '#FFFFFF' 
+      : isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    marginBottom: SPACING.xs,
   }),
-  productPrice: isDarkMode => ({
+  productPrice: (isDarkMode, isSelected) => ({
     fontFamily: REGULAR_FONT,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    fontSize: FONT_NORMAL + 2,
+    fontWeight: '600',
+    color: isSelected 
+      ? '#FFFFFF' 
+      : isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    marginBottom: SPACING.xs,
   }),
-  productDesc: isDarkMode => ({
+  productDesc: (isDarkMode, isSelected) => ({
     fontFamily: REGULAR_FONT,
     fontSize: 10,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
-    marginTop: 5,
+    color: isSelected 
+      ? 'rgba(255,255,255,0.9)' 
+      : isDarkMode ? SLATE_COLOR : '#64748b',
+    marginTop: SPACING.xs,
   }),
+  checkIconContainer: {
+    position: 'absolute',
+    right: SPACING.md,
+    top: SPACING.md,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: BORDER_RADIUS.full,
+    padding: SPACING.xs,
+  },
 });
 
 export default ProductCard;

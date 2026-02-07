@@ -12,12 +12,25 @@ import {
   Modal,
   useColorScheme,
 } from 'react-native';
+import CustomHeader from '../../components/CustomHeader';
 import {useNavigation} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import {API_URL} from '../../utils/const';
 import ProductBadge from '../../components/ProductBadge';
 import TransactionDetailModal from '../../components/TransactionDetailModal';
+import {
+  DARK_BACKGROUND,
+  WHITE_BACKGROUND,
+  HORIZONTAL_MARGIN,
+  DARK_COLOR,
+  LIGHT_COLOR,
+  REGULAR_FONT,
+  MEDIUM_FONT,
+  BLUE_COLOR,
+} from '../../utils/const';
+import SkeletonCard from '../../components/SkeletonCard';
+import ModernButton from '../../components/ModernButton';
 
 const IndosatPage = () => {
   const navigation = useNavigation();
@@ -230,66 +243,85 @@ const IndosatPage = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Indosat</Text>
-        <Text style={styles.headerSubtitle}>
+    <SafeAreaView style={[styles.container, {backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}]}>
+      <CustomHeader title="Indosat" />
+      
+      {/* Fixed Header and Input Section */}
+      <View style={{paddingHorizontal: HORIZONTAL_MARGIN, marginTop: 15, marginBottom: 10}}>
+        <Text style={[styles.headerSubtitle, {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR, marginBottom: 10}]}>
           Masukkan nomor telepon untuk melihat paket
         </Text>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Contoh: 081234567890"
-          value={phoneNumber}
-          onChangeText={setPhoneNumber}
-          keyboardType="phone-pad"
-          placeholderTextColor="#999"
-        />
-        <TouchableOpacity style={styles.cekButton} onPress={fetchProducts}>
-          <Text style={styles.cekButtonText}>Cek</Text>
-        </TouchableOpacity>
-      </View>
-
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3498db" />
-          <Text style={styles.loadingText}>Memuat produk...</Text>
+        <View style={styles.inputContainer}>
+          <View style={{flex: 1}}>
+            <TextInput
+              style={[styles.input, {
+                backgroundColor: isDarkMode ? '#1e293b' : '#f8fafc',
+                color: isDarkMode ? '#fff' : '#000',
+                borderColor: isDarkMode ? '#334155' : '#e2e8f0'
+              }]}
+              placeholder="Contoh: 081234567890"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              keyboardType="phone-pad"
+              placeholderTextColor={isDarkMode ? '#64748b' : '#94a3b8'}
+            />
+          </View>
+          <TouchableOpacity 
+            style={[styles.cekButton, {backgroundColor: BLUE_COLOR}]} 
+            onPress={fetchProducts}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.cekButtonText}>Cek</Text>
+            )}
+          </TouchableOpacity>
         </View>
-      ) : (
-        <>
+      </View>
+
+      {/* Main Content Area */}
+      <View style={{flex: 1}}>
+        {loading ? (
+          <View style={{paddingHorizontal: HORIZONTAL_MARGIN, marginTop: 10}}>
+            <Text style={[styles.productsTitle, {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR}]}>Memuat Paket...</Text>
+            {[1, 2, 3, 4, 5].map((_, i) => (
+              <SkeletonCard key={i} style={{height: 80, marginBottom: 12}} />
+            ))}
+          </View>
+        ) : (
           <View style={styles.productsContainer}>
-            <Text style={styles.productsTitle}>Pilihan Paket</Text>
+            {products.length > 0 && (
+              <Text style={[styles.productsTitle, {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR}]}>Pilihan Paket</Text>
+            )}
             <FlatList
               data={products}
               renderItem={renderProduct}
               keyExtractor={item => item.id}
               contentContainerStyle={styles.productsList}
+              showsVerticalScrollIndicator={false}
               ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyText}>
-                    Belum ada produk. Masukkan nomor telepon dan tekan Cek.
-                  </Text>
-                </View>
+                !loading && (
+                  <View style={styles.emptyContainer}>
+                    <Text style={[styles.emptyText, {color: isDarkMode ? '#94a3b8' : '#64748b'}]}>
+                      Belum ada produk. Masukkan nomor telepon dan tekan Cek.
+                    </Text>
+                  </View>
+                )
               }
             />
           </View>
+        )}
+      </View>
 
-          {products.length > 0 && (
-            <View style={styles.bottomButtonContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.lanjutkanButton,
-                  !selectedProduct && styles.disabledButton,
-                ]}
-                onPress={handleLanjutkan}
-                disabled={!selectedProduct}>
-                <Text style={styles.lanjutkanButtonText}>Lanjutkan</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </>
+      {products.length > 0 && !loading && (
+        <View style={[styles.bottomButtonContainer, {backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}]}>
+          <ModernButton
+            label="Lanjutkan"
+            onPress={handleLanjutkan}
+            disabled={!selectedProduct}
+          />
+        </View>
       )}
 
       <Modal

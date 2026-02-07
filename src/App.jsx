@@ -2,6 +2,7 @@ import * as React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import Router from './router';
 import AuthProvider from './context/AuthContext';
+import {AlertProvider} from './context/AlertContext';
 import { useEffect } from 'react';
 import { preloadAllData } from './services/preloadService';
 import { handleTokenRefreshForServer } from './services/notificationService';
@@ -77,7 +78,9 @@ function App() {
   return (
     <NavigationContainer linking={linking}>
       <AuthProvider>
-        <Router />
+        <AlertProvider>
+          <Router />
+        </AlertProvider>
       </AuthProvider>
     </NavigationContainer>
   );

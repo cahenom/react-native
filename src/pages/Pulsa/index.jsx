@@ -11,9 +11,10 @@ import {
   PermissionsAndroid,
   Platform,
   Linking,
+  SafeAreaView,
+  RefreshControl,
 } from 'react-native';
 import React, {useState} from 'react';
-import {SafeAreaView} from 'react-native-safe-area-context';
 import {
   BLUE_COLOR,
   DARK_BACKGROUND,
@@ -34,12 +35,17 @@ import BottomModal from '../../components/BottomModal';
 import Input from '../../components/form/Input';
 import TransactionDetail from '../../components/TransactionDetail';
 import ProductCard from '../../components/ProductCard';
+import SkeletonCard from '../../components/SkeletonCard';
 import {numberWithCommas} from '../../utils/formatter';
 import {api} from '../../utils/api';
 import {makePaymentCall, makeTopupCall} from '../../helpers/apiBiometricHelper';
+import CustomHeader from '../../components/CustomHeader';
+import ModernButton from '../../components/ModernButton';
+import BottomButton from '../../components/BottomButton';
 
-// Cache to store fetched products
+// Cache to store fetched products with timestamp
 const productCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 export default function Pulsa({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -53,23 +59,28 @@ export default function Pulsa({navigation}) {
     setNomor(null);
   };
 
-  const handleProduct = async () => {
+  const handleProduct = async (forceRefresh = false) => {
     if (!nomorTujuan) {
+      if (forceRefresh) setIsRefreshing(false);
       return;
     }
 
-    setLoading(true);
+    if (!forceRefresh) setLoading(true);
 
     // Create a cache key based on the customer number
     const cacheKey = `pulsa_${nomorTujuan}`;
 
-    // Check if products are already cached for this customer number
+    // Check if products are already cached for this customer number and if not expired
     if (productCache.has(cacheKey)) {
-      console.log('Using cached pulsa products for:', nomorTujuan);
-      const cachedProducts = productCache.get(cacheKey);
-      setPulsa(cachedProducts.pulsa || []);
-      setLoading(false);
-      return;
+      const cachedData = productCache.get(cacheKey);
+      const now = Date.now();
+      
+      if (now - cachedData.timestamp < CACHE_TTL && !forceRefresh) {
+        console.log('Using cached pulsa products for:', nomorTujuan);
+        setPulsa(cachedData.pulsa || []);
+        setLoading(false);
+        return;
+      }
     }
 
     try {
@@ -80,14 +91,13 @@ export default function Pulsa({navigation}) {
       console.log('API Response:', response.data); // Debug log
 
       if (response.data && response.data.data) {
-        console.log('Pulsa products:', response.data.data.pulsa); // Debug log
-
         // The API returns pulsa in the response
         const pulsaProducts = response.data.data.pulsa || [];
 
         // Cache the products for this customer number
         productCache.set(cacheKey, {
           pulsa: pulsaProducts,
+          timestamp: Date.now()
         });
 
         setPulsa(pulsaProducts);
@@ -98,15 +108,23 @@ export default function Pulsa({navigation}) {
         // Cache the products for this customer number
         productCache.set(cacheKey, {
           pulsa: pulsaProducts,
+          timestamp: Date.now()
         });
 
         setPulsa(pulsaProducts);
       }
-      setLoading(false);
     } catch (error) {
-      setLoading(false);
       console.log('Error fetching pulsa products:', error);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
     }
+  };
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const onRefresh = () => {
+    setIsRefreshing(true);
+    handleProduct(true);
   };
 
   const [isProcessing, setIsProcessing] = useState(false); // Loading state to prevent spam clicks
@@ -126,7 +144,7 @@ export default function Pulsa({navigation}) {
         'Verifikasi sidik jari atau wajah untuk melakukan isi pulsa',
       );
 
-      // Close the modal before navigating
+      // Close the modal after response
       setShowModal(false);
 
       navigation.navigate('SuccessNotif', {
@@ -144,6 +162,7 @@ export default function Pulsa({navigation}) {
       console.log('response topup : ', response);
     } catch (error) {
       console.log('response error : ', error);
+      setShowModal(false);
       if (error.message !== 'Biometric authentication failed') {
         // Error will be handled by global interceptor
       }
@@ -153,80 +172,81 @@ export default function Pulsa({navigation}) {
   };
 
   return (
-    <>
-      <SafeAreaView
+    <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}}>
+      <CustomHeader title="Topup Pulsa" />
+      <View
         style={{
           flex: 1,
+          marginHorizontal: HORIZONTAL_MARGIN,
+          marginTop: 15,
           backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
         }}>
         <View
           style={{
-            flex: 1,
-            marginHorizontal: HORIZONTAL_MARGIN,
-            marginTop: 15,
-            backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
+            rowGap: 10,
           }}>
+          <Input
+            value={nomorTujuan}
+            placeholder="Masukan nomor tujuan"
+            onchange={text => setNomor(text)}
+            ondelete={() => clearNomor()}
+            type="numeric"
+          />
+
+          <ModernButton
+            label={loading ? 'Loading' : 'Tampilkan produk'}
+            isLoading={loading}
+            onPress={() => handleProduct()}
+          />
+        </View>
+
+        {/* PRODUK PULSA */}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          style={{flex: 1, marginTop: 10}}
+          contentContainerStyle={{paddingBottom: 100}}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={onRefresh}
+              colors={[BLUE_COLOR]}
+              tintColor={BLUE_COLOR}
+            />
+          }>
           <View
             style={{
-              rowGap: 10,
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              justifyContent: 'space-between',
+              rowGap: 25,
             }}>
-            <Input
-              value={nomorTujuan}
-              placeholder="Masukan nomor tujuan"
-              onchange={text => setNomor(text)}
-              ondelete={() => clearNomor()}
-              type="numeric"
-            />
-
-            {loading ? (
-              <View style={styles.button}>
-                <ActivityIndicator size="small" color="#fff" />
-                <Text style={styles.buttonLabel}>Loading</Text>
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={styles.button}
-                onPress={() => handleProduct()}>
-                <Text style={styles.buttonLabel}>Tampilkan produk</Text>
-              </TouchableOpacity>
-            )}
+            {loading && data_pulsa.length === 0 ? (
+              // Skeleton cards while loading initially
+              Array.from({ length: 6 }).map((_, index) => (
+                <View key={`skeleton-${index}`} style={{width: '45%'}}>
+                  <SkeletonCard style={{height: 100}} />
+                </View>
+              ))
+            ) : data_pulsa.map(p => {
+              return (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  isSelected={selectItem?.id === p.id}
+                  onSelect={setSelectItem}
+                  style={{width: '45%'}}
+                />
+              );
+            })}
           </View>
-
-          {/* PRODUK PULSA */}
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            style={{flex: 1, marginTop: 10}}
-            contentContainerStyle={{paddingBottom: 100}}>
-            <View
-              style={{
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                justifyContent: 'space-between',
-                rowGap: 25,
-              }}>
-              {data_pulsa.map(p => {
-                return (
-                  <ProductCard
-                    key={p.id}
-                    product={p}
-                    isSelected={selectItem?.id === p.id}
-                    onSelect={setSelectItem}
-                    style={{width: '45%'}}
-                  />
-                );
-              })}
-            </View>
-          </ScrollView>
-        </View>
-      </SafeAreaView>
+        </ScrollView>
+      </View>
       {selectItem && (
-        <View style={styles.bottom(isDarkMode)}>
-          <TouchableOpacity
-            style={styles.bottomButton}
-            onPress={() => setShowModal(!showModal)}>
-            <Text style={styles.buttonLabel}>Lanjutkan</Text>
-          </TouchableOpacity>
-        </View>
+        <BottomButton
+          label="Lanjutkan"
+          action={() => setShowModal(!showModal)}
+          isLoading={false}
+        />
       )}
       <BottomModal
         visible={showModal}
@@ -242,8 +262,8 @@ export default function Pulsa({navigation}) {
           isLoading={isProcessing}
         />
       </BottomModal>
-    </>
-  );
+      </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({

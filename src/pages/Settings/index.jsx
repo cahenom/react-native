@@ -4,9 +4,10 @@ import {
   View,
   useColorScheme,
   TouchableOpacity,
-  Alert,
   TextInput,
+  SafeAreaView,
 } from 'react-native';
+import {Alert} from '../../utils/alert';
 import React, {useState, useEffect} from 'react';
 import {
   BOLD_FONT,
@@ -25,6 +26,7 @@ import {
 import {useAuth} from '../../context/AuthContext';
 import {api} from '../../utils/api';
 import RNBiometrics from 'react-native-biometrics';
+import CustomHeader from '../../components/CustomHeader';
 
 export default function SettingsScreen({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -79,48 +81,51 @@ export default function SettingsScreen({navigation}) {
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        {backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND},
-      ]}>
-      <View style={styles.formContainer}>
-        <Text style={styles.title(isDarkMode)}>Pengaturan Profil</Text>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label(isDarkMode)}>Nama</Text>
-          <TextInput
-            style={styles.input(isDarkMode)}
-            value={name}
-            onChangeText={setName}
-            placeholder="Masukkan nama anda"
-            placeholderTextColor={isDarkMode ? SLATE_COLOR : GREY_COLOR}
-          />
+    <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}}>
+      <CustomHeader title="Pengaturan Profil" />
+      <View
+        style={[
+          styles.container,
+          {backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND},
+        ]}>
+        
+        <View style={styles.formContainer}>
+  
+          <View style={styles.inputGroup}>
+            <Text style={styles.label(isDarkMode)}>Nama</Text>
+            <TextInput
+              style={styles.input(isDarkMode)}
+              value={name}
+              onChangeText={setName}
+              placeholder="Masukkan nama anda"
+              placeholderTextColor={isDarkMode ? SLATE_COLOR : GREY_COLOR}
+            />
+          </View>
+  
+          <View style={styles.inputGroup}>
+            <Text style={styles.label(isDarkMode)}>Email</Text>
+            <TextInput
+              style={styles.input(isDarkMode)}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Masukkan email anda"
+              placeholderTextColor={isDarkMode ? SLATE_COLOR : GREY_COLOR}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+  
+          <TouchableOpacity
+            style={styles.updateButton}
+            onPress={handleUpdateProfile}
+            disabled={loading}>
+            <Text style={styles.updateButtonText}>
+              {loading ? 'Memperbarui...' : 'Perbarui Profil'}
+            </Text>
+          </TouchableOpacity>
         </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label(isDarkMode)}>Email</Text>
-          <TextInput
-            style={styles.input(isDarkMode)}
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Masukkan email anda"
-            placeholderTextColor={isDarkMode ? SLATE_COLOR : GREY_COLOR}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
-
-        <TouchableOpacity
-          style={styles.updateButton}
-          onPress={handleUpdateProfile}
-          disabled={loading}>
-          <Text style={styles.updateButtonText}>
-            {loading ? 'Memperbarui...' : 'Perbarui Profil'}
-          </Text>
-        </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

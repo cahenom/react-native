@@ -17,6 +17,8 @@ import {
   WHITE_BACKGROUND,
 } from '../../utils/const';
 import {ArrowRight} from '../../assets';
+import CustomHeader from '../../components/CustomHeader';
+import {SafeAreaView} from 'react-native';
 
 export default function LayananPLN({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -33,25 +35,28 @@ export default function LayananPLN({navigation}) {
   ];
 
   return (
-    <View style={styles.wrapper(isDarkMode)}>
-      <View style={styles.container(isDarkMode)}>
-        <View>
-          {layanans.map(layanan => {
-            return (
-              <TouchableOpacity
-                key={layanan.label}
-                style={styles.layananButton(isDarkMode)}
-                onPress={() => navigation.navigate(layanan.path)}>
-                <Text style={styles.buttonText(isDarkMode)}>
-                  {layanan.label}
-                </Text>
-                <ArrowRight />
-              </TouchableOpacity>
-            );
-          })}
+    <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}}>
+      <CustomHeader title="Layanan PLN" />
+      <View style={styles.wrapper(isDarkMode)}>
+        <View style={styles.container(isDarkMode)}>
+          <View>
+            {layanans.map(layanan => {
+              return (
+                <TouchableOpacity
+                  key={layanan.label}
+                  style={styles.layananButton(isDarkMode)}
+                  onPress={() => navigation.navigate(layanan.path)}>
+                  <Text style={styles.buttonText(isDarkMode)}>
+                    {layanan.label}
+                  </Text>
+                  <ArrowRight />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

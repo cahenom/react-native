@@ -1,8 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../utils/api';
 
-// Cache to store fetched products
+// Cache to store fetched products with timestamp
 const productCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 /**
  * Generic function to fetch provider lists with caching and error handling
@@ -16,24 +17,35 @@ export const fetchProviderList = async (cacheKey, apiEndpoint, dataField, forceR
 
   // Check if providers are already cached in memory
   if (productCache.has(cacheKey)) {
-    cachedData = productCache.get(cacheKey);
-  } else {
-    // Check if providers are cached in AsyncStorage
-    const cachedString = await AsyncStorage.getItem(`${cacheKey}_cache`);
-    if (cachedString) {
-      cachedData = JSON.parse(cachedString);
-      // Store in memory cache as well
-      productCache.set(cacheKey, cachedData);
+    const cachedEntry = productCache.get(cacheKey);
+    const now = Date.now();
+    if (now - cachedEntry.timestamp < CACHE_TTL && !forceRefresh) {
+      console.log(`Using in-memory cache for ${cacheKey}`);
+      return {
+        providers: cachedEntry.providers,
+        error: null
+      };
     }
   }
 
-  // If we have cached data and not forcing refresh, return it immediately without fetching
-  if (cachedData && !forceRefresh) {
-    console.log(`Using cached data for ${cacheKey} without fetching`);
-    return {
-      providers: cachedData,
-      error: null
-    };
+  // Check if providers are cached in AsyncStorage
+  if (!forceRefresh) {
+    const cachedString = await AsyncStorage.getItem(`${cacheKey}_cache`);
+    if (cachedString) {
+      const cachedData = JSON.parse(cachedString);
+      const now = Date.now();
+      
+      // If cache is valid (has providers and is not expired)
+      if (cachedData && cachedData.providers && (now - cachedData.timestamp < CACHE_TTL)) {
+        console.log(`Using AsyncStorage cache for ${cacheKey}`);
+        // Store in memory cache as well
+        productCache.set(cacheKey, cachedData);
+        return {
+          providers: cachedData.providers,
+          error: null
+        };
+      }
+    }
   }
 
   // If no cached data or forcing refresh, fetch from API
@@ -43,12 +55,16 @@ export const fetchProviderList = async (cacheKey, apiEndpoint, dataField, forceR
     if (response.data && response.data.data && response.data.data[dataField]) {
       const allProducts = response.data.data[dataField];
       const uniqueProviders = [...new Set(allProducts.map(item => item.provider))];
+      const cacheData = {
+        providers: uniqueProviders,
+        timestamp: Date.now()
+      };
 
       // Cache the providers in memory
-      productCache.set(cacheKey, uniqueProviders);
+      productCache.set(cacheKey, cacheData);
 
       // Cache the providers in AsyncStorage for persistence
-      await AsyncStorage.setItem(`${cacheKey}_cache`, JSON.stringify(uniqueProviders));
+      await AsyncStorage.setItem(`${cacheKey}_cache`, JSON.stringify(cacheData));
 
       return {
         providers: uniqueProviders,

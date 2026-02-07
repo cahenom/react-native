@@ -270,9 +270,8 @@ const AuthProvider = ({children}) => {
           );
         });
       } else {
-        // Error will be handled by global interceptor
-
-        return { success: false, error: error.message };
+        const errorMessage = error.response?.data?.message || error.message || 'Login gagal';
+        return { success: false, error: errorMessage };
       }
     }
   };

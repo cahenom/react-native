@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   useColorScheme,
   FlatList,
-  ActivityIndicator,
   Alert,
 } from 'react-native';
 import React, {useState, useEffect} from 'react';
@@ -21,6 +20,10 @@ import {
 } from '../../utils/const';
 import {ArrowRight} from '../../assets';
 import { api } from '../../utils/api';
+import CustomHeader from '../../components/CustomHeader';
+import SkeletonCard from '../../components/SkeletonCard';
+import ModernButton from '../../components/ModernButton';
+import {SafeAreaView} from 'react-native';
 
 export default function TypeEmoney({route, navigation}) {
   const {provider, title} = route.params;
@@ -107,43 +110,39 @@ export default function TypeEmoney({route, navigation}) {
     </TouchableOpacity>
   );
 
-  if (loading) {
-    return (
-      <View style={[styles.wrapper(isDarkMode), {justifyContent: 'center', alignItems: 'center'}]}>
-        <ActivityIndicator size="large" color="#138EE9" />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={[styles.wrapper(isDarkMode), {justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20}]}>
-        <Text style={[styles.typeButtonText(isDarkMode), {textAlign: 'center', marginBottom: 20}]}>
-          Error: {error}
-        </Text>
-        <TouchableOpacity
-          style={[styles.typeButton(isDarkMode), {backgroundColor: '#138EE9', alignItems: 'center'}]}
-          onPress={fetchTypes}
-        >
-          <Text style={[styles.typeButtonText(isDarkMode), {color: 'white'}]}>Coba Lagi</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.wrapper(isDarkMode)}>
-      <View style={styles.container(isDarkMode)}>
-        <Text style={styles.title(isDarkMode)}>Pilih Jenis {provider}</Text>
-        <FlatList
-          data={types}
-          renderItem={renderTypeItem}
-          keyExtractor={(item) => item.id.toString()}
-          showsVerticalScrollIndicator={false}
-          style={styles.flatList}
-        />
+    <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}}>
+      <CustomHeader title={title || "Jenis Dompet Elektronik"} />
+      <View style={styles.wrapper(isDarkMode)}>
+        <View style={styles.container(isDarkMode)}>
+          {loading ? (
+            <FlatList
+              data={[1, 2, 3, 4, 5, 6]}
+              renderItem={() => <SkeletonCard style={{height: 50, marginBottom: 15}} />}
+              keyExtractor={(item) => item.toString()}
+            />
+          ) : error ? (
+            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20}}>
+              <Text style={[styles.typeButtonText(isDarkMode), {textAlign: 'center', marginBottom: 20}]}>
+                Error: {error}
+              </Text>
+              <ModernButton
+                label="Coba Lagi"
+                onPress={fetchTypes}
+              />
+            </View>
+          ) : (
+            <FlatList
+              data={types}
+              renderItem={renderTypeItem}
+              keyExtractor={(item) => item.id.toString()}
+              showsVerticalScrollIndicator={false}
+              style={styles.flatList}
+            />
+          )}
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

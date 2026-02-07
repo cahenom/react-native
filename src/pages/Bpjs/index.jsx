@@ -4,7 +4,11 @@ import {
   View,
   TouchableOpacity,
   useColorScheme,
+  SafeAreaView,
 } from 'react-native';
+import CustomHeader from '../../components/CustomHeader';
+import ModernButton from '../../components/ModernButton';
+import BottomButton from '../../components/BottomButton';
 import React, {useState} from 'react';
 import {
   BLUE_COLOR,
@@ -28,7 +32,8 @@ export default function BpjsKesehatan() {
   const [customer_no, setCustomerNo] = useState('');
 
   return (
-    <>
+    <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}}>
+      <CustomHeader title="BPJS Kesehatan" />
       <View style={styles.container}>
         <View style={styles.formGroup}>
           <Input
@@ -38,9 +43,10 @@ export default function BpjsKesehatan() {
             ondelete={() => setCustomerNo('')}
             type="numeric"
           />
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Cek</Text>
-          </TouchableOpacity>
+          <ModernButton
+            label="Cek"
+            onPress={() => console.log('Cek BPJS')}
+          />
         </View>
 
         <View style={styles.infoPelanggan(isDarkMode)}>
@@ -67,12 +73,12 @@ export default function BpjsKesehatan() {
         </View>
       </View>
 
-      <View style={styles.bottom(isDarkMode)}>
-        <TouchableOpacity style={styles.bottomButton}>
-          <Text style={styles.buttonText}>Bayar Tagihan</Text>
-        </TouchableOpacity>
-      </View>
-    </>
+      <BottomButton
+        label="Bayar Tagihan"
+        action={() => console.log('Bayar BPJS')}
+        isLoading={false}
+      />
+    </SafeAreaView>
   );
 }
 

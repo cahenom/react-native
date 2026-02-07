@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from './const';
-import { Alert } from 'react-native';
+import { Alert } from './alert';
 
 export const api = axios.create({
   baseURL: API_URL,

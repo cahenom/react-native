@@ -1,5 +1,16 @@
-import {View, Text, TouchableOpacity, useColorScheme} from 'react-native';
-import {BLUE_COLOR, DARK_BACKGROUND, LIGHT_COLOR} from '../utils/const';
+import {View, Text, TouchableOpacity, useColorScheme, Animated} from 'react-native';
+import React, {useRef, useEffect} from 'react';
+import LinearGradient from 'react-native-linear-gradient';
+import {
+  BLUE_COLOR,
+  DARK_BACKGROUND,
+  LIGHT_COLOR,
+  DARK_COLOR,
+  BORDER_RADIUS,
+  SPACING,
+  SHADOWS,
+  GRADIENTS,
+} from '../utils/const';
 import {
   HomeActive,
   HomeDefault,
@@ -21,62 +32,136 @@ function MyTabBar({state, descriptors, navigation}) {
   };
 
   return (
-    <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-      {state.routes.map((route, index) => {
-        const {options} = descriptors[route.key];
-        const label =
-          options.tabBarLabel !== undefined
-            ? options.tabBarLabel
-            : options.title !== undefined
-            ? options.title
-            : route.name;
+    <View style={{
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      paddingBottom: SPACING.md,
+      paddingHorizontal: SPACING.lg,
+    }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          backgroundColor: isDarkMode ? '#1a2332' : '#ffffff',
+          borderRadius: BORDER_RADIUS.xlarge,
+          paddingVertical: SPACING.sm,
+          paddingHorizontal: SPACING.xs,
+          ...SHADOWS.large,
+        }}>
+        {state.routes.map((route, index) => {
+          const {options} = descriptors[route.key];
+          const label =
+            options.tabBarLabel !== undefined
+              ? options.tabBarLabel
+              : options.title !== undefined
+              ? options.title
+              : route.name;
 
-        const isFocused = state.index === index;
+          const isFocused = state.index === index;
 
-        const onPress = () => {
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: route.key,
-            canPreventDefault: true,
-          });
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
 
-          if (!isFocused && !event.defaultPrevented) {
-            // The `merge: true` option makes sure that the params inside the tab screen are preserved
-            navigation.navigate({name: route.name, merge: true});
-          }
-        };
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate({name: route.name, merge: true});
+            }
+          };
 
-        const onLongPress = () => {
-          navigation.emit({
-            type: 'tabLongPress',
-            target: route.key,
-          });
-        };
+          const onLongPress = () => {
+            navigation.emit({
+              type: 'tabLongPress',
+              target: route.key,
+            });
+          };
 
-        return (
-          <TouchableOpacity
-            key={index}
-            accessibilityRole="button"
-            accessibilityState={isFocused ? {selected: true} : {}}
-            accessibilityLabel={options.tabBarAccessibilityLabel}
-            testID={options.tabBarTestID}
-            onPress={onPress}
-            onLongPress={onLongPress}
-            style={{
-              flex: 1,
-              backgroundColor: isDarkMode ? DARK_BACKGROUND : '#FFF',
-              padding: 10,
-              alignItems: 'center',
-            }}>
-            <IkonMenu label={label} active={isFocused} />
-            <Text style={{color: isFocused ? BLUE_COLOR : LIGHT_COLOR}}>
-              {label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
+            const animatedScale = useRef(new Animated.Value(0.95)).current;
+
+            useEffect(() => {
+              if (isFocused) {
+                Animated.spring(animatedScale, {
+                  toValue: 1,
+                  friction: 4,
+                  useNativeDriver: true,
+                }).start();
+              } else {
+                animatedScale.setValue(0.95);
+              }
+            }, [isFocused, animatedScale]);
+
+            return (
+              <TouchableOpacity
+                key={index}
+                accessibilityRole="button"
+                accessibilityState={isFocused ? {selected: true} : {}}
+                accessibilityLabel={options.tabBarAccessibilityLabel}
+                testID={options.tabBarTestID}
+                onPress={onPress}
+                onLongPress={onLongPress}
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  paddingVertical: SPACING.md,
+                  borderRadius: BORDER_RADIUS.large,
+                }}
+                activeOpacity={0.7}>
+                <Animated.View
+                  style={{
+                    transform: [{scale: animatedScale}],
+                    width: '100%',
+                    alignItems: 'center',
+                  }}>
+                  {isFocused ? (
+                    <LinearGradient
+                      colors={isDarkMode ? ['#1e3a8a', '#1e1b4b'] : ['#eff6ff', '#dbeafe']}
+                      start={{x: 0, y: 0}}
+                      end={{x: 1, y: 0}}
+                      style={{
+                        position: 'absolute',
+                        top: -SPACING.md,
+                        bottom: -SPACING.md,
+                        left: SPACING.xs,
+                        right: SPACING.xs,
+                        borderRadius: BORDER_RADIUS.large,
+                        opacity: 0.8,
+                      }}
+                    />
+                  ) : null}
+                  <View style={{marginBottom: SPACING.xs}}>
+                    <IkonMenu label={label} active={isFocused} />
+                  </View>
+                  <Text
+                    style={{
+                      color: isFocused ? BLUE_COLOR : isDarkMode ? '#94a3b8' : '#64748b',
+                      fontSize: 12,
+                      fontWeight: isFocused ? '600' : '400',
+                    }}>
+                    {label}
+                  </Text>
+                </Animated.View>
+                {isFocused && (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      width: 40,
+                      height: 3,
+                      borderRadius: BORDER_RADIUS.full,
+                      backgroundColor: BLUE_COLOR,
+                    }}
+                  />
+                )}
+              </TouchableOpacity>
+            );
+        })}
+      </View>
     </View>
   );
 }
 
 export default MyTabBar;
+

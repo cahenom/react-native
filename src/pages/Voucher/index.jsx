@@ -5,8 +5,8 @@ import {
   TouchableOpacity,
   useColorScheme,
   FlatList,
-  ActivityIndicator,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import React, {useState, useEffect, useRef} from 'react';
 import usePersistentState from '../../hooks/usePersistentState';
@@ -19,9 +19,14 @@ import {
   REGULAR_FONT,
   SLATE_COLOR,
   WHITE_BACKGROUND,
+  BLUE_COLOR,
 } from '../../utils/const';
 import {ArrowRight} from '../../assets';
 import {fetchProviderList} from '../../helpers/providerHelper';
+import CustomHeader from '../../components/CustomHeader';
+import ModernButton from '../../components/ModernButton';
+import SkeletonCard from '../../components/SkeletonCard';
+import {SafeAreaView} from 'react-native';
 
 export default function Voucher({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -47,13 +52,6 @@ export default function Voucher({navigation}) {
           // We have valid cached data, no need to fetch initially
           setLoading(false);
           hasLoaded.current = true; // Mark as initialized
-
-          // Check if background refresh is needed
-          const shouldRefreshInBackground = await needsBackgroundRefresh();
-          if (shouldRefreshInBackground) {
-            // Fetch fresh data in background without affecting UI
-            fetchProviders(false); // Don't force refresh, just update cache
-          }
         }
       }
     };
@@ -120,41 +118,51 @@ export default function Voucher({navigation}) {
     </TouchableOpacity>
   );
 
-  if (loading && !error) {
-    return (
-      <View style={[styles.wrapper(isDarkMode), {justifyContent: 'center', alignItems: 'center'}]}>
-        <ActivityIndicator size="large" color="#138EE9" />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={[styles.wrapper(isDarkMode), {justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20}]}>
-        <Text style={[styles.buttonText(isDarkMode), {textAlign: 'center', marginBottom: 20}]}>
-          {error}
-        </Text>
-        <TouchableOpacity
-          style={[styles.layananButton(isDarkMode), {backgroundColor: '#138EE9', alignItems: 'center'}]}
-          onPress={handleRetry}
-        >
-          <Text style={[styles.buttonText(isDarkMode), {color: 'white'}]}>Coba Lagi</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.wrapper(isDarkMode)}>
-      <View style={styles.container(isDarkMode)}>
-        <FlatList
-          data={providers}
-          renderItem={renderProviderItem}
-          keyExtractor={(item) => item}
-          showsVerticalScrollIndicator={false}
-        />
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
+      }}>
+      <CustomHeader title="Voucher" />
+      <View style={styles.wrapper(isDarkMode)}>
+        <View style={styles.container(isDarkMode)}>
+          {loading && !error ? (
+            <FlatList
+              data={[1, 2, 3, 4, 5, 6]}
+              renderItem={() => <SkeletonCard style={{height: 50, marginBottom: 15}} />}
+              keyExtractor={(item) => item.toString()}
+              showsVerticalScrollIndicator={false}
+            />
+          ) : error ? (
+            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20}}>
+              <Text style={[styles.buttonText(isDarkMode), {textAlign: 'center', marginBottom: 20}]}>
+                {error}
+              </Text>
+              <ModernButton
+                label="Coba Lagi"
+                onPress={handleRetry}
+              />
+            </View>
+          ) : (
+            <FlatList
+              data={providers}
+              renderItem={renderProviderItem}
+              keyExtractor={(item) => item}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={() => fetchProviders(true)}
+                  colors={[BLUE_COLOR]}
+                  tintColor={BLUE_COLOR}
+                />
+              }
+            />
+          )}
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -166,6 +174,7 @@ const styles = StyleSheet.create({
   container: isDarkMode => ({
     marginHorizontal: HORIZONTAL_MARGIN,
     marginTop: 15,
+    flex: 1,
   }),
   layananButton: isDarkMode => ({
     flexDirection: 'row',

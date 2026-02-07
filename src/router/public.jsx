@@ -21,7 +21,7 @@ function PublicRoute() {
         name="Register"
         component={RegisterPage}
         options={{
-          title: '',
+          headerShown: false,
         }}
       />
     </Stack.Navigator>

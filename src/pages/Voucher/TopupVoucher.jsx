@@ -26,6 +26,7 @@ import useTopupProducts from '../../hooks/useTopupProducts';
 import { api } from '../../utils/api';
 import {numberWithCommas} from '../../utils/formatter';
 import { makeTopupCall } from '../../helpers/apiBiometricHelper';
+import CustomHeader from '../../components/CustomHeader';
 
 export default function TopupVoucher({route}) {
   const navigation = useNavigation();
@@ -102,6 +103,8 @@ export default function TopupVoucher({route}) {
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND, paddingBottom: 100}}>
+      <CustomHeader title={title || "Topup Voucher"} />
+      
       {/* Fixed Header and Input Section */}
       <View style={[styles.container, {paddingBottom: 10, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}]}>
         <View style={{marginBottom: 15}}>
@@ -111,7 +114,7 @@ export default function TopupVoucher({route}) {
               fontSize: 16,
               color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
             }}>
-            {title || provider}
+            Pilih nominal {provider}
           </Text>
         </View>
 
@@ -197,7 +200,6 @@ export default function TopupVoucher({route}) {
           description={selectItem?.desc}
           price={selectItem?.price}
           onConfirm={() => {
-            setShowModal(false);
             confirmOrder();
           }}
           onCancel={() => setShowModal(false)}

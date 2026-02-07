@@ -1,6 +1,19 @@
-import {StyleSheet, Text, View, useColorScheme, ScrollView} from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  useColorScheme,
+  ScrollView,
+  SafeAreaView,
+  Dimensions,
+  Share,
+  Clipboard,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
 import React from 'react';
 import LottieView from 'lottie-react-native';
+import CustomHeader from '../../components/CustomHeader';
 import {
   DARK_BACKGROUND,
   DARK_COLOR,
@@ -13,163 +26,356 @@ import {
   REGULAR_FONT,
   SLATE_COLOR,
   WHITE_BACKGROUND,
+  BLUE_COLOR,
+  WHITE_COLOR,
+  BOLD_FONT,
 } from '../../utils/const';
+
+const {width} = Dimensions.get('window');
 
 export default function SuccessNotif({route}) {
   const {item, product} = route.params;
   const isDarkMode = useColorScheme() === 'dark';
 
-  // Extract data from the API response structure
   const responseData = item?.data || item;
+  const status = (responseData?.status || item?.status || 'Berhasil').toLowerCase();
+
+  const isFailed = ['gagal', 'failed', 'error', 'none'].includes(status);
+  const isPending = ['pending', 'diproses', 'processing'].includes(status);
+
+  const getStatusColor = () => {
+    if (isFailed) return '#EF4444';
+    if (isPending) return '#F59E0B';
+    return '#01C1A2';
+  };
+
+  const renderDetailRow = (label, value) => {
+    if (value === undefined || value === null || value === '') return null;
+    return (
+      <View style={styles.detailRow}>
+        <Text style={styles.labelDetail(isDarkMode)}>{label}</Text>
+        <Text style={styles.valueDetail(isDarkMode)}>{String(value)}</Text>
+      </View>
+    );
+  };
+
+  const getPrice = () => {
+    const priceValue = responseData?.price ?? item?.price ?? product?.price ?? product?.product_seller_price;
+    if (priceValue === undefined || priceValue === null || priceValue === '-') return '-';
+    
+    if (typeof priceValue === 'number') {
+      return `Rp ${priceValue.toLocaleString('id-ID')}`;
+    }
+    
+    if (typeof priceValue === 'string') {
+      const parsed = parseFloat(priceValue);
+      if (!isNaN(parsed)) {
+        return `Rp ${parsed.toLocaleString('id-ID')}`;
+      }
+      return priceValue.includes('Rp') ? priceValue : `Rp ${priceValue}`;
+    }
+    
+    return priceValue;
+  };
+
+  const formattedPrice = getPrice();
+
+  const getFormattedDate = (dateVal) => {
+    if (!dateVal || dateVal === '-') return null;
+    const date = new Date(dateVal);
+    if (isNaN(date.getTime())) return dateVal;
+    
+    return date.toLocaleString('id-ID', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const onShare = async () => {
+    try {
+      const shareMessage = `*Bukti Transaksi*\n\nProduk: ${responseData?.produk || item?.produk || product?.produk || 'Transaksi'}\nStatus: ${status.toUpperCase()}\nNomor Tujuan: ${responseData?.tujuan || item?.tujuan || item?.customer_no || '-'}\nRef ID: ${responseData?.ref || responseData?.ref_id || item?.ref || '-'}\nSN: ${responseData?.sn || item?.sn || '-'}\nTotal: ${formattedPrice}\nWaktu: ${getFormattedDate(responseData?.created_at || item?.created_at)}\n\nTerima kasih.`;
+      
+      await Share.share({
+        message: shareMessage,
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
+  const onCopyRef = () => {
+    const refId = responseData?.ref || responseData?.ref_id || item?.ref || item?.ref_id;
+    if (refId && refId !== '-') {
+      Clipboard.setString(refId);
+      Alert.alert('Berhasil', 'Ref ID berhasil disalin ke clipboard');
+    }
+  };
+
+  const onPrint = () => {
+    Alert.alert(
+      'Cetak Struk',
+      'Fitur cetak struk memerlukan koneksi Bluetooth ke printer thermal. Pastikan printer Anda sudah terhubung.',
+      [
+        {text: 'Batal', style: 'cancel'},
+        {text: 'Cetak', onPress: () => console.log('Print requested')},
+      ]
+    );
+  };
 
   return (
-    <View
+    <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
+        backgroundColor: isDarkMode ? '#0f172a' : '#f8fafc',
       }}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View
-          style={{
-            height: 150,
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginTop: 15,
-          }}>
-          {item?.status === 'Gagal' ||
-          responseData?.status === 'Gagal' ||
-          item?.status === 'Error' ||
-          responseData?.status === 'Error' ||
-          item?.status === 'none' ? (
-            <LottieView
-              source={require('../../assets/lottie/gagal-animation.json')}
-              autoPlay
-              loop
-            />
-          ) : item?.status === 'Pending' ||
-            responseData?.status === 'Pending' ? (
-            <LottieView
-              source={require('../../assets/lottie/pending-animation.json')}
-              autoPlay
-              loop
-            />
-          ) : (
-            <LottieView
-              source={require('../../assets/lottie/success-animation.json')}
-              autoPlay
-              loop
-            />
-          )}
-        </View>
-        <View
-          style={{
-            marginHorizontal: HORIZONTAL_MARGIN,
-            marginBottom: 100,
-          }}>
-          {/* Reference ID */}
-          <View style={styles.modalData(isDarkMode)}>
-            <Text style={styles.labelModalData(isDarkMode)}>Ref ID</Text>
-            <Text style={styles.valueModalData(isDarkMode)}>
-              {responseData?.ref || responseData?.ref_id || item?.ref_id || '-'}
-            </Text>
+      <CustomHeader title="Detail Transaksi" />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom: 40}}>
+        <View style={styles.receiptContainer}>
+          <View
+            style={[
+              styles.receiptCard,
+              {backgroundColor: isDarkMode ? '#1e293b' : WHITE_COLOR},
+            ]}>
+            <View style={styles.animationHeader}>
+              <View style={styles.lottieWrapper}>
+                {isFailed ? (
+                  <LottieView
+                    source={require('../../assets/lottie/gagal-animation.json')}
+                    autoPlay
+                    loop
+                    style={styles.lottie}
+                  />
+                ) : isPending ? (
+                  <LottieView
+                    source={require('../../assets/lottie/pending-animation.json')}
+                    autoPlay
+                    loop
+                    style={styles.lottie}
+                  />
+                ) : (
+                  <LottieView
+                    source={require('../../assets/lottie/success-animation.json')}
+                    autoPlay
+                    loop
+                    style={styles.lottie}
+                  />
+                )}
+              </View>
+              <Text style={[styles.statusMainText, {color: getStatusColor()}]}>
+                Transaksi {isFailed ? 'Gagal' : isPending ? 'Sedang Diproses' : 'Berhasil'}
+              </Text>
+              <Text style={styles.productName(isDarkMode)}>
+                {responseData?.produk || item?.produk || product?.produk || 'Transaksi'}
+              </Text>
+              <Text style={styles.mainAmount(isDarkMode)}>{formattedPrice}</Text>
+            </View>
+
+            <View style={styles.dividerWrapper}>
+              <View style={[styles.dot, styles.dotLeft, {backgroundColor: isDarkMode ? '#0f172a' : '#f8fafc'}]} />
+              <View style={[styles.dashedLine, {borderColor: isDarkMode ? '#334155' : '#e2e8f0'}]} />
+              <View style={[styles.dot, styles.dotRight, {backgroundColor: isDarkMode ? '#0f172a' : '#f8fafc'}]} />
+            </View>
+
+            <View style={styles.detailsSection}>
+              {renderDetailRow('Nomor Tujuan', responseData?.tujuan || item?.tujuan || item?.customer_no || responseData?.customer_no)}
+              {renderDetailRow('SKU', responseData?.sku || item?.sku)}
+              {renderDetailRow('Serial Number (SN)', responseData?.sn || item?.sn || item?.serial_number || responseData?.serial_number)}
+              <View style={styles.detailRow}>
+                <Text style={styles.labelDetail(isDarkMode)}>Ref ID</Text>
+                <View style={{flex: 1.5, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center'}}>
+                  <Text style={[styles.valueDetail(isDarkMode), {flex: 0, marginRight: 8}]}>
+                    {responseData?.ref || responseData?.ref_id || item?.ref || item?.ref_id || '-'}
+                  </Text>
+                  <TouchableOpacity onPress={onCopyRef} activeOpacity={0.6}>
+                     <View style={[styles.copyIcon, {backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#f1f5f9'}]}>
+                        <Text style={{fontSize: 10, color: isDarkMode ? '#94a3b8' : '#64748b', fontFamily: BOLD_FONT}}>SALIN</Text>
+                     </View>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              {renderDetailRow('Waktu', getFormattedDate(responseData?.created_at || item?.created_at))}
+            </View>
+
+            {(responseData?.message || item?.message) && (responseData?.message !== '-' || item?.message !== '-') && (
+              <View style={[styles.messageBox, {backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : '#f8fafc'}]}>
+                <Text style={styles.messageLabel(isDarkMode)}>Keterangan</Text>
+                <Text style={styles.messageValue(isDarkMode)}>{responseData?.message || item?.message}</Text>
+              </View>
+            )}
           </View>
 
-          {/* Target Number */}
-          <View style={styles.modalData(isDarkMode)}>
-            <Text style={styles.labelModalData(isDarkMode)}>Nomor Tujuan</Text>
-            <Text style={styles.valueModalData(isDarkMode)}>
-              {responseData?.tujuan ||
-                item?.customer_no ||
-                item?.data?.customer_no ||
-                '-'}
-            </Text>
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity 
+              style={[styles.actionButton, {backgroundColor: isDarkMode ? '#1e293b' : WHITE_COLOR}]}
+              onPress={onShare}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.actionButtonText, {color: isDarkMode ? WHITE_COLOR : '#3e516dff'}]}>Bagikan</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.actionButton, {backgroundColor: BLUE_COLOR}]}
+              onPress={onPrint}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.actionButtonText, {color: WHITE_COLOR}]}>Print Struk</Text>
+            </TouchableOpacity>
           </View>
 
-          {/* SKU */}
-          <View style={styles.modalData(isDarkMode)}>
-            <Text style={styles.labelModalData(isDarkMode)}>SKU</Text>
-            <Text style={styles.valueModalData(isDarkMode)}>
-              {responseData?.sku || '-'}
-            </Text>
-          </View>
-
-          {/* Status */}
-          <View style={styles.modalData(isDarkMode)}>
-            <Text style={styles.labelModalData(isDarkMode)}>Status</Text>
-            <Text style={styles.valueModalData(isDarkMode)}>
-              {responseData?.status || item?.status || 'Berhasil'}
-            </Text>
-          </View>
-
-          {/* Price */}
-          <View style={styles.modalData(isDarkMode)}>
-            <Text style={styles.labelModalData(isDarkMode)}>Harga</Text>
-            <Text style={styles.valueModalData(isDarkMode)}>
-              {responseData?.price !== undefined && responseData?.price !== null
-                ? typeof responseData?.price === 'number'
-                  ? `Rp ${responseData?.price?.toLocaleString('id-ID')}`
-                  : typeof responseData?.price === 'string'
-                  ? `Rp ${
-                      parseFloat(responseData?.price)?.toLocaleString(
-                        'id-ID',
-                      ) || responseData?.price
-                    }`
-                  : responseData?.price
-                : product?.product_seller_price || product?.price || '-'}
-            </Text>
-          </View>
-
-          {/* Serial Number */}
-          <View style={styles.modalData(isDarkMode)}>
-            <Text style={styles.labelModalData(isDarkMode)}>SN</Text>
-            <Text style={styles.valueModalData(isDarkMode)}>
-              {responseData?.sn ||
-                item?.sn ||
-                item?.data?.sn ||
-                item?.serial_number ||
-                '-'}
-            </Text>
-          </View>
-
-          {/* Message */}
-          <View style={styles.modalData(isDarkMode)}>
-            <Text style={styles.labelModalData(isDarkMode)}>Message</Text>
-            <Text style={styles.valueModalData(isDarkMode)}>
-              {responseData?.message ||
-                item?.message ||
-                item?.data?.message ||
-                '-'}
-            </Text>
-          </View>
-
-          {/* Product Name (if available) */}
-          <View style={styles.modalData(isDarkMode)}>
-            <Text style={styles.labelModalData(isDarkMode)}>Produk</Text>
-            <Text style={styles.valueModalData(isDarkMode)}>
-              {responseData?.produk || product?.produk || '-'}
-            </Text>
-          </View>
+          <Text style={styles.footerNote}>
+            Terima kasih telah menggunakan layanan kami. Simpan struk ini sebagai bukti transaksi yang sah.
+          </Text>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  modalData: isDarkMode => ({
-    borderBottomWidth: 1,
-    borderBottomColor: isDarkMode ? SLATE_COLOR : GREY_COLOR,
-    paddingVertical: 5,
-    rowGap: 5,
-  }),
-  labelModalData: isDarkMode => ({
+  receiptContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  receiptCard: {
+    borderRadius: 24,
+    paddingVertical: 30,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+  },
+  animationHeader: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  lottieWrapper: {
+    width: 100,
+    height: 100,
+    marginBottom: 10,
+  },
+  lottie: {
+    width: '100%',
+    height: '100%',
+  },
+  statusMainText: {
+    fontSize: 20,
+    fontFamily: BOLD_FONT,
+    marginBottom: 8,
+  },
+  productName: isDarkMode => ({
+    fontSize: 14,
     fontFamily: MEDIUM_FONT,
-    fontSize: FONT_SEDANG,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    color: isDarkMode ? '#94a3b8' : '#64748b',
+    marginBottom: 4,
   }),
-  valueModalData: isDarkMode => ({
+  mainAmount: isDarkMode => ({
+    fontSize: 28,
+    fontFamily: BOLD_FONT,
+    color: isDarkMode ? WHITE_COLOR : DARK_COLOR,
+  }),
+  dividerWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 25,
+    overflow: 'hidden',
+  },
+  dashedLine: {
+    flex: 1,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: 1,
+    marginHorizontal: 15,
+  },
+  dot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    position: 'absolute',
+  },
+  dotLeft: {
+    left: -10,
+  },
+  dotRight: {
+    right: -10,
+  },
+  detailsSection: {
+    paddingHorizontal: 25,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+    alignItems: 'flex-start',
+  },
+  labelDetail: isDarkMode => ({
+    fontSize: 13,
     fontFamily: REGULAR_FONT,
-    fontSize: FONT_NORMAL,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    color: isDarkMode ? '#94a3b8' : '#64748b',
+    flex: 1,
   }),
+  valueDetail: isDarkMode => ({
+    fontSize: 13,
+    fontFamily: MEDIUM_FONT,
+    color: isDarkMode ? WHITE_COLOR : '#607693ff',
+    flex: 1.5,
+    textAlign: 'right',
+  }),
+  messageBox: {
+    marginHorizontal: 25,
+    marginTop: 10,
+    padding: 15,
+    borderRadius: 12,
+  },
+  messageLabel: isDarkMode => ({
+    fontSize: 12,
+    fontFamily: MEDIUM_FONT,
+    color: isDarkMode ? '#64748b' : '#94a3b8',
+    marginBottom: 4,
+  }),
+  messageValue: isDarkMode => ({
+    fontSize: 12,
+    fontFamily: REGULAR_FONT,
+    color: isDarkMode ? '#94a3b8' : '#64748b',
+    lineHeight: 18,
+  }),
+  footerNote: {
+    marginTop: 25,
+    textAlign: 'center',
+    fontSize: 11,
+    fontFamily: REGULAR_FONT,
+    color: '#94a3b8',
+    paddingHorizontal: 40,
+    lineHeight: 16,
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 25,
+    columnGap: 15,
+  },
+  actionButton: {
+    flex: 1,
+    height: 50,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontFamily: BOLD_FONT,
+  },
+  copyIcon: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
 });

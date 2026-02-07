@@ -9,6 +9,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
+import CustomHeader from '../../components/CustomHeader';
 import {
   DARK_BACKGROUND,
   DARK_COLOR,
@@ -59,6 +60,7 @@ const DepositFailed = () => {
 
   return (
     <SafeAreaView style={getStyles(isDarkMode).container}>
+      <CustomHeader title="Deposit Gagal" showBackButton={false} />
       <View style={getStyles(isDarkMode).content}>
         <Animated.View
           style={[

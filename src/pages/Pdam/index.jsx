@@ -5,7 +5,10 @@ import {
   TouchableOpacity,
   useColorScheme,
   FlatList,
+  SafeAreaView,
 } from 'react-native';
+import CustomHeader from '../../components/CustomHeader';
+import ModernButton from '../../components/ModernButton';
 import React, {useState} from 'react';
 import {
   BLUE_COLOR,
@@ -40,7 +43,8 @@ export default function PDAM() {
   };
 
   return (
-    <>
+    <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}}>
+      <CustomHeader title="PDAM" />
       <View style={styles.container}>
         <View style={styles.formGroup}>
           <Input
@@ -69,9 +73,10 @@ export default function PDAM() {
               {wilayahPdam ? wilayahPdam?.label : 'Pilih Wilayah'}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Cek</Text>
-          </TouchableOpacity>
+          <ModernButton
+            label="Cek"
+            onPress={() => console.log('Cek PDAM')}
+          />
         </View>
 
         <View style={styles.infoPelanggan(isDarkMode)}>
@@ -123,7 +128,7 @@ export default function PDAM() {
           />
         </View>
       </FullModal>
-    </>
+    </SafeAreaView>
   );
 }
 
