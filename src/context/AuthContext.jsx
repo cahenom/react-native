@@ -11,6 +11,7 @@ const AuthProvider = ({children}) => {
   const [user, setUser] = useState(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true); // State untuk menandakan proses pengecekan otentikasi
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
+  const [lastRefreshTime, setLastRefreshTime] = useState(0);
 
   // Function to reload user data from storage
   const reloadUserData = async () => {
@@ -99,7 +100,14 @@ const AuthProvider = ({children}) => {
   };
 
   // Function to refresh user profile data from API
-  const refreshUserProfile = async () => {
+  const refreshUserProfile = async (force = false) => {
+    const now = Date.now();
+    // Prevent refreshes if called too frequently (e.g., within 30 seconds), unless forced
+    if (!force && now - lastRefreshTime < 30000) {
+      console.log('Profile refresh skipped (cooldown)');
+      return user;
+    }
+
     try {
       // Use POST method for refreshing user profile
       const response = await api.post('/api/user/profile');
@@ -113,9 +121,14 @@ const AuthProvider = ({children}) => {
         }
 
         setUser(userProfile);
+        setLastRefreshTime(now);
         return userProfile;
       }
     } catch (error) {
+      if (error.response?.status === 429) {
+        console.log('Profile refresh rate limited (429)');
+        return user; // Silently return existing user data on rate limit
+      }
       console.error('Error refreshing user profile:', error);
       throw error;
     }

@@ -12,9 +12,10 @@ import {
   SafeAreaView,
 } from 'react-native';
 import {Alert} from '../../utils/alert';
-import React, {useState, useEffect} from 'react';
-import {Eye, EyeCros} from '../../assets';
+import React, {useState, useEffect, useCallback} from 'react';
+import {Eye, EyeCros, CheckProduct} from '../../assets';
 import CustomHeader from '../../components/CustomHeader';
+import {useFocusEffect} from '@react-navigation/native';
 import {
   BOLD_FONT,
   DARK_BACKGROUND,
@@ -362,7 +363,7 @@ export default function ProfilScreen({navigation}) {
     ]);
   };
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await refreshUserProfile();
@@ -371,7 +372,14 @@ export default function ProfilScreen({navigation}) {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [refreshUserProfile]);
+
+  // Auto-refresh when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      onRefresh();
+    }, [onRefresh])
+  );
 
   const cardBackgroundColor = isDarkMode ? '#1e293b' : '#ffffff'; // slate-800 or white
   const sectionBackgroundColor = isDarkMode ? '#1e293b' : '#ffffff';
@@ -452,6 +460,18 @@ export default function ProfilScreen({navigation}) {
       fontSize: 16,
     },
     profileTextContainer: {
+      alignItems: 'center',
+    },
+    profileNameWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    verifiedBadge: {
+      backgroundColor: '#1d4ed8', // primary
+      borderRadius: 9999,
+      padding: 3,
+      justifyContent: 'center',
       alignItems: 'center',
     },
     profileName: {
@@ -619,7 +639,12 @@ export default function ProfilScreen({navigation}) {
             </Text>
           </View>
           <View style={styles.profileTextContainer}>
-            <Text style={styles.profileName}>{user?.name || 'User Name'}</Text>
+            <View style={styles.profileNameWrapper}>
+              <Text style={styles.profileName}>{user?.name || 'User Name'}</Text>
+              <View style={styles.verifiedBadge}>
+                <CheckProduct width={10} height={10} fill={WHITE_COLOR} />
+              </View>
+            </View>
             <Text style={styles.profilePhone}>
               {user?.email || 'user@example.com'}
             </Text>
@@ -694,7 +719,7 @@ export default function ProfilScreen({navigation}) {
         <TouchableOpacity
           style={styles.listItem}
           onPress={() => navigation.navigate('Settings')}>
-          <Text style={styles.listItemText}>Security & PIN</Text>
+          <Text style={styles.listItemText}>Update Profile</Text>
           <Text style={styles.chevronText}>›</Text>
         </TouchableOpacity>
         <View style={styles.divider} />

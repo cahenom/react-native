@@ -10,7 +10,7 @@ import {
   RefreshControl,
   SafeAreaView,
 } from 'react-native';
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {Alert} from '../../utils/alert';
 import {useFocusEffect} from '@react-navigation/native';
 import {BellIkon, Eye, EyeCros} from '../../assets';
@@ -41,6 +41,32 @@ export default function HomeScreen({navigation}) {
   const {user, refreshUserProfile, isBalanceVisible, toggleBalanceVisibility} = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+  const flatListRef = useRef(null);
+
+  const promoData = [
+    {id: 1, icon: '📱', title: 'Cashback 50%'},
+    {id: 2, icon: '🔌', title: 'Gratis Ongkir'},
+    {id: 3, icon: '💧', title: 'Diskon 30%'},
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      let nextIndex = activeSlideIndex + 1;
+      if (nextIndex >= promoData.length) {
+        nextIndex = 0;
+      }
+      
+      if (flatListRef.current) {
+        flatListRef.current.scrollToIndex({
+          index: nextIndex,
+          animated: true,
+        });
+        setActiveSlideIndex(nextIndex);
+      }
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [activeSlideIndex, promoData.length]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -557,12 +583,9 @@ export default function HomeScreen({navigation}) {
             </Text>
             <View style={styles.sliderContainer}>
               <FlatList
+                ref={flatListRef}
                 horizontal
-                data={[
-                  {id: 1, icon: '📱', title: 'Cashback 50%'},
-                  {id: 2, icon: '🔌', title: 'Gratis Ongkir'},
-                  {id: 3, icon: '💧', title: 'Diskon 30%'},
-                ]}
+                data={promoData}
                 renderItem={({item}) => (
                   <View style={styles.sliderImage}>
                     <Text style={styles.imagePlaceholder}>{item.icon}</Text>
@@ -579,19 +602,16 @@ export default function HomeScreen({navigation}) {
                 showsHorizontalScrollIndicator={false}
                 pagingEnabled
                 onScroll={event => {
-                  const slideSize = 300; // Approximate slide width
+                  const slideSize = event.nativeEvent.layoutMeasurement.width;
                   const offsetX = event.nativeEvent.contentOffset.x;
                   const index = Math.round(offsetX / slideSize);
                   setActiveSlideIndex(index);
                 }}
                 scrollEventThrottle={16}
+                onScrollToIndexFailed={() => {}}
               />
               <View style={styles.dotsContainer}>
-                {[
-                  {id: 1, icon: '📱', title: 'Cashback 50%'},
-                  {id: 2, icon: '🔌', title: 'Gratis Ongkir'},
-                  {id: 3, icon: '💧', title: 'Diskon 30%'},
-                ].map((_, index) => (
+                {promoData.map((_, index) => (
                   <View
                     key={index}
                     style={[

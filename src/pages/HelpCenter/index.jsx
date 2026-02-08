@@ -49,7 +49,7 @@ export default function HelpCenter({navigation}) {
   ];
 
   const handleContactSupport = () => {
-    Linking.openURL('https://wa.me/628123456789'); // Placeholder WA number
+    Linking.openURL('https://wa.me/6285179921771'); // Placeholder WA number
   };
 
   const textColor = isDarkMode ? '#f1f5f9' : '#1e293b';

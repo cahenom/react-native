@@ -30,7 +30,7 @@ import CustomHeader from '../../components/CustomHeader';
 
 export default function SettingsScreen({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
-  const {user, reloadUserData} = useAuth();
+  const {user, refreshUserProfile} = useAuth();
 
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -61,8 +61,8 @@ export default function SettingsScreen({navigation}) {
       if (response.data && response.data.status) {
         Alert.alert('Success', 'Profil berhasil diperbarui');
 
-        // Reload user data to update the context
-        await reloadUserData();
+        // Refresh user data from API to update the context
+        await refreshUserProfile();
 
         // Navigate back to profile
         navigation.goBack();
