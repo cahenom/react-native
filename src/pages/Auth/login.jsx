@@ -8,6 +8,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from 'react-native';
 import React, {useState} from 'react';
 import {useAlert} from '../../context/AlertContext';
@@ -48,6 +49,7 @@ export default function LoginPage({navigation}) {
   const {showAlert} = useAlert();
 
   const handleLogin = async () => {
+    Keyboard.dismiss();
     // Basic validation
     if (!email || !password) {
       showAlert('Error', 'Email dan password wajib diisi', 'error');

@@ -8,10 +8,18 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+let authToken = null;
+
+export const setAuthToken = (token) => {
+  authToken = token;
+};
+
 api.interceptors.request.use(async config => {
-  const token = await AsyncStorage.getItem('token'); // ← ambil token langsung
-  if (token) {
-    config.headers.Authorization = 'Bearer ' + token;
+  if (!authToken) {
+    authToken = await AsyncStorage.getItem('token');
+  }
+  if (authToken) {
+    config.headers.Authorization = 'Bearer ' + authToken;
   }
   return config;
 });

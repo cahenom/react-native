@@ -1,8 +1,9 @@
 import React, {createContext, useContext, useState, useEffect} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {api} from '../utils/api'; // Import the API utility
+import {api, setAuthToken} from '../utils/api'; // Import the API utility and setter
 import {Alert} from 'react-native';
 import { setBiometricEnabledStatus } from '../utils/biometricUtils';
+import { getFcmToken } from '../utils/notifications';
 
 const AuthContext = createContext();
 
@@ -12,6 +13,7 @@ const AuthProvider = ({children}) => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true); // State untuk menandakan proses pengecekan otentikasi
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState(0);
+  const [cachedFcmToken, setCachedFcmToken] = useState(null);
 
   // Function to reload user data from storage
   const reloadUserData = async () => {
@@ -70,12 +72,21 @@ const AuthProvider = ({children}) => {
       setUser(null);
     }
 
+    // Pre-fetch FCM token
+    try {
+      const tokenFCM = await getFcmToken();
+      setCachedFcmToken(tokenFCM);
+    } catch (err) {
+      console.log('Error pre-fetching FCM in init:', err);
+    }
+
     setIsCheckingAuth(false); // Selesai pengecekan otentikasi
   };
 
   const logout = async () => {
     await AsyncStorage.removeItem('token');
     await AsyncStorage.removeItem('user');
+    setAuthToken(null);
     setIsLoggedIn(false);
     setUser(null);
   };
@@ -84,6 +95,7 @@ const AuthProvider = ({children}) => {
   const setLoggedInState = async (userData, token) => {
     if (token) {
       await AsyncStorage.setItem('token', token);
+      setAuthToken(token);
     }
 
     if (userData) {
@@ -137,8 +149,13 @@ const AuthProvider = ({children}) => {
   // Function to login with fallback mechanism
   const login = async (email, password) => {
     try {
-      // Dapatkan FCM token
-      const fcmToken = await import('../utils/notifications').then(module => module.getFcmToken());
+      // Gunakan token yang sudah di-cache jika ada, jika tidak ambil baru
+      let fcmToken = cachedFcmToken;
+      if (!fcmToken) {
+        console.log('FCM token not cached, fetching now...');
+        fcmToken = await getFcmToken();
+        setCachedFcmToken(fcmToken);
+      }
 
       const loginData = {
         email,
@@ -163,6 +180,7 @@ const AuthProvider = ({children}) => {
 
       // SIMPAN TOKEN
       await AsyncStorage.setItem('token', token);
+      setAuthToken(token);
 
       // SIMPAN USER
       await AsyncStorage.setItem('user', JSON.stringify(user));
