@@ -52,6 +52,13 @@ export default function Games({navigation}) {
           // We have valid cached data, no need to fetch initially
           setLoading(false);
           hasLoaded.current = true; // Mark as initialized
+
+          // Check if background refresh is needed
+          const shouldRefreshInBackground = await needsBackgroundRefresh();
+          if (shouldRefreshInBackground) {
+            // Fetch fresh data in background without affecting UI
+            fetchProviders(false); // Don't force refresh, just update cache
+          }
         }
       }
     };

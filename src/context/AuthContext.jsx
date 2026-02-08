@@ -10,6 +10,7 @@ const AuthProvider = ({children}) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true); // State untuk menandakan proses pengecekan otentikasi
+  const [isBalanceVisible, setIsBalanceVisible] = useState(true);
 
   // Function to reload user data from storage
   const reloadUserData = async () => {
@@ -31,6 +32,12 @@ const AuthProvider = ({children}) => {
   }, []);
 
   const initializeAuth = async () => {
+    // Load balance visibility preference
+    const balanceVisible = await AsyncStorage.getItem('isBalanceVisible');
+    if (balanceVisible !== null) {
+      setIsBalanceVisible(balanceVisible === 'true');
+    }
+
     const token = await AsyncStorage.getItem('token');
 
     if (token) {
@@ -49,53 +56,13 @@ const AuthProvider = ({children}) => {
           setUser(userProfile);
           setIsLoggedIn(true);
         } else {
-          // Jika API mengembalikan data kosong, fallback ke local storage
-          const userData = await AsyncStorage.getItem('user');
-          if (userData) {
-            setUser(JSON.parse(userData));
-            setIsLoggedIn(true);
-
-            // Also check for biometric status in the local user data
-            const parsedUserData = JSON.parse(userData);
-            if (parsedUserData.biometric_enabled !== undefined) {
-              await setBiometricEnabledStatus(parsedUserData.biometric_enabled);
-            }
-          } else {
-            setIsLoggedIn(false);
-            setUser(null);
-          }
+          // Jika API tidak mengembalikan data valid, paksa logout
+          await logout();
         }
       } catch (error) {
         console.error('Error fetching user profile on init:', error);
-
-        // Tampilkan notifikasi bahwa fetch API gagal
-        Alert.alert(
-          'Kesalahan Jaringan',
-          'Gagal mengambil data profil. Aplikasi akan menggunakan data lokal.',
-          [
-            {
-              text: 'OK',
-              onPress: async () => {
-                // Fallback to local storage if API fails
-                const userData = await AsyncStorage.getItem('user');
-                if (userData) {
-                  const parsedUserData = JSON.parse(userData);
-                  setUser(parsedUserData);
-
-                  // Also check for biometric status in the local user data
-                  if (parsedUserData.biometric_enabled !== undefined) {
-                    await setBiometricEnabledStatus(parsedUserData.biometric_enabled);
-                  }
-
-                  setIsLoggedIn(true);
-                } else {
-                  setIsLoggedIn(false);
-                  setUser(null);
-                }
-              }
-            }
-          ]
-        );
+        // Jika gagal terhubung ke server saat inisialisasi, paksa logout (Full Online)
+        await logout();
       }
     } else {
       setIsLoggedIn(false);
@@ -150,31 +117,12 @@ const AuthProvider = ({children}) => {
       }
     } catch (error) {
       console.error('Error refreshing user profile:', error);
-
-      // Tampilkan notifikasi bahwa refresh gagal
-      Alert.alert(
-        'Kesalahan Jaringan',
-        'Gagal memperbarui profil. Aplikasi akan menggunakan data lokal.',
-        [
-          {
-            text: 'OK',
-            onPress: async () => {
-              // Ambil data dari local storage jika refresh gagal
-              const userData = await AsyncStorage.getItem('user');
-              if (userData) {
-                setUser(JSON.parse(userData));
-              }
-            }
-          }
-        ]
-      );
-
       throw error;
     }
   };
 
   // Function to login with fallback mechanism
-  const loginWithFallback = async (email, password) => {
+  const login = async (email, password) => {
     try {
       // Dapatkan FCM token
       const fcmToken = await import('../utils/notifications').then(module => module.getFcmToken());
@@ -217,67 +165,20 @@ const AuthProvider = ({children}) => {
 
       return { success: true, user, token };
     } catch (error) {
-      console.log('Login error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        config: error.config ? {
-          url: error.config.url,
-          method: error.config.method,
-          data: error.config.data
-        } : undefined
-      });
-
-      // Jika login API gagal, tawarkan fallback ke data lokal jika tersedia
-      const storedToken = await AsyncStorage.getItem('token');
-      const storedUser = await AsyncStorage.getItem('user');
-
-      if (storedToken && storedUser) {
-        // Tampilkan notifikasi bahwa login API gagal tapi bisa gunakan data lokal
-        return new Promise((resolve) => {
-          Alert.alert(
-            'Kesalahan Jaringan',
-            'Login ke server gagal. Gunakan data lokal?',
-            [
-              {
-                text: 'Gunakan Data Lokal',
-                onPress: async () => {
-                  try {
-                    // Gunakan data yang tersimpan
-                    setIsLoggedIn(true);
-                    setUser(JSON.parse(storedUser));
-                    resolve({ success: true, user: JSON.parse(storedUser), token: storedToken, usingLocalData: true });
-                  } catch (parseError) {
-                    console.error('Error parsing stored user data:', parseError);
-                    resolve({ success: false, error: 'Data lokal rusak' });
-                  }
-                }
-              },
-              {
-                text: 'Coba Lagi',
-                onPress: () => {
-                  resolve({ success: false, error: 'retry_needed' });
-                }
-              },
-              {
-                text: 'Batalkan',
-                style: 'cancel',
-                onPress: () => {
-                  resolve({ success: false, error: 'cancelled' });
-                }
-              }
-            ]
-          );
-        });
-      } else {
-        const errorMessage = error.response?.data?.message || error.message || 'Login gagal';
-        return { success: false, error: errorMessage };
-      }
+      console.log('Login error details:', error.message);
+      const errorMessage = error.response?.data?.message || error.message || 'Login gagal';
+      return { success: false, error: errorMessage };
     }
   };
 
+  const toggleBalanceVisibility = async () => {
+    const newState = !isBalanceVisible;
+    setIsBalanceVisible(newState);
+    await AsyncStorage.setItem('isBalanceVisible', newState.toString());
+  };
+
   return (
-    <AuthContext.Provider value={{isLoggedIn, setIsLoggedIn, user, setUser, logout, setLoggedInState, reloadUserData, refreshUserProfile, loginWithFallback, isCheckingAuth}}>
+    <AuthContext.Provider value={{isLoggedIn, setIsLoggedIn, user, setUser, logout, setLoggedInState, reloadUserData, refreshUserProfile, login, isCheckingAuth, isBalanceVisible, toggleBalanceVisibility}}>
       {children}
     </AuthContext.Provider>
   );

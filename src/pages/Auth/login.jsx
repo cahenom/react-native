@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   useColorScheme,
-  Alert,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -40,7 +39,7 @@ import {getFcmToken} from '../../utils/notifications';
 import CustomAlert from '../../components/CustomAlert';
 
 export default function LoginPage({navigation}) {
-  const {loginWithFallback, setIsLoggedIn, setLoggedInState} = useAuth();
+  const {login, setIsLoggedIn, setLoggedInState} = useAuth();
   const isDarkMode = useColorScheme() === 'dark';
   const [isSecure, setIsSecure] = useState(true);
   const [email, setEmail] = useState('');
@@ -58,23 +57,11 @@ export default function LoginPage({navigation}) {
     setLoading(true);
 
     try {
-      // Gunakan fungsi login baru dengan fallback
-      const result = await loginWithFallback(email, password);
+      // Gunakan fungsi login baru yang full online
+      const result = await login(email, password);
 
       if (result.success) {
-        if (result.usingLocalData) {
-          showAlert('Info', 'Login menggunakan data lokal karena koneksi ke server gagal.', 'info');
-        } else {
-          showAlert('Success', 'Login berhasil', 'success');
-        }
-      } else if (result.error === 'retry_needed') {
-        // Jika pengguna memilih untuk mencoba lagi
-        setLoading(false);
-        // Panggil fungsi login lagi
-        await handleLogin();
-      } else if (result.error === 'cancelled') {
-        // Jika pengguna membatalkan login
-        setLoading(false);
+        showAlert('Success', 'Login berhasil', 'success');
       } else {
         // Jika ada error lain
         setLoading(false);

@@ -50,7 +50,10 @@ export default function PDAM() {
           <Input
             value={customer_no}
             placeholder="Masukan nomor meter"
-            onchange={text => setCustomerNo(text)}
+            onchange={text => {
+              setCustomerNo(text);
+              // reset bill info here when real integration is added
+            }}
             ondelete={() => setCustomerNo('')}
             type="numeric"
           />
@@ -105,7 +108,7 @@ export default function PDAM() {
 
       <BottomButton
         label="Bayar Tagihan"
-        action={() => console.log(selectItem)}
+        action={() => console.log('Bayar PDAM:', customer_no)}
         isLoading={false}
       />
 

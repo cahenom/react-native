@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-const BACKGROUND_REFRESH_THRESHOLD = 1 * 60 * 60 * 1000; // 1 hour - refresh in background if older than this
+const BACKGROUND_REFRESH_THRESHOLD = 0; // Always attempt background refresh if data exists
 
 const usePersistentState = (key, defaultValue, cacheDuration = CACHE_DURATION) => {
   const [state, setState] = useState(defaultValue);
@@ -86,14 +86,24 @@ const usePersistentState = (key, defaultValue, cacheDuration = CACHE_DURATION) =
     }
   };
 
-  // Function to check if cache is expired
+  // Function to check if cache is expired (Daily or Duration based)
   const isCacheExpired = async () => {
     try {
       const persistedData = await AsyncStorage.getItem(key);
       if (persistedData !== null) {
         const parsedData = JSON.parse(persistedData);
         const currentTime = Date.now();
-        return (currentTime - parsedData.timestamp) >= LOCAL_CACHE_DURATION;
+        
+        // 1. Check if duration exceeded
+        const isDurationExpired = (currentTime - parsedData.timestamp) >= LOCAL_CACHE_DURATION;
+        if (isDurationExpired) return true;
+
+        // 2. Check if day has changed (Daily Cache)
+        const cachedDate = new Date(parsedData.timestamp).toDateString();
+        const currentDate = new Date(currentTime).toDateString();
+        const isDifferentDay = cachedDate !== currentDate;
+        
+        return isDifferentDay;
       }
       return true; // If no data, consider it expired
     } catch (error) {

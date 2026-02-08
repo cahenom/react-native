@@ -1,5 +1,6 @@
 import RNBiometrics from 'react-native-biometrics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {Platform} from 'react-native';
 
 /**
  * Utility functions for biometric authentication in order processes
@@ -51,7 +52,7 @@ export const authenticateWithBiometrics = async (promptMessage = 'Verify your id
   try {
     const { available, biometryType } = await rnBiometrics.isSensorAvailable();
 
-    if (!available) {
+    if (!available && Platform.OS === 'ios') {
       throw new Error('Biometric sensor is not available on this device');
     }
 
@@ -69,7 +70,8 @@ export const authenticateWithBiometrics = async (promptMessage = 'Verify your id
 
     const { success, error } = await rnBiometrics.simplePrompt({
       promptMessage: biometricPromptMessage,
-      cancelButtonText: 'Cancel'
+      cancelButtonText: 'Cancel',
+      allowDeviceCredentials: true
     });
 
     if (success) {
@@ -90,6 +92,12 @@ export const authenticateWithBiometrics = async (promptMessage = 'Verify your id
 export const isBiometricRequiredForOrder = async () => {
   const isAvailable = await isBiometricAvailable();
   const isEnabled = await isBiometricEnabled();
+  
+  // On Android, we can fallback to Device PIN even if sensor is not available
+  // On iOS, we currently strictly require biometric sensor availability
+  if (Platform.OS === 'android') {
+    return isEnabled;
+  }
   
   return isAvailable.available && isEnabled;
 };

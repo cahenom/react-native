@@ -12,43 +12,51 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
  * @param {string} dataField - The field in the response that contains the products
  * @returns {Promise<{providers: Array, error: string|null}>}
  */
+/**
+ * Generic function to fetch provider lists with Smart Daily Cache strategy:
+ * 1. Instant Load from cache if it's from the same day.
+ * 2. Background sync to keep data fresh.
+ * 3. Force fresh fetch if it's a new day.
+ */
 export const fetchProviderList = async (cacheKey, apiEndpoint, dataField, forceRefresh = false) => {
   let cachedData = null;
+  const storageKey = `${cacheKey}_cache`;
 
-  // Check if providers are already cached in memory
-  if (productCache.has(cacheKey)) {
-    const cachedEntry = productCache.get(cacheKey);
-    const now = Date.now();
-    if (now - cachedEntry.timestamp < CACHE_TTL && !forceRefresh) {
-      console.log(`Using in-memory cache for ${cacheKey}`);
-      return {
-        providers: cachedEntry.providers,
-        error: null
-      };
-    }
-  }
+  // 1. Load from AsyncStorage immediately
+  const cachedString = await AsyncStorage.getItem(storageKey);
+  if (cachedString) {
+    try {
+      const parsed = JSON.parse(cachedString);
+      const cachedDate = new Date(parsed.timestamp).toDateString();
+      const currentDate = new Date().toDateString();
 
-  // Check if providers are cached in AsyncStorage
-  if (!forceRefresh) {
-    const cachedString = await AsyncStorage.getItem(`${cacheKey}_cache`);
-    if (cachedString) {
-      const cachedData = JSON.parse(cachedString);
-      const now = Date.now();
-      
-      // If cache is valid (has providers and is not expired)
-      if (cachedData && cachedData.providers && (now - cachedData.timestamp < CACHE_TTL)) {
-        console.log(`Using AsyncStorage cache for ${cacheKey}`);
-        // Store in memory cache as well
-        productCache.set(cacheKey, cachedData);
+      // If same day and not forcing refresh, use it immediately
+      if (cachedDate === currentDate && !forceRefresh) {
+        cachedData = parsed.providers;
+        
+        // Trigger background refresh silently
+        setTimeout(() => {
+          backgroundSyncProviders(cacheKey, apiEndpoint, dataField);
+        }, 100);
+
         return {
-          providers: cachedData.providers,
+          providers: cachedData,
           error: null
         };
       }
+    } catch (e) {
+      console.warn('Error parsing cache:', e);
     }
   }
 
-  // If no cached data or forcing refresh, fetch from API
+  // 2. If no valid same-day cache or forceRefresh, fetch from API immediately (Online-first)
+  return await backgroundSyncProviders(cacheKey, apiEndpoint, dataField);
+};
+
+/**
+ * Perform actual network fetch and update cache
+ */
+const backgroundSyncProviders = async (cacheKey, apiEndpoint, dataField) => {
   try {
     const response = await api.post(apiEndpoint);
 
@@ -60,10 +68,7 @@ export const fetchProviderList = async (cacheKey, apiEndpoint, dataField, forceR
         timestamp: Date.now()
       };
 
-      // Cache the providers in memory
-      productCache.set(cacheKey, cacheData);
-
-      // Cache the providers in AsyncStorage for persistence
+      // Cache for persistence
       await AsyncStorage.setItem(`${cacheKey}_cache`, JSON.stringify(cacheData));
 
       return {
@@ -71,52 +76,27 @@ export const fetchProviderList = async (cacheKey, apiEndpoint, dataField, forceR
         error: null
       };
     } else {
-      // If API returns unexpected structure but we have cached data, return cached data
-      if (cachedData) {
-        return {
-          providers: cachedData,
-          error: null
-        };
-      }
       return {
         providers: [],
-        error: 'Struktur data tidak sesuai. Silakan hubungi administrator.'
+        error: 'Struktur data tidak sesuai.'
       };
     }
   } catch (error) {
-    console.error('Error details:', {
-      message: error.message,
-      response: error.response,
-      status: error.response?.status,
-      data: error.response?.data
-    });
-
-    // If there's cached data available, return it without error regardless of fetch failure
-    if (cachedData) {
-      console.log(`Using cached data for ${cacheKey} due to fetch error`);
+    console.error(`Background sync failed for ${cacheKey}:`, error.message);
+    
+    // On error, try to return whatever we have in cache even if it's old
+    const cachedString = await AsyncStorage.getItem(`${cacheKey}_cache`);
+    if (cachedString) {
+      const parsed = JSON.parse(cachedString);
       return {
-        providers: cachedData,
-        error: null  // No error when using cached data
+        providers: parsed.providers,
+        error: null // Silently use old cache if network fails
       };
-    }
-
-    // More specific error handling based on status code when no cached data exists
-    let errorMessage = '';
-    if (error.response?.status === 405) {
-      errorMessage = 'Terjadi kesalahan teknis. Silakan coba beberapa saat lagi.';
-    } else if (error.response?.status === 401) {
-      errorMessage = 'Sesi Anda telah berakhir. Silakan login kembali.';
-    } else if (error.response?.status === 404) {
-      errorMessage = 'Layanan sementara tidak tersedia. Silakan coba beberapa saat lagi.';
-    } else if (error.response?.status === 0 || !error.response) {
-      errorMessage = 'Periksa koneksi internet Anda dan coba lagi.';
-    } else {
-      errorMessage = 'Gagal memuat daftar provider. Silakan coba beberapa saat lagi.';
     }
 
     return {
       providers: [],
-      error: errorMessage
+      error: 'Terjadi kesalahan jaringan. Coba lagi nanti.'
     };
   }
 };

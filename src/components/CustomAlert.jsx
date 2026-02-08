@@ -48,16 +48,7 @@ export default function CustomAlert({
   }, [visible]);
 
   const getGradient = () => {
-    switch (type) {
-      case 'success':
-        return GRADIENTS.success;
-      case 'error':
-        return GRADIENTS.error;
-      case 'warning':
-        return GRADIENTS.warning;
-      default:
-        return GRADIENTS.primary;
-    }
+    return GRADIENTS.primary;
   };
 
   const getIcon = () => {

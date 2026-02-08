@@ -9,8 +9,8 @@ import {
   Share,
   Clipboard,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
+import {Alert} from '../../utils/alert';
 import React from 'react';
 import LottieView from 'lottie-react-native';
 import CustomHeader from '../../components/CustomHeader';
@@ -35,6 +35,10 @@ const {width} = Dimensions.get('window');
 
 export default function SuccessNotif({route}) {
   const {item, product} = route.params;
+
+  console.log('[SUCCESS DEBUG] Received route.params.item:', JSON.stringify(item, null, 2));
+  console.log('[SUCCESS DEBUG] Received route.params.product:', JSON.stringify(product, null, 2));
+
   const isDarkMode = useColorScheme() === 'dark';
 
   const responseData = item?.data || item;
@@ -180,7 +184,7 @@ export default function SuccessNotif({route}) {
             </View>
 
             <View style={styles.detailsSection}>
-              {renderDetailRow('Nomor Tujuan', responseData?.tujuan || item?.tujuan || item?.customer_no || responseData?.customer_no)}
+              {renderDetailRow('Nomor Tujuan', item?.customer_no || responseData?.customer_no || responseData?.tujuan || item?.tujuan)}
               {renderDetailRow('SKU', responseData?.sku || item?.sku)}
               {renderDetailRow('Serial Number (SN)', responseData?.sn || item?.sn || item?.serial_number || responseData?.serial_number)}
               <View style={styles.detailRow}>

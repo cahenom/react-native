@@ -1,4 +1,4 @@
-import {StyleSheet, Text, View, useColorScheme, ScrollView, FlatList, ActivityIndicator, Alert, SafeAreaView, TouchableOpacity, RefreshControl} from 'react-native';
+import {StyleSheet, Text, View, useColorScheme, ScrollView, FlatList, ActivityIndicator, SafeAreaView, TouchableOpacity, RefreshControl} from 'react-native';
 import React, {useState, useEffect, useRef} from 'react';
 import {
   BLUE_COLOR,
@@ -140,6 +140,10 @@ export default function TopupData({route, navigation}) {
   const confirmOrder = async () => {
     if (isProcessing) return; // Prevent multiple clicks
 
+    console.log('[DATA DEBUG] Initiating confirmOrder');
+    console.log('[DATA DEBUG] current customer_no state:', customer_no);
+    console.log('[DATA DEBUG] current selectItem state:', JSON.stringify(selectItem, null, 2));
+
     setIsProcessing(true); // Set loading state to prevent spam clicks
 
     try {
@@ -162,7 +166,8 @@ export default function TopupData({route, navigation}) {
         product: {
           ...selectItem,
           product_name: selectItem?.name || selectItem?.label,
-          product_seller_price: selectItem?.price
+          product_seller_price: selectItem?.price,
+          customer_no: customer_no // Explicitly passing to avoid confusion
         },
       });
     } catch (error) {
@@ -197,6 +202,7 @@ export default function TopupData({route, navigation}) {
             placeholder="Masukan nomor tujuan"
             onchange={text => {
               setCustomerNo(text);
+              if (selectItem) setSelectItem(null); // Clear selected item if number changes
               if (validationErrors.customer_no) {
                 clearValidationErrors();
               }

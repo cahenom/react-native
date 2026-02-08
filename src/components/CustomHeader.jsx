@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: HORIZONTAL_MARGIN,
   },
   leftContainer: {
-    width: 44,
+    minWidth: 44,
     alignItems: 'flex-start',
     justifyContent: 'center',
   },

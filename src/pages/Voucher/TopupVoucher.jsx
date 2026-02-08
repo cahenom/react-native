@@ -1,4 +1,4 @@
-import {StyleSheet, Text, View, useColorScheme, ScrollView, FlatList, ActivityIndicator, Alert, SafeAreaView, TouchableOpacity} from 'react-native';
+import {StyleSheet, Text, View, useColorScheme, ScrollView, FlatList, ActivityIndicator, SafeAreaView, TouchableOpacity} from 'react-native';
 import React, {useRef, useState} from 'react';
 import { useNavigation } from '@react-navigation/native';
 import {
@@ -64,6 +64,10 @@ export default function TopupVoucher({route}) {
 
   const confirmOrder = async () => {
     if (isProcessing) return; // Prevent multiple clicks
+
+    console.log('[VOUCHER DEBUG] Initiating confirmOrder');
+    console.log('[VOUCHER DEBUG] current customer_no state:', customer_no);
+    console.log('[VOUCHER DEBUG] current selectItem state:', JSON.stringify(selectItem, null, 2));
 
     setIsProcessing(true); // Set loading state to prevent spam clicks
 

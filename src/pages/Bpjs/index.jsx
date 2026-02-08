@@ -39,7 +39,10 @@ export default function BpjsKesehatan() {
           <Input
             value={customer_no}
             placeholder="Masukan nomor VA Keluarga"
-            onchange={text => setCustomerNo(text)}
+            onchange={text => {
+              setCustomerNo(text);
+              // Reset bill info here when real integration is added
+            }}
             ondelete={() => setCustomerNo('')}
             type="numeric"
           />

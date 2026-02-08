@@ -1,4 +1,4 @@
-import {Alert, Platform} from 'react-native';
+import {Platform} from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import {getMessagingService, requestUserPermission} from '../../firebase/index';
 

@@ -32,6 +32,8 @@ import Indosat from './Indosat';
 import DepositPage from './Deposit';
 import DepositSuccess from './Deposit/DepositSuccess';
 import DepositFailed from './Deposit/DepositFailed';
+import HelpCenter from './HelpCenter';
+import PrivacyPolicy from './PrivacyPolicy';
 
 export {
   HomeScreen,
@@ -67,5 +69,7 @@ export {
   Indosat,
   DepositPage,
   DepositSuccess,
-  DepositFailed
+  DepositFailed,
+  HelpCenter,
+  PrivacyPolicy
 };

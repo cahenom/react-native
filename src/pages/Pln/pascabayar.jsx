@@ -54,6 +54,9 @@ export default function PLNPascabayar() {
 
     setLoading(true);
 
+    console.log('[PLN PASCA DEBUG] Initiating handleCekTagihan');
+    console.log('[PLN PASCA DEBUG] current customer_no state:', customer_no);
+
     try {
       const response = await makeCekTagihanCall({
         sku: 'plnpascabayar', // Using the correct SKU for PLN postpaid
@@ -78,12 +81,15 @@ export default function PLNPascabayar() {
   };
 
   const handleBayarTagihan = async (billData) => {
+    console.log('[PLN PASCA DEBUG] Initiating handleBayarTagihan');
+    console.log('[PLN PASCA DEBUG] billData passed:', JSON.stringify(billData, null, 2));
+
     try {
       const response = await makeBayarTagihanCall({
         sku: 'plnpascabayar',
         customer_no: billData.customer_no,
         ref_id: billData.ref_id, // Include the reference ID from the bill data
-      }, 'Verifikasi sidik jari atau wajah untuk membayar tagihan PLN');
+      }, 'Verifikasi sidik jari atau biometric wajah untuk membayar tagihan PLN');
 
       // Navigate to success screen with the response data
       navigation.navigate('SuccessNotif', {
@@ -123,15 +129,21 @@ export default function PLNPascabayar() {
           <Input
             value={customer_no}
             placeholder="Masukan nomor meter"
-            onchange={text => setCustomerNo(text)}
-            ondelete={() => setCustomerNo('')}
+            onchange={text => {
+              setCustomerNo(text);
+              if (billData) setBillData(null); // Clear bill data if number changes
+            }}
+            ondelete={() => {
+              setCustomerNo('');
+              setBillData(null);
+            }}
             type="numeric"
           />
           <View style={{marginTop: 10}}>
             <ModernButton
               label="Cek"
               onPress={handleCekTagihan}
-              loading={loading}
+              isLoading={loading}
             />
           </View>
         </View>

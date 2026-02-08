@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import {Alert} from '../../utils/alert';
 import React, {useState, useEffect} from 'react';
+import {Eye, EyeCros} from '../../assets';
 import CustomHeader from '../../components/CustomHeader';
 import {
   BOLD_FONT,
@@ -37,7 +38,7 @@ import {setBiometricEnabledStatus} from '../../utils/biometricUtils';
 
 export default function ProfilScreen({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
-  const {user, logout, refreshUserProfile} = useAuth();
+  const {user, logout, refreshUserProfile, isBalanceVisible, toggleBalanceVisibility} = useAuth();
   const {showAlert} = useAlert();
   const [refreshing, setRefreshing] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -149,6 +150,7 @@ export default function ProfilScreen({navigation}) {
                 promptMessage:
                   'Verifikasi sidik jari untuk mengaktifkan login sidik jari',
                 cancelButtonText: 'Batal',
+                allowDeviceCredentials: true,
               });
 
               if (success) {
@@ -168,6 +170,7 @@ export default function ProfilScreen({navigation}) {
                 promptMessage:
                   'Verifikasi wajah untuk mengaktifkan login wajah',
                 cancelButtonText: 'Batal',
+                allowDeviceCredentials: true,
               });
 
               if (success) {
@@ -187,6 +190,7 @@ export default function ProfilScreen({navigation}) {
                 promptMessage:
                   'Verifikasi sidik jari atau wajah untuk mengaktifkan login biometrik',
                 cancelButtonText: 'Batal',
+                allowDeviceCredentials: true,
               });
 
               if (success) {
@@ -199,6 +203,26 @@ export default function ProfilScreen({navigation}) {
                 } else {
                   Alert.alert('Gagal', 'Verifikasi biometrik gagal: ' + error);
                 }
+              }
+            }
+          } else if (Platform.OS === 'android') {
+            // Android fallback to Device PIN if sensor not available
+            const {success, error} = await rnBiometrics.simplePrompt({
+              promptMessage:
+                'Verifikasi keamanan perangkat Anda untuk mengaktifkan fitur ini',
+              cancelButtonText: 'Batal',
+              allowDeviceCredentials: true,
+            });
+
+            if (success) {
+              setBiometricEnabled(true);
+              await setBiometricEnabledStatus(true);
+              Alert.alert('Sukses', 'Keamanan perangkat telah diaktifkan');
+            } else {
+              if (error === 'user_cancel' || error === 'userfallback') {
+                Alert.alert('Info', 'Verifikasi dibatalkan');
+              } else {
+                Alert.alert('Gagal', 'Verifikasi gagal: ' + error);
               }
             }
           } else {
@@ -233,6 +257,7 @@ export default function ProfilScreen({navigation}) {
                 promptMessage:
                   'Verifikasi sidik jari untuk menonaktifkan login sidik jari',
                 cancelButtonText: 'Batal',
+                allowDeviceCredentials: true,
               });
               success = result.success;
               error = result.error;
@@ -242,6 +267,7 @@ export default function ProfilScreen({navigation}) {
                 promptMessage:
                   'Verifikasi wajah untuk menonaktifkan login wajah',
                 cancelButtonText: 'Batal',
+                allowDeviceCredentials: true,
               });
               success = result.success;
               error = result.error;
@@ -251,6 +277,7 @@ export default function ProfilScreen({navigation}) {
                 promptMessage:
                   'Verifikasi sidik jari atau wajah untuk menonaktifkan login biometrik',
                 cancelButtonText: 'Batal',
+                allowDeviceCredentials: true,
               });
               success = result.success;
               error = result.error;
@@ -272,6 +299,22 @@ export default function ProfilScreen({navigation}) {
                   'Verifikasi gagal. Biometrik tetap aktif.',
                 );
               }
+            }
+          } else if (Platform.OS === 'android') {
+            // Android disable requires verification via PIN
+            const result = await rnBiometrics.simplePrompt({
+              promptMessage:
+                'Verifikasi keamanan perangkat untuk menonaktifkan fitur ini',
+              cancelButtonText: 'Batal',
+              allowDeviceCredentials: true,
+            });
+
+            if (result.success) {
+              setBiometricEnabled(false);
+              await setBiometricEnabledStatus(false);
+              Alert.alert('Info', 'Keamanan perangkat telah dinonaktifkan');
+            } else {
+              Alert.alert('Info', 'Verifikasi dibatalkan. Fitur tetap aktif.');
             }
           } else {
             Alert.alert(
@@ -382,14 +425,17 @@ export default function ProfilScreen({navigation}) {
       gap: 12, // gap-3
     },
     profileImageContainer: {
+      width: 96,
+      height: 96,
+      borderRadius: 48,
+      borderWidth: 4,
+      borderColor: isDarkMode ? '#1e293b' : '#ffffff',
       position: 'relative',
     },
-    profileImage: {
-      width: 96, // w-24
-      height: 96, // h-24
-      borderRadius: 9999, // rounded-full
-      borderWidth: 4,
-      borderColor: isDarkMode ? '#1e293b' : '#ffffff', // dark:border-slate-800 or border-white
+    profileAvatarText: {
+      fontSize: 40,
+      fontFamily: BOLD_FONT,
+      color: WHITE_COLOR,
     },
     editIconContainer: {
       position: 'absolute',
@@ -559,23 +605,37 @@ export default function ProfilScreen({navigation}) {
       <View style={styles.profileCard}>
         <View style={styles.profileCardBackground} />
         <View style={styles.profileCardContent}>
-          <View style={styles.profileImageContainer}>
-            <Image
-              source={{
-                uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB0tlknUn_f2ML_udX2XZfPgf1bDwIyJlYh0WPQOOIrKDVn8IA7PyQH7JisPg5Z82CJgVB-hE80yqx63JXyH4UFDdF8849LWAOJQMzay3edKvzh8_LQTcRsmQWY_8PqjdJqMzAwcFLhOrqK0ICPD2K_Jm6loy5-fKpnqv9mOcSxc5Dp0pB2ieY27Mk32vjVKMVfs_xdy_LNA-SgJfW1ORkkPF4mnbFloadgfxZPsVWDCXlstOcZSwLAgS24xJ3oLcVrk_X7nw2T-iTs',
-              }}
-              style={styles.profileImage}
-            />
+          <View
+            style={[
+              styles.profileImageContainer,
+              {
+                backgroundColor: isDarkMode ? '#1e293b' : '#3b82f6',
+                justifyContent: 'center',
+                alignItems: 'center',
+              },
+            ]}>
+            <Text style={styles.profileAvatarText}>
+              {user?.name?.charAt(0) || 'U'}
+            </Text>
           </View>
           <View style={styles.profileTextContainer}>
             <Text style={styles.profileName}>{user?.name || 'User Name'}</Text>
             <Text style={styles.profilePhone}>
               {user?.email || 'user@example.com'}
             </Text>
-            <View style={styles.badgeContainer}>
+            <View style={[styles.badgeContainer, {flexDirection: 'row', alignItems: 'center', gap: 8}]}>
               <Text style={styles.badgeText}>
-                Rp {user?.saldo ? parseFloat(user.saldo).toLocaleString() : '0'}
+                {isBalanceVisible
+                  ? `Rp ${user?.saldo ? parseFloat(user.saldo).toLocaleString() : '0'}`
+                  : 'Rp ••••••'}
               </Text>
+              <TouchableOpacity onPress={toggleBalanceVisibility} activeOpacity={0.7}>
+                {isBalanceVisible ? (
+                  <Eye width={16} height={16} fill={isDarkMode ? '#93c5fd' : '#1d4ed8'} />
+                ) : (
+                  <EyeCros width={16} height={16} fill={isDarkMode ? '#93c5fd' : '#1d4ed8'} />
+                )}
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -655,14 +715,14 @@ export default function ProfilScreen({navigation}) {
       <View style={styles.sectionCard}>
         <TouchableOpacity
           style={styles.listItem}
-          onPress={() => Alert.alert('Help Center')}>
+          onPress={() => navigation.navigate('HelpCenter')}>
           <Text style={styles.listItemText}>Help Center</Text>
           <Text style={styles.chevronText}>›</Text>
         </TouchableOpacity>
         <View style={styles.divider} />
         <TouchableOpacity
           style={styles.listItem}
-          onPress={() => Alert.alert('Privacy Policy')}>
+          onPress={() => navigation.navigate('PrivacyPolicy')}>
           <Text style={styles.listItemText}>Privacy Policy</Text>
           <Text style={styles.chevronText}>›</Text>
         </TouchableOpacity>

@@ -1,3 +1,4 @@
+import React, {useState} from 'react';
 import {
   StyleSheet,
   Text,
@@ -14,7 +15,7 @@ import {
   SafeAreaView,
   RefreshControl,
 } from 'react-native';
-import React, {useState} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   BLUE_COLOR,
   DARK_BACKGROUND,
@@ -43,9 +44,8 @@ import CustomHeader from '../../components/CustomHeader';
 import ModernButton from '../../components/ModernButton';
 import BottomButton from '../../components/BottomButton';
 
-// Cache to store fetched products with timestamp
-const productCache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+// Smart Daily Cache Logic for Pulsa
+const getPulsaCacheKey = (nomor) => `pulsa_cache_${nomor}`;
 
 export default function Pulsa({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -67,54 +67,55 @@ export default function Pulsa({navigation}) {
 
     if (!forceRefresh) setLoading(true);
 
-    // Create a cache key based on the customer number
-    const cacheKey = `pulsa_${nomorTujuan}`;
+    // 1. Try to load from Persistent Cache for Instant display
+    const cacheKey = getPulsaCacheKey(nomorTujuan);
+    const cachedString = await AsyncStorage.getItem(cacheKey);
+    
+    if (cachedString && !forceRefresh) {
+      try {
+        const parsed = JSON.parse(cachedString);
+        const cachedDate = new Date(parsed.timestamp).toDateString();
+        const currentDate = new Date().toDateString();
 
-    // Check if products are already cached for this customer number and if not expired
-    if (productCache.has(cacheKey)) {
-      const cachedData = productCache.get(cacheKey);
-      const now = Date.now();
-      
-      if (now - cachedData.timestamp < CACHE_TTL && !forceRefresh) {
-        console.log('Using cached pulsa products for:', nomorTujuan);
-        setPulsa(cachedData.pulsa || []);
-        setLoading(false);
-        return;
+        // If same day, show immediately but still sync in background
+        if (cachedDate === currentDate) {
+          console.log('Using persistent same-day cache for Pulsa:', nomorTujuan);
+          setPulsa(parsed.pulsa || []);
+          setLoading(false);
+          
+          // Background sync silently
+          backgroundSyncPulsa(nomorTujuan, cacheKey);
+          return;
+        }
+      } catch (e) {
+        console.warn('Error parsing pulsa cache:', e);
       }
     }
 
+    // 2. If no valid cache or forceRefresh, perform online fetch
+    await backgroundSyncPulsa(nomorTujuan, cacheKey);
+  };
+
+  const backgroundSyncPulsa = async (nomor, cacheKey) => {
     try {
       const response = await api.post(`/api/product/pulsa`, {
-        customer_no: nomorTujuan,
+        customer_no: nomor,
       });
 
-      console.log('API Response:', response.data); // Debug log
-
       if (response.data && response.data.data) {
-        // The API returns pulsa in the response
-        const pulsaProducts = response.data.data.pulsa || [];
-
-        // Cache the products for this customer number
-        productCache.set(cacheKey, {
+        const pulsaProducts = response.data.data.pulsa || response.data.data.pulsas || [];
+        
+        // Save to Persistence
+        const cacheData = {
           pulsa: pulsaProducts,
           timestamp: Date.now()
-        });
-
-        setPulsa(pulsaProducts);
-      } else {
-        // Fallback to original structure if different
-        const pulsaProducts = response.data.data?.pulsas || [];
-
-        // Cache the products for this customer number
-        productCache.set(cacheKey, {
-          pulsa: pulsaProducts,
-          timestamp: Date.now()
-        });
-
+        };
+        await AsyncStorage.setItem(cacheKey, JSON.stringify(cacheData));
+        
         setPulsa(pulsaProducts);
       }
     } catch (error) {
-      console.log('Error fetching pulsa products:', error);
+      console.log('Pulsa sync failed:', error.message);
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -131,6 +132,10 @@ export default function Pulsa({navigation}) {
 
   const handleTopup = async () => {
     if (isProcessing) return; // Prevent multiple clicks
+
+    console.log('[PULSA DEBUG] Initiating handleTopup');
+    console.log('[PULSA DEBUG] current nomorTujuan state:', nomorTujuan);
+    console.log('[PULSA DEBUG] current selectItem state:', JSON.stringify(selectItem, null, 2));
 
     setIsProcessing(true); // Set loading state to prevent spam clicks
 
@@ -188,8 +193,16 @@ export default function Pulsa({navigation}) {
           <Input
             value={nomorTujuan}
             placeholder="Masukan nomor tujuan"
-            onchange={text => setNomor(text)}
-            ondelete={() => clearNomor()}
+            onchange={text => {
+              setNomor(text);
+              if (selectItem) setSelectItem(null); // Clear selected item if number changes
+              if (data_pulsa.length > 0) setPulsa([]); // Force re-check products for new number
+            }}
+            ondelete={() => {
+              clearNomor();
+              setSelectItem(null);
+              setPulsa([]);
+            }}
             type="numeric"
           />
 

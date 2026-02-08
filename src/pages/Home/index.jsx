@@ -10,8 +10,10 @@ import {
   RefreshControl,
   SafeAreaView,
 } from 'react-native';
-import React, {useState, useEffect} from 'react';
-import {BellIkon} from '../../assets';
+import React, {useState, useEffect, useCallback} from 'react';
+import {Alert} from '../../utils/alert';
+import {useFocusEffect} from '@react-navigation/native';
+import {BellIkon, Eye, EyeCros} from '../../assets';
 import CustomHeader from '../../components/CustomHeader';
 import {
   BOLD_FONT,
@@ -36,13 +38,16 @@ import {api} from '../../utils/api';
 
 export default function HomeScreen({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
-  const {user} = useAuth();
+  const {user, refreshUserProfile, isBalanceVisible, toggleBalanceVisibility} = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
   const onRefresh = async () => {
     setRefreshing(true);
     try {
+      // Refresh user profile (balance, etc)
+      await refreshUserProfile();
+      
       // Fetch fresh transaction data
       const response = await api.post('/api/user/transaksi');
 
@@ -111,6 +116,13 @@ export default function HomeScreen({navigation}) {
     }
   };
 
+  // Auto-refresh when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      onRefresh();
+    }, [])
+  );
+
   // State for recent activities
   const [recentActivities, setRecentActivities] = useState([
     // Default/fallback data in case cache is empty
@@ -150,7 +162,7 @@ export default function HomeScreen({navigation}) {
   useEffect(() => {
     const loadRecentActivities = async () => {
       try {
-        // First, try to load from cache to show immediate data
+        // 1. First, try to load from cache to show immediate data (Smart Daily Cache)
         const cachedData = await AsyncStorage.getItem('user_transactions');
         if (cachedData) {
           const parsedData = JSON.parse(cachedData);
@@ -208,8 +220,8 @@ export default function HomeScreen({navigation}) {
             setRecentActivities(recentTransactions);
           }
         }
-
-        // Then fetch fresh data from API
+        
+        // 2. Then fetch fresh data from API (Full Online Mode)
         const response = await api.post('/api/user/transaksi');
 
         if (response.data.status) {
@@ -355,6 +367,19 @@ export default function HomeScreen({navigation}) {
       : '#dc2626';
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 11) {
+      return 'Selamat Pagi,';
+    } else if (hour >= 11 && hour < 15) {
+      return 'Selamat Siang,';
+    } else if (hour >= 15 && hour < 19) {
+      return 'Selamat Sore,';
+    } else {
+      return 'Selamat Malam,';
+    }
+  };
+
   const renderProfile = (
     <View style={styles.userProfile}>
       <View
@@ -368,9 +393,9 @@ export default function HomeScreen({navigation}) {
       </View>
       <View>
         <Text style={[styles.greeting, {color: 'rgba(255,255,255,0.8)'}]}>
-          Good Morning,
+          {getGreeting()}
         </Text>
-        <Text style={[styles.userName, {color: WHITE_COLOR}]}>
+        <Text style={[styles.userName, {color: WHITE_COLOR, marginTop: 2}]}>
           {user?.name || user?.email || 'User'}
         </Text>
       </View>
@@ -409,9 +434,20 @@ export default function HomeScreen({navigation}) {
         {/* Balance Card */}
         <View style={[styles.balanceCard, {backgroundColor: BLUE_COLOR}]}>
           <View style={styles.balanceContent}>
-            <Text style={styles.balanceTitle}>Total Balance</Text>
+            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+              <Text style={styles.balanceTitle}>Total Balance</Text>
+              <TouchableOpacity onPress={toggleBalanceVisibility} activeOpacity={0.7}>
+                {isBalanceVisible ? (
+                  <Eye width={20} height={20} fill="white" />
+                ) : (
+                  <EyeCros width={20} height={20} fill="white" />
+                )}
+              </TouchableOpacity>
+            </View>
             <Text style={styles.balanceAmount}>
-              Rp {user?.saldo ? parseFloat(user.saldo).toLocaleString() : '0'}
+              {isBalanceVisible
+                ? `Rp ${user?.saldo ? parseFloat(user.saldo).toLocaleString() : '0'}`
+                : 'Rp ••••••'}
             </Text>
           </View>
           <View style={styles.balanceActions}>
@@ -428,9 +464,10 @@ export default function HomeScreen({navigation}) {
               style={[
                 styles.actionButton,
                 {backgroundColor: 'rgba(255,255,255,0.2)'},
-              ]}>
-              <Text style={styles.actionIcon}>🔍</Text>
-              <Text style={styles.actionText}>Scan QR</Text>
+              ]}
+              onPress={() => Alert.alert('Informasi', 'Fitur Transfer/Kirim Saldo akan segera hadir!')}>
+              <Text style={styles.actionIcon}>📤</Text>
+              <Text style={styles.actionText}>Kirim</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -691,6 +728,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   userProfile: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,

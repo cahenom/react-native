@@ -50,7 +50,10 @@ export default function Internet() {
           <Input
             value={customer_no}
             placeholder="Masukan nomor pelanggan"
-            onchange={text => setCustomerNo(text)}
+            onchange={text => {
+              setCustomerNo(text);
+              // Reset bill info here when real integration is added
+            }}
             ondelete={() => setCustomerNo('')}
             type="numeric"
           />
@@ -105,7 +108,7 @@ export default function Internet() {
 
       <BottomButton
         label="Bayar Tagihan"
-        action={() => console.log(selectItem)}
+        action={() => console.log('Bayar Internet:', customer_no)}
         isLoading={false}
       />
 

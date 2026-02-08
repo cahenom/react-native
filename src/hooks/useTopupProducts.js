@@ -27,6 +27,16 @@ export default function useTopupProducts(provider, title, endpoint, cacheKeyPref
     return [...products].sort((a, b) => a.price - b.price);
   }, [products]);
 
+  // RESET LOGIC: Clear selected product if customer number changes
+  // This prevents the "stale data" bug where a user selects a product for Number A,
+  // then changes to Number B but accidentally clicks confirm with the old selection.
+  useEffect(() => {
+    if (selectItem) {
+      console.log('Resetting selected product because customer number changed');
+      setSelectItem(null);
+    }
+  }, [customer_no]);
+
   useEffect(() => {
     let isMounted = true; // Flag to prevent state updates on unmounted components
 
@@ -38,7 +48,7 @@ export default function useTopupProducts(provider, title, endpoint, cacheKeyPref
 
       // Wait for persistent state to load
       if (!isLoadingFromHook) {
-        // Check if cache is expired
+        // Check if cache is expired (including daily check)
         const cacheExpired = await checkCacheExpired();
 
         console.log('Cache status for provider:', provider, 'cacheExpired:', cacheExpired, 'products.length:', products.length);
@@ -46,21 +56,28 @@ export default function useTopupProducts(provider, title, endpoint, cacheKeyPref
         if (isMounted) {
           setIsCacheExpiredState(cacheExpired);
 
-          // If products are empty, show loading state immediately and fetch fresh data (unless offline)
+          // SMART DAILY CACHE STRATEGY:
           if (products.length === 0) {
-            setLoading(true); // Show skeleton/loading state immediately when products are empty
-            console.log('Products are empty, fetching fresh data for provider:', provider);
-            hasFetchedRef.current[providerKey] = true; // Mark as fetched to prevent duplicate calls
+            // 1. No data at all? Fetch immediately with loading state
+            setLoading(true);
+            console.log('No data, fetching fresh products for provider:', provider);
+            hasFetchedRef.current[providerKey] = true;
             await fetchProductsByProvider();
-          } else if (cacheExpired && !hasFetchedForThisProvider) {
-            // Only fetch if cache is expired AND hasn't been fetched in this session
-            console.log('Cache expired, fetching fresh data for provider:', provider);
-            hasFetchedRef.current[providerKey] = true; // Mark as fetched to prevent duplicate calls
+          } else if (cacheExpired) {
+            // 2. Data from different day? Show skeleton and fetch fresh
+            setLoading(true);
+            console.log('Cache from different day, forcing fresh fetch for provider:', provider);
+            hasFetchedRef.current[providerKey] = true;
             await fetchProductsByProvider();
           } else {
-            // If products are already loaded and cache is still valid, just set loading to false
-            console.log('Using cached products for provider:', provider);
+            // 3. Valid cache? Use it instantly, then background refresh will handle sync
+            console.log('Using valid daily cache for provider:', provider);
             setLoading(false);
+            // Re-trigger background refresh if not already done in this session
+            if (!hasFetchedForThisProvider) {
+              hasFetchedRef.current[providerKey] = true;
+              checkAndRefreshInBackground();
+            }
           }
         }
       }
@@ -176,61 +193,58 @@ export default function useTopupProducts(provider, title, endpoint, cacheKeyPref
     }
   };
 
-  // Effect to handle background refresh if needed
-  useEffect(() => {
-    const checkAndRefreshInBackground = async () => {
-      if (!isLoadingFromHook && products.length > 0) {
-        const needsRefresh = await checkNeedsBackgroundRefresh();
-        if (needsRefresh) {
-          // Perform background refresh without showing loading indicator
-          try {
-            console.log(`Background refresh for provider: ${provider}`);
-
-            const response = await api.post(endpoint);
-            if (response.data && response.data.data) {
-              let allProducts = [];
-              if (endpoint.includes('/api/product/masaaktif')) {
-                if (response.data.status === "success" && response.data.data && response.data.data.masa_aktif) {
-                  allProducts = response.data.data.masa_aktif || [];
-                }
-              } else if (endpoint.includes('/api/product/games')) {
-                allProducts = response.data.data.games || [];
-              } else if (endpoint.includes('/api/product/emoney')) {
-                allProducts = response.data.data.emoney || [];
-              } else if (endpoint.includes('/api/product/tv')) {
-                allProducts = response.data.data.tv || [];
-              } else if (endpoint.includes('/api/product/voucher')) {
-                allProducts = response.data.data.voucher || [];
-              } else {
-                const dataKeys = Object.keys(response.data.data);
-                if (dataKeys.length > 0) {
-                  allProducts = response.data.data[dataKeys[0]] || [];
-                }
-              }
-
-              const filteredProducts = allProducts.filter(item => item.provider === provider);
-              const transformedProducts = filteredProducts.map(item => ({
-                id: item.id,
-                label: item.name,
-                price: item.price,
-                desc: item.desc,
-                category: item.category,
-                sku: item.sku,
-                multi: item.multi
-              }));
-
-              // Update products in background without affecting UI loading state
-              await setProducts(transformedProducts);
+  const checkAndRefreshInBackground = async () => {
+    if (products.length > 0) {
+      try {
+        console.log(`Background revalidation for provider: ${provider}`);
+        const response = await api.post(endpoint);
+        if (response.data && response.data.data) {
+          let allProducts = [];
+          if (endpoint.includes('/api/product/masaaktif')) {
+            if (response.data.status === "success" && response.data.data && response.data.data.masa_aktif) {
+              allProducts = response.data.data.masa_aktif || [];
             }
-          } catch (error) {
-            console.warn('Background refresh failed:', error.message);
+          } else if (endpoint.includes('/api/product/games')) {
+            allProducts = response.data.data.games || [];
+          } else if (endpoint.includes('/api/product/emoney')) {
+            allProducts = response.data.data.emoney || [];
+          } else if (endpoint.includes('/api/product/tv')) {
+            allProducts = response.data.data.tv || [];
+          } else if (endpoint.includes('/api/product/voucher')) {
+            allProducts = response.data.data.voucher || [];
+          } else {
+            const dataKeys = Object.keys(response.data.data);
+            if (dataKeys.length > 0) {
+              allProducts = response.data.data[dataKeys[0]] || [];
+            }
           }
-        }
-      }
-    };
 
-    checkAndRefreshInBackground();
-  }, [isLoadingFromHook, products.length, provider, endpoint, checkNeedsBackgroundRefresh, cacheKeyPrefix]);
+          const filteredProducts = allProducts.filter(item => item.provider === provider);
+          const transformedProducts = filteredProducts.map(item => ({
+            id: item.id,
+            label: item.name,
+            price: item.price,
+            desc: item.desc,
+            category: item.category,
+            sku: item.sku,
+            multi: item.multi
+          }));
+
+          // Update state silently
+          await setProducts(transformedProducts);
+        }
+      } catch (error) {
+        console.warn('Background sync failed:', error.message);
+      }
+    }
+  };
+
+  // Effect to handle background refresh if needed (always check on mount if products exist)
+  useEffect(() => {
+    if (!isLoadingFromHook) {
+      checkAndRefreshInBackground();
+    }
+  }, [isLoadingFromHook, provider, endpoint]);
 
   const resetInput = () => {
     setCustomerNo('');

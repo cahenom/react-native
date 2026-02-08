@@ -35,6 +35,8 @@ import {
   TypeEmoney,
   DepositSuccess,
   DepositFailed,
+  HelpCenter,
+  PrivacyPolicy
 } from '../pages';
 import Transaksi from '../pages/Transaksi';
 import {
@@ -293,6 +295,20 @@ function ProtectedRoute() {
         component={DepositFailed}
         options={{
           title: 'Deposit Gagal',
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="HelpCenter"
+        component={HelpCenter}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicy}
+        options={{
           headerShown: false,
         }}
       />

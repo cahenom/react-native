@@ -1,4 +1,4 @@
-import {Alert} from 'react-native';
+import {Alert} from '../utils/alert';
 import {api} from '../utils/api';
 import {
   isBiometricRequiredForOrder,
@@ -43,6 +43,11 @@ export const makeApiCallWithBiometric = async (
   try {
     let response;
 
+    console.log(`[API DEBUG] Calling ${endpoint} [${method.toUpperCase()}]`);
+    if (data) {
+      console.log(`[API DEBUG] Payload:`, JSON.stringify(data, null, 2));
+    }
+
     if (method.toUpperCase() === 'GET') {
       response = await api.get(endpoint);
     } else if (method.toUpperCase() === 'POST') {
@@ -56,9 +61,13 @@ export const makeApiCallWithBiometric = async (
       response = await api.post(endpoint, data);
     }
 
+    console.log(`[API DEBUG] Response for ${endpoint}:`, JSON.stringify(response.data, null, 2));
     return response.data;
   } catch (error) {
-    console.error(`API call failed for ${endpoint}:`, error);
+    console.error(`[API DEBUG] API call failed for ${endpoint}:`, error);
+    if (error.response) {
+      console.error(`[API DEBUG] Error response:`, JSON.stringify(error.response.data, null, 2));
+    }
     throw error;
   }
 };

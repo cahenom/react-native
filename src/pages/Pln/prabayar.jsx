@@ -43,9 +43,8 @@ import CustomHeader from '../../components/CustomHeader';
 import SkeletonCard from '../../components/SkeletonCard';
 import ModernButton from '../../components/ModernButton';
 
-// Cache to store fetched products with timestamp
-const productCache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+// Smart Daily Cache Logic for PLN Prabayar
+const PLN_CACHE_KEY = 'pln_prabayar_cache';
 
 export default function PLNPrabayar({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -68,86 +67,46 @@ export default function PLNPrabayar({navigation}) {
 
   const handleRefresh = async () => {
     setIsRefreshingState(true);
-    await fetchProducts(true); // Force refresh when user wants to update data
+    await handleProductList(true); // Force refresh when user wants to update data
     setIsRefreshingState(false);
   };
 
-  const fetchProducts = async (forceRefresh = false) => {
-    // Show loading only when forcing refresh
-    if (forceRefresh) {
-      setLoading(true);
-    }
+  const handleProductList = async (forceRefresh = false) => {
+    if (!forceRefresh) setLoading(true);
 
-    // Check if products are already cached in memory and not expired
-    if (productCache.has('pln_prabayar') && !forceRefresh) {
-      const cachedEntry = productCache.get('pln_prabayar');
-      const now = Date.now();
-      if (now - cachedEntry.timestamp < CACHE_TTL) {
-        console.log('Using cached PLN Prabayar products without fetching');
-        await setProducts(cachedEntry.products);
-        setLoading(false);
-        return;
-      }
-    }
-
-    // Check if products are cached in AsyncStorage
-    if (!forceRefresh) {
+    // 1. Try to load from Persistent Cache for Instant display
+    const cachedString = await AsyncStorage.getItem(PLN_CACHE_KEY);
+    
+    if (cachedString && !forceRefresh) {
       try {
-        const cachedData = await AsyncStorage.getItem('pln_prabayar_cache');
-        if (cachedData) {
-          const parsedData = JSON.parse(cachedData);
-          productCache.set('pln_prabayar', parsedData);
-          await setProducts(parsedData);
-          if (forceRefresh) {
-            setLoading(false);
-          }
+        const parsed = JSON.parse(cachedString);
+        const cachedDate = new Date(parsed.timestamp).toDateString();
+        const currentDate = new Date().toDateString();
 
-          // Optionally fetch fresh data in the background if not forcing refresh
-          try {
-            const response = await api.post('/api/product/pln');
-            if (response.data && response.data.data && response.data.data.pln) {
-              const allProducts = response.data.data.pln;
-              const prepaidProducts = allProducts;
-
-              const transformedProducts = prepaidProducts.map(item => ({
-                id: item.id,
-                label: item.name,
-                price: item.price,
-                desc: item.desc,
-                category: item.category,
-                sku: item.sku,
-                multi: item.multi
-              }));
-
-              // Update cache with fresh data
-              productCache.set('pln_prabayar', transformedProducts);
-              await AsyncStorage.setItem('pln_prabayar_cache', JSON.stringify(transformedProducts));
-            }
-          } catch (bgError) {
-            console.log('Background refresh failed for PLN Prabayar, keeping cached data');
-          }
-
+        // If same day, show immediately but still sync in background
+        if (cachedDate === currentDate) {
+          console.log('Using persistent same-day cache for PLN Prabayar');
+          await setProducts(parsed.products || []);
+          setLoading(false);
+          
+          // Background sync silently
+          backgroundSyncPLN();
           return;
         }
-      } catch (error) {
-        console.error('Error reading cached PLN products:', error);
+      } catch (e) {
+        console.warn('Error parsing PLN cache:', e);
       }
     }
 
-    // If no cached data or forcing refresh, try to fetch fresh data from API
+    // 2. If no valid cache or forceRefresh, perform online fetch
+    await backgroundSyncPLN();
+  };
+
+  const backgroundSyncPLN = async () => {
     try {
       const response = await api.post('/api/product/pln');
-
-      console.log('PLN products response:', response.data);
-
       if (response.data && response.data.data && response.data.data.pln) {
-        const allProducts = response.data.data.pln;
-        console.log('All PLN products:', allProducts);
-
-        // Filter for prepaid products specifically - since all PLN products in the response are prepaid tokens
-        const prepaidProducts = allProducts;
-
-        const transformedProducts = prepaidProducts.map(item => ({
+        const transformedProducts = response.data.data.pln.map(item => ({
           id: item.id,
           label: item.name,
           price: item.price,
@@ -157,45 +116,20 @@ export default function PLNPrabayar({navigation}) {
           multi: item.multi
         }));
 
-        console.log('Transformed PLN prepaid products:', transformedProducts);
-
-        // Cache the products in memory
-        productCache.set('pln_prabayar', {
+        // Save to Persistence
+        const cacheData = {
           products: transformedProducts,
           timestamp: Date.now()
-        });
-
-        // Cache the products in AsyncStorage for persistence
-        await AsyncStorage.setItem('pln_prabayar_cache', JSON.stringify(transformedProducts));
-
+        };
+        await AsyncStorage.setItem(PLN_CACHE_KEY, JSON.stringify(cacheData));
+        
         await setProducts(transformedProducts);
-      } else {
-        Alert.alert('Error', 'Struktur data tidak sesuai. Silakan hubungi administrator.');
       }
     } catch (error) {
-      console.error('Error fetching PLN products:', error);
-
-      // If there's an error but we have cached data, try to load it anyway
-      try {
-        const cachedData = await AsyncStorage.getItem('pln_prabayar_cache');
-        if (cachedData) {
-          const parsedData = JSON.parse(cachedData);
-          productCache.set('pln_prabayar', parsedData);
-          await setProducts(parsedData);
-          console.log('Loaded cached PLN Prabayar products due to fetch error');
-        } else {
-          // Only show error if no cached data exists
-          // Error will be handled by global interceptor
-        }
-      } catch (cacheError) {
-        console.error('Error loading cached data as fallback:', cacheError);
-        // Show error if both fetch and cache loading failed
-        // Error will be handled by global interceptor
-      }
+      console.log('PLN sync failed:', error.message);
     } finally {
-      if (forceRefresh) {
-        setLoading(false);
-      }
+      setLoading(false);
+      setIsRefreshingState(false);
     }
   };
 
@@ -211,25 +145,21 @@ export default function PLNPrabayar({navigation}) {
         // Check if cache is expired
         const expired = await isCacheExpired();
         if (products.length === 0 || expired) {
-          // No data available or cache is expired, fetch fresh data
-          await fetchProducts(false);
+          // No data available or cache is expired (new day), fetch fresh data
+          await handleProductList(false);
         } else {
-          // We have valid cached data, no need to fetch initially
+          // We have valid cached data, use it but sync in background
           setLoading(false);
           hasLoaded.current = true; // Mark as initialized
-
-          // Check if background refresh is needed
-          const shouldRefreshInBackground = await needsBackgroundRefresh();
-          if (shouldRefreshInBackground) {
-            // Fetch fresh data in background without affecting UI
-            fetchProducts(false); // Don't force refresh, just update cache
-          }
+          
+          // Re-trigger background sync
+          backgroundSyncPLN();
         }
       }
     };
 
     initializeData();
-  }, [isLoadingFromHook, products, isCacheExpired, needsBackgroundRefresh]);
+  }, [isLoadingFromHook, products, isCacheExpired]);
 
   // Update loading state based on persistent state loading
   useEffect(() => {
@@ -263,6 +193,10 @@ export default function PLNPrabayar({navigation}) {
   const confirmOrder = async () => {
     if (isProcessing) return; // Prevent multiple clicks
 
+    console.log('[PLN DEBUG] Initiating confirmOrder');
+    console.log('[PLN DEBUG] current customer_no state:', customer_no);
+    console.log('[PLN DEBUG] current selectItem state:', JSON.stringify(selectItem, null, 2));
+
     setIsProcessing(true); // Set loading state to prevent spam clicks
 
     try {
@@ -285,7 +219,8 @@ export default function PLNPrabayar({navigation}) {
         product: {
           ...selectItem,
           product_name: selectItem?.name || selectItem?.label,
-          product_seller_price: selectItem?.price
+          product_seller_price: selectItem?.price,
+          customer_no: customer_no
         },
       });
     } catch (error) {
@@ -307,7 +242,10 @@ export default function PLNPrabayar({navigation}) {
           <Input
             value={customer_no}
             placeholder="Masukan nomor meter"
-            onchange={text => setCustomerNo(text)}
+            onchange={text => {
+              setCustomerNo(text);
+              if (selectItem) setSelectItem(null); // Clear selected item if number changes
+            }}
             ondelete={resetInput}
             type="numeric"
             lebar={windowWidth * 0.9}
