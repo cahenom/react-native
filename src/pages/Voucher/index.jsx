@@ -110,7 +110,7 @@ export default function Voucher({navigation}) {
   };
 
   const handleProviderPress = (provider) => {
-    navigation.navigate('TopupVoucher', {
+    navigation.navigate('TypeVoucher', {
       provider: provider,
       title: `${provider} Voucher`,
     });

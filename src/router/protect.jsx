@@ -24,7 +24,9 @@ import {
   TopupGames,
   TopupMasaAktif,
   TopupTV,
+  TypeTV,
   TopupVoucher,
+  TypeVoucher,
   TV,
   Voucher,
   Indosat,
@@ -206,6 +208,13 @@ function ProtectedRoute() {
         }}
       />
       <Stack.Screen
+        name="TypeTV"
+        component={TypeTV}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
         name="Voucher"
         component={Voucher}
         options={{
@@ -215,6 +224,13 @@ function ProtectedRoute() {
       <Stack.Screen
         name="TopupVoucher"
         component={TopupVoucher}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="TypeVoucher"
+        component={TypeVoucher}
         options={{
           headerShown: false,
         }}

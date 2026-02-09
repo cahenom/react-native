@@ -34,7 +34,7 @@ import {
 const {width} = Dimensions.get('window');
 
 export default function SuccessNotif({route}) {
-  const {item, product} = route.params;
+  const {item = {}, product = {}} = route.params || {};
 
   console.log('[SUCCESS DEBUG] Received route.params.item:', JSON.stringify(item, null, 2));
   console.log('[SUCCESS DEBUG] Received route.params.product:', JSON.stringify(product, null, 2));
@@ -53,12 +53,23 @@ export default function SuccessNotif({route}) {
     return '#01C1A2';
   };
 
-  const renderDetailRow = (label, value) => {
-    if (value === undefined || value === null || value === '') return null;
+  const renderDetailRow = (label, value, isCopyable = false, onCopy = null) => {
+    if (value === undefined || value === null || value === '' || value === '-') return null;
     return (
       <View style={styles.detailRow}>
         <Text style={styles.labelDetail(isDarkMode)}>{label}</Text>
-        <Text style={styles.valueDetail(isDarkMode)}>{String(value)}</Text>
+        <View style={{flex: 1.5, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center'}}>
+          <Text style={[styles.valueDetail(isDarkMode), {flex: isCopyable ? 0 : 1.5, marginRight: isCopyable ? 8 : 0}]}>
+            {String(value)}
+          </Text>
+          {isCopyable && (
+            <TouchableOpacity onPress={onCopy} activeOpacity={0.6}>
+              <View style={[styles.copyIcon, {backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#f1f5f9'}]}>
+                <Text style={{fontSize: 10, color: isDarkMode ? '#94a3b8' : '#64748b', fontFamily: BOLD_FONT}}>SALIN</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     );
   };
@@ -72,7 +83,7 @@ export default function SuccessNotif({route}) {
     }
     
     if (typeof priceValue === 'string') {
-      const parsed = parseFloat(priceValue);
+      const parsed = parseFloat(priceValue.replace(/[^0-9]/g, ''));
       if (!isNaN(parsed)) {
         return `Rp ${parsed.toLocaleString('id-ID')}`;
       }
@@ -110,11 +121,10 @@ export default function SuccessNotif({route}) {
     }
   };
 
-  const onCopyRef = () => {
-    const refId = responseData?.ref || responseData?.ref_id || item?.ref || item?.ref_id;
-    if (refId && refId !== '-') {
-      Clipboard.setString(refId);
-      Alert.alert('Berhasil', 'Ref ID berhasil disalin ke clipboard');
+  const onCopyValue = (value, label) => {
+    if (value && value !== '-') {
+      Clipboard.setString(value);
+      Alert.alert('Berhasil', `${label} berhasil disalin ke clipboard`);
     }
   };
 
@@ -185,30 +195,34 @@ export default function SuccessNotif({route}) {
 
             <View style={styles.detailsSection}>
               {renderDetailRow('Nomor Tujuan', item?.customer_no || responseData?.customer_no || responseData?.tujuan || item?.tujuan)}
+              {renderDetailRow('Produk', responseData?.produk || item?.produk || product?.produk)}
               {renderDetailRow('SKU', responseData?.sku || item?.sku)}
-              {renderDetailRow('Serial Number (SN)', responseData?.sn || item?.sn || item?.serial_number || responseData?.serial_number)}
-              <View style={styles.detailRow}>
-                <Text style={styles.labelDetail(isDarkMode)}>Ref ID</Text>
-                <View style={{flex: 1.5, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center'}}>
-                  <Text style={[styles.valueDetail(isDarkMode), {flex: 0, marginRight: 8}]}>
-                    {responseData?.ref || responseData?.ref_id || item?.ref || item?.ref_id || '-'}
-                  </Text>
-                  <TouchableOpacity onPress={onCopyRef} activeOpacity={0.6}>
-                     <View style={[styles.copyIcon, {backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#f1f5f9'}]}>
-                        <Text style={{fontSize: 10, color: isDarkMode ? '#94a3b8' : '#64748b', fontFamily: BOLD_FONT}}>SALIN</Text>
-                     </View>
-                  </TouchableOpacity>
-                </View>
-              </View>
+              {renderDetailRow('Harga', formattedPrice)}
+              {renderDetailRow('Status', responseData?.message || item?.message)}
               {renderDetailRow('Waktu', getFormattedDate(responseData?.created_at || item?.created_at))}
+              {renderDetailRow('Ref ID', responseData?.ref || responseData?.ref_id || item?.ref || item?.ref_id, true, () => onCopyValue(responseData?.ref || responseData?.ref_id || item?.ref || item?.ref_id, 'Ref ID'))}
             </View>
+          </View>
 
-            {(responseData?.message || item?.message) && (responseData?.message !== '-' || item?.message !== '-') && (
-              <View style={[styles.messageBox, {backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : '#f8fafc'}]}>
-                <Text style={styles.messageLabel(isDarkMode)}>Keterangan</Text>
-                <Text style={styles.messageValue(isDarkMode)}>{responseData?.message || item?.message}</Text>
-              </View>
-            )}
+          <View
+            style={[
+              styles.secondaryCard,
+              {backgroundColor: isDarkMode ? '#1e293b' : WHITE_COLOR},
+            ]}>
+            <View style={styles.keteranganHeader}>
+              <Text style={styles.labelDetail(isDarkMode)}>Keterangan</Text>
+              <TouchableOpacity 
+                onPress={() => onCopyValue(responseData?.sn || item?.sn || item?.serial_number || responseData?.serial_number, 'Keterangan')} 
+                activeOpacity={0.6}
+              >
+                <View style={[styles.copyIcon, {backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#f1f5f9'}]}>
+                  <Text style={{fontSize: 10, color: isDarkMode ? '#94a3b8' : '#64748b', fontFamily: BOLD_FONT}}>SALIN</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.keteranganValue(isDarkMode)}>
+              {String(responseData?.sn || item?.sn || item?.serial_number || responseData?.serial_number || '-')}
+            </Text>
           </View>
 
           <View style={styles.actionButtonsContainer}>
@@ -252,6 +266,29 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 12,
   },
+  secondaryCard: {
+    borderRadius: 20,
+    paddingVertical: 20,
+    marginTop: 15,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    paddingHorizontal: 25,
+  },
+  keteranganHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  keteranganValue: isDarkMode => ({
+    fontSize: 14,
+    fontFamily: MEDIUM_FONT,
+    color: isDarkMode ? WHITE_COLOR : '#607693ff',
+    lineHeight: 22,
+  }),
   animationHeader: {
     alignItems: 'center',
     paddingHorizontal: 20,

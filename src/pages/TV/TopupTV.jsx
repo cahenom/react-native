@@ -30,7 +30,7 @@ import CustomHeader from '../../components/CustomHeader';
 
 export default function TopupTV({route}) {
   const navigation = useNavigation();
-  const {provider, title} = route.params;
+  const {provider, title, type} = route.params;
   const isDarkMode = useColorScheme() === 'dark';
   const scrollViewRef = useRef(null);
 
@@ -47,7 +47,7 @@ export default function TopupTV({route}) {
     validationErrors,
     validateInputs,
     clearValidationErrors
-  } = useTopupProducts(provider, title, '/api/product/tv', 'tv');
+  } = useTopupProducts(provider, title, '/api/product/tv', 'tv', type);
 
   const [showModal, setShowModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false); // Loading state to prevent spam clicks

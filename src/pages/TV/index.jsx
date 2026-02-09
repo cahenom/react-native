@@ -108,7 +108,7 @@ export default function TV({navigation}) {
   };
 
   const handleProviderPress = (provider) => {
-    navigation.navigate('TopupTV', {
+    navigation.navigate('TypeTV', {
       provider: provider,
       title: `${provider} TV`,
     });

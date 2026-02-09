@@ -16,8 +16,10 @@ import MasaAktif from './MasaAktif';
 import TopupMasaAktif from './MasaAktif/TopupMasaAktif';
 import TV from './TV';
 import TopupTV from './TV/TopupTV';
+import TypeTV from './TV/typeTV';
 import Voucher from './Voucher';
 import TopupVoucher from './Voucher/TopupVoucher';
+import TypeVoucher from './Voucher/typeVoucher';
 import BpjsKesehatan from './Bpjs';
 import PDAM from './Pdam';
 import Internet from './Internet';
@@ -54,8 +56,10 @@ export {
   TopupMasaAktif,
   TV,
   TopupTV,
+  TypeTV,
   Voucher,
   TopupVoucher,
+  TypeVoucher,
   BpjsKesehatan,
   PDAM,
   Internet,

@@ -30,7 +30,7 @@ import CustomHeader from '../../components/CustomHeader';
 
 export default function TopupVoucher({route}) {
   const navigation = useNavigation();
-  const {provider, title} = route.params;
+  const {provider, title, type} = route.params;
   const isDarkMode = useColorScheme() === 'dark';
   const scrollViewRef = useRef(null);
 
@@ -47,7 +47,7 @@ export default function TopupVoucher({route}) {
     validationErrors,
     validateInputs,
     clearValidationErrors
-  } = useTopupProducts(provider, title, '/api/product/voucher', 'voucher');
+  } = useTopupProducts(provider, title, '/api/product/voucher', 'voucher', type);
 
   const [showModal, setShowModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false); // Loading state to prevent spam clicks
