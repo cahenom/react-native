@@ -4,6 +4,7 @@ import DataPackage from './Data_Package';
 import DataType from './Data_Package/dataType';
 import TopupData from './Data_Package/topupData';
 import SuccessNotif from './Notifikasi/SuccessNotif';
+import TransactionResult from './Notifikasi/TransactionResult';
 import LayananPLN from './Pln';
 import PLNPascabayar from './Pln/pascabayar';
 import PLNPrabayar from './Pln/prabayar';
@@ -34,6 +35,7 @@ import Indosat from './Indosat';
 import DepositPage from './Deposit';
 import DepositSuccess from './Deposit/DepositSuccess';
 import DepositFailed from './Deposit/DepositFailed';
+import PaymentWebView from './Deposit/PaymentWebView';
 import HelpCenter from './HelpCenter';
 import PrivacyPolicy from './PrivacyPolicy';
 
@@ -44,6 +46,7 @@ export {
   DataType,
   TopupData,
   SuccessNotif,
+  TransactionResult,
   LayananPLN,
   PLNPascabayar,
   PLNPrabayar,
@@ -74,6 +77,7 @@ export {
   DepositPage,
   DepositSuccess,
   DepositFailed,
+  PaymentWebView,
   HelpCenter,
   PrivacyPolicy
 };

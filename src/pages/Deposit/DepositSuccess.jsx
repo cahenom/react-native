@@ -21,13 +21,13 @@ import {
 const DepositSuccess = () => {
   const navigation = useNavigation();
   const isDarkMode = useColorScheme() === 'dark';
-  const {refreshUserData} = useAuth();
+  const {refreshUserProfile} = useAuth();
   const scaleAnim = new Animated.Value(0);
   const checkAnim = new Animated.Value(0);
 
   useEffect(() => {
     // Refresh user balance when entering this page
-    refreshUserData();
+    refreshUserProfile();
 
     // Animate the success icon
     Animated.sequence([

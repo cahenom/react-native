@@ -152,18 +152,38 @@ export default function Pulsa({navigation}) {
       // Close the modal after response
       setShowModal(false);
 
-      navigation.navigate('SuccessNotif', {
-        item: {
-          ...response,
-          customer_no: nomorTujuan,
-        },
-        product: {
-          ...selectItem,
-          product_name: selectItem?.name || selectItem?.product_name,
-          product_seller_price:
-            selectItem?.price || selectItem?.product_seller_price,
-        },
-      });
+      // Check if transaction is successful
+      const status = (response?.status || 'Berhasil').toLowerCase();
+      const isSuccess = !['gagal', 'failed', 'error', 'none', 'pending', 'diproses', 'processing'].includes(status);
+
+      // Navigate to TransactionResult only for successful payments
+      if (isSuccess) {
+        navigation.navigate('TransactionResult', {
+          item: {
+            ...response,
+            customer_no: nomorTujuan,
+          },
+          product: {
+            ...selectItem,
+            product_name: selectItem?.name || selectItem?.product_name,
+            product_seller_price:
+              selectItem?.price || selectItem?.product_seller_price,
+          },
+        });
+      } else {
+        navigation.navigate('SuccessNotif', {
+          item: {
+            ...response,
+            customer_no: nomorTujuan,
+          },
+          product: {
+            ...selectItem,
+            product_name: selectItem?.name || selectItem?.product_name,
+            product_seller_price:
+              selectItem?.price || selectItem?.product_seller_price,
+          },
+        });
+      }
       console.log('response topup : ', response);
     } catch (error) {
       console.log('response error : ', error);

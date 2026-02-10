@@ -20,6 +20,7 @@ import {
   Pulsa,
   SettingsScreen,
   SuccessNotif,
+  TransactionResult,
   TopupDompet,
   TopupGames,
   TopupMasaAktif,
@@ -37,6 +38,7 @@ import {
   TypeEmoney,
   DepositSuccess,
   DepositFailed,
+  PaymentWebView,
   HelpCenter,
   PrivacyPolicy
 } from '../pages';
@@ -135,6 +137,14 @@ function ProtectedRoute() {
         component={PLNPascabayar}
         options={{
           headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="TransactionResult"
+        component={TransactionResult}
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
         }}
       />
       <Stack.Screen
@@ -311,6 +321,13 @@ function ProtectedRoute() {
         component={DepositFailed}
         options={{
           title: 'Deposit Gagal',
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="PaymentWebView"
+        component={PaymentWebView}
+        options={{
           headerShown: false,
         }}
       />

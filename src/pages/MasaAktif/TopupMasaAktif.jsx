@@ -82,20 +82,40 @@ export default function TopupMasaAktif({route}) {
       // Close confirmation modal
       setShowModal(false);
 
-      // Navigate to success screen with the response data
-      navigation.navigate('SuccessNotif', {
-        item: {
-          ...response,
-          customer_no: customer_no,
-          status: response.status || 'Berhasil', // Map status appropriately
-          data: { status: response.status || 'Berhasil' } // Also include in data object for SuccessNotif checks
-        },
-        product: {
-          ...selectItem,
-          product_name: selectItem?.name || selectItem?.label,
-          product_seller_price: selectItem?.price
-        },
-      });
+      // Check if transaction is successful
+      const status = (response?.status || 'Berhasil').toLowerCase();
+      const isSuccess = !['gagal', 'failed', 'error', 'none', 'pending', 'diproses', 'processing'].includes(status);
+
+      // Navigate to TransactionResult only for successful payments
+      if (isSuccess) {
+        navigation.navigate('TransactionResult', {
+          item: {
+            ...response,
+            customer_no: customer_no,
+            status: response.status || 'Berhasil',
+            data: { status: response.status || 'Berhasil' }
+          },
+          product: {
+            ...selectItem,
+            product_name: selectItem?.name || selectItem?.label,
+            product_seller_price: selectItem?.price
+          },
+        });
+      } else {
+        navigation.navigate('SuccessNotif', {
+          item: {
+            ...response,
+            customer_no: customer_no,
+            status: response.status || 'Berhasil',
+            data: { status: response.status || 'Berhasil' }
+          },
+          product: {
+            ...selectItem,
+            product_name: selectItem?.name || selectItem?.label,
+            product_seller_price: selectItem?.price
+          },
+        });
+      }
     } catch (error) {
       console.error('Topup error:', error);
       setShowModal(false);

@@ -8,7 +8,6 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
-  Linking,
   SafeAreaView,
   FlatList,
   useColorScheme,
@@ -32,9 +31,11 @@ import {
 } from '../../utils/const';
 
 import ModernButton from '../../components/ModernButton';
+import { useNavigation } from '@react-navigation/native';
 
 const DepositPage = () => {
   const isDarkMode = useColorScheme() === 'dark';
+  const navigation = useNavigation();
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [invoiceData, setInvoiceData] = useState(null);
@@ -124,7 +125,11 @@ const DepositPage = () => {
 
   const handlePayNow = () => {
     if (invoiceData?.payment_url) {
-      Linking.openURL(invoiceData.payment_url);
+      navigation.navigate('PaymentWebView', {
+        paymentUrl: invoiceData.payment_url,
+        invoiceId: invoiceData.invoice_id,
+        amount: invoiceData.amount,
+      });
     }
   };
 
