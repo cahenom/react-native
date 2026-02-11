@@ -82,12 +82,13 @@ export default function TopupTV({route}) {
       // Close confirmation modal
       setShowModal(false);
 
-      // Check if transaction is successful
+      // Check if transaction is successful or pending/processing
       const status = (response?.status || 'Berhasil').toLowerCase();
-      const isSuccess = !['gagal', 'failed', 'error', 'none', 'pending', 'diproses', 'processing'].includes(status);
+      // Include pending statuses as "successful initiations" to show the animation
+      const isSuccessOrPending = !['gagal', 'failed', 'error', 'none'].includes(status);
 
-      // Navigate to TransactionResult only for successful payments
-      if (isSuccess) {
+      // Navigate to TransactionResult for successful or pending initiations
+      if (isSuccessOrPending) {
         navigation.navigate('TransactionResult', {
           item: {
             ...response,

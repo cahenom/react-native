@@ -1,4 +1,5 @@
 import messaging from '@react-native-firebase/messaging';
+import { displayNotification, setupNotifeeChannels } from './notifeeHelper';
 
 // Fungsi untuk menangani notifikasi saat aplikasi dalam mode foreground
 export const handleForegroundNotifications = () => {
@@ -6,8 +7,15 @@ export const handleForegroundNotifications = () => {
   const unsubscribe = messaging().onMessage(async remoteMessage => {
     console.log('Notifikasi diterima saat foreground:', remoteMessage);
 
-    // Push notifications will be handled by the system
-    // No in-app alerts will be shown - only system notifications
+    // Show local notification with sound via Notifee
+    if (remoteMessage.notification) {
+      const { title, body } = remoteMessage.notification;
+      await displayNotification(
+        title || 'Notifikasi Baru',
+        body || '',
+        remoteMessage.data
+      );
+    }
   });
 
   return unsubscribe;
@@ -19,8 +27,16 @@ export const setBackgroundNotificationHandler = () => {
   messaging().setBackgroundMessageHandler(async remoteMessage => {
     console.log('Notifikasi diterima saat background/killed:', remoteMessage);
     
-    // Lakukan sesuatu saat notifikasi diterima di background
-    // Misalnya, simpan ke database lokal atau update state aplikasi
+    // Play sound via local notification even in background
+    if (remoteMessage.notification) {
+        const { title, body } = remoteMessage.notification;
+        await displayNotification(
+          title || 'Punya Kios',
+          body || '',
+          remoteMessage.data
+        );
+    }
+
     return Promise.resolve();
   });
 };
@@ -39,6 +55,9 @@ export const setupNotificationHandlers = async () => {
     } else {
       console.log('Izin notifikasi ditolak');
     }
+
+    // Setup Notifee channels (for sound)
+    await setupNotifeeChannels();
 
     // Setup handler untuk notifikasi background
     setBackgroundNotificationHandler();

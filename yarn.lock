@@ -1489,6 +1489,11 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@notifee/react-native@^9.1.8":
+  version "9.1.8"
+  resolved "https://registry.npmjs.org/@notifee/react-native/-/react-native-9.1.8.tgz"
+  integrity sha512-Az/dueoPerJsbbjRxu8a558wKY+gONUrfoy3Hs++5OqbeMsR0dYe6P+4oN6twrLFyzAhEA1tEoZRvQTFDRmvQg==
+
 "@react-native-async-storage/async-storage@^1.19.3":
   version "1.19.3"
   resolved "https://registry.npmjs.org/@react-native-async-storage/async-storage/-/async-storage-1.19.3.tgz"
@@ -6500,6 +6505,11 @@ react-native-select-contact@^1.6.3:
   integrity sha512-TI+mvioD86ZZcOaBmndJAsKla1QF0dlX7Oa2aw37uUDPp8HKAkSwUWl8q/AxYtdLJohasgsLVlUskXzLK4KEjA==
   optionalDependencies:
     react-native-action-sheet "^2.2.0"
+
+react-native-sound-player@^0.14.5:
+  version "0.14.5"
+  resolved "https://registry.npmjs.org/react-native-sound-player/-/react-native-sound-player-0.14.5.tgz"
+  integrity sha512-/fCP91KNNCJ8RindTMERklLCbQ+Vjbd6aGY7ZX2W92mRNvAkbPCQ99PZkvYqJsC7VgUn18rxvGmneZbhb7LnxQ==
 
 react-native-svg-transformer@^1.1.0:
   version "1.1.0"

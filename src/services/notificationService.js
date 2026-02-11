@@ -26,9 +26,6 @@ export const addFcmTokenToRequest = async (requestData) => {
 // Fungsi untuk menangani refresh token dan mengirimnya ke server saat login
 export const handleTokenRefreshForServer = async (onTokenUpdate) => {
   try {
-    // Configure push notifications to handle foreground messages
-    configurePushNotifications();
-
     // Dengarkan perubahan token dan panggil fungsi callback jika terjadi perubahan
     const unsubscribe = await onTokenRefresh(async (newToken) => {
       try {

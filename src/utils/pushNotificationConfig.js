@@ -1,22 +1,27 @@
 import messaging from '@react-native-firebase/messaging';
 import {Platform} from 'react-native';
+import { displayNotification, setupNotifeeChannels } from './notifeeHelper';
 
 /**
  * Configure push notification handlers
  */
 export const configurePushNotifications = () => {
+  // Setup Notifee channels for sound
+  setupNotifeeChannels();
+
   // Handle foreground messages (when app is active)
   const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
     console.log('Foreground message received:', remoteMessage);
 
-    // Push notifications will be handled by the system
-    // No in-app alerts will be shown - only system notifications
-  });
-
-  // Handle background messages (when app is in background)
-  messaging().setBackgroundMessageHandler(async remoteMessage => {
-    console.log('Background message received:', remoteMessage);
-    // This will automatically show notification in tray when app is in background
+    // Show local notification with sound via Notifee
+    if (remoteMessage.notification) {
+      const { title, body } = remoteMessage.notification;
+      await displayNotification(
+        title || 'Notifikasi Baru',
+        body || '',
+        remoteMessage.data
+      );
+    }
   });
 
   // Handle notification tap (when user taps on notification)

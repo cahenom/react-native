@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import LottieView from 'lottie-react-native';
+import SoundPlayer from 'react-native-sound-player';
 import {
   DARK_BACKGROUND,
   WHITE_COLOR,
@@ -52,10 +53,18 @@ export default function TransactionResult({route}) {
       }),
     ]).start();
 
-    // Provide haptic feedback for successful transactions
-    if (isSuccess) {
+    // Provide haptic feedback and play sound for successful/pending transactions
+    if (!isFailed) {
       // Vibrate in a success pattern: short-pause-short
       Vibration.vibrate([0, 100, 50, 100]);
+      
+      // Play success sound
+      try {
+        // playSoundFile will look in android/app/src/main/res/raw
+        SoundPlayer.playSoundFile('success', 'mp3');
+      } catch (e) {
+        console.log(`Cannot play the sound file`, e);
+      }
     } else if (isFailed) {
       // Vibrate in a failure pattern: long vibration
       Vibration.vibrate(400);
@@ -83,13 +92,13 @@ export default function TransactionResult({route}) {
 
   const getStatusText = () => {
     if (isFailed) return 'Transaksi Gagal';
-    if (isPending) return 'Sedang Diproses';
-    return 'Transaksi Berhasil';
+    // Display both success and pending as "Pembayaran Berhasil" for optimistic UI
+    return 'Pembayaran Berhasil';
   };
 
   const getStatusMessage = () => {
     if (isFailed) return 'Mohon maaf, transaksi Anda gagal diproses';
-    if (isPending) return 'Transaksi Anda sedang dalam proses';
+    // Display success message for both success and pending
     return 'Transaksi Anda telah berhasil diproses';
   };
 
@@ -116,14 +125,8 @@ export default function TransactionResult({route}) {
               loop={false}
               style={styles.lottie}
             />
-          ) : isPending ? (
-            <LottieView
-              source={require('../../assets/lottie/pending-animation.json')}
-              autoPlay
-              loop={true}
-              style={styles.lottie}
-            />
           ) : (
+            // Use success animation for both success and pending
             <LottieView
               source={require('../../assets/lottie/success-animation.json')}
               autoPlay
