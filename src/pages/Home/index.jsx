@@ -152,36 +152,7 @@ export default function HomeScreen({navigation}) {
   // State for recent activities
   const [recentActivities, setRecentActivities] = useState([
     // Default/fallback data in case cache is empty
-    {
-      id: 1,
-      service: 'Telkomsel 10GB',
-      time: 'Today, 10:23 AM',
-      amount: '-Rp 55.000',
-      status: 'Success',
-      icon: '📶',
-      type: 'debit',
-      color: '#ef4444',
-    },
-    {
-      id: 2,
-      service: 'PLN Token',
-      time: 'Yesterday, 08:45 PM',
-      amount: '-Rp 100.000',
-      status: 'Pending',
-      icon: '⚡',
-      type: 'debit',
-      color: '#f59e0b',
-    },
-    {
-      id: 3,
-      service: 'Top Up Balance',
-      time: 'Sep 24, 02:15 PM',
-      amount: '+Rp 500.000',
-      status: 'Success',
-      icon: '💳',
-      type: 'credit',
-      color: '#10b981',
-    },
+    
   ]);
 
   // Load recent activities from API and cache
@@ -506,9 +477,9 @@ export default function HomeScreen({navigation}) {
                 item =>
                   item.label.toLowerCase() !== 'pdam' &&
                   item.label.toLowerCase() !== 'internet' &&
-                  item.label.toLowerCase() !== 'bpjs kesehatan' &&
                   item.label.toLowerCase() !== 'indosat' &&
-                  item.label.toLowerCase() !== 'voucher',
+                  item.label.toLowerCase() !== 'voucher' &&
+                  item.label.toLowerCase() !== 'bpjs kesehatan',  
               ),
               {id: 'semua', label: 'Semua', ikon: '🔍'}, // Add Semua as a service item
             ]}

@@ -52,7 +52,7 @@ export default function LihatSemuaScreen({navigation}) {
   );
 
   // Coming soon services
-  const comingSoonServices = ['BPJS Kesehatan', 'PDAM', 'Internet'];
+  const comingSoonServices = ['PDAM', 'Internet'];
 
   const handleServicePress = (item) => {
     if (comingSoonServices.includes(item.label)) {

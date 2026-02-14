@@ -24,6 +24,9 @@ import XClose from './images/svg/x-close.svg';
 import ArrowRight from './images/svg/arrow-right.svg';
 import Eye from './images/svg/eye.svg';
 import EyeCros from './images/svg/eye-crossed.svg';
+import PromoActive from './images/svg/promo-active.svg';
+import PromoDefault from './images/svg/promo-default.svg';
+import ScanIcon from './images/svg/scan-icon.svg';
 
 export {
   HeaderBG,
@@ -49,5 +52,8 @@ export {
   XClose,
   ArrowRight,
   Eye,
-  EyeCros
+  EyeCros,
+  PromoActive,
+  PromoDefault,
+  ScanIcon
 };

@@ -14,6 +14,9 @@ import {
 import {
   HomeActive,
   HomeDefault,
+  PromoActive,
+  PromoDefault,
+  ScanIcon,
   TransaksiActive,
   TransaksiDefault,
   UserActive,
@@ -25,6 +28,7 @@ function MyTabBar({state, descriptors, navigation}) {
 
   const IkonMenu = ({label, active}) => {
     if (label === 'Home') return active ? <HomeActive /> : <HomeDefault />;
+    if (label === 'Promo') return active ? <PromoActive /> : <PromoDefault />;
     if (label === 'Transaksi')
       return active ? <TransaksiActive /> : <TransaksiDefault />;
     if (label === 'Profil') return active ? <UserActive /> : <UserDefault />;
@@ -59,6 +63,7 @@ function MyTabBar({state, descriptors, navigation}) {
               : route.name;
 
           const isFocused = state.index === index;
+          const isScanTab = label === 'Scan';
 
           const onPress = () => {
             const event = navigation.emit({
@@ -79,84 +84,135 @@ function MyTabBar({state, descriptors, navigation}) {
             });
           };
 
-            const animatedScale = useRef(new Animated.Value(0.95)).current;
+          const animatedScale = useRef(new Animated.Value(0.95)).current;
 
-            useEffect(() => {
-              if (isFocused) {
-                Animated.spring(animatedScale, {
-                  toValue: 1,
-                  friction: 4,
-                  useNativeDriver: true,
-                }).start();
-              } else {
-                animatedScale.setValue(0.95);
-              }
-            }, [isFocused, animatedScale]);
+          useEffect(() => {
+            if (isFocused) {
+              Animated.spring(animatedScale, {
+                toValue: 1,
+                friction: 4,
+                useNativeDriver: true,
+              }).start();
+            } else {
+              animatedScale.setValue(0.95);
+            }
+          }, [isFocused, animatedScale]);
 
+          // ========== SCAN CENTER BUTTON ==========
+          if (isScanTab) {
             return (
-              <TouchableOpacity
+              <View
                 key={index}
-                accessibilityRole="button"
-                accessibilityState={isFocused ? {selected: true} : {}}
-                accessibilityLabel={options.tabBarAccessibilityLabel}
-                testID={options.tabBarTestID}
-                onPress={onPress}
-                onLongPress={onLongPress}
                 style={{
                   flex: 1,
                   alignItems: 'center',
-                  paddingVertical: SPACING.md,
-                  borderRadius: BORDER_RADIUS.large,
-                }}
-                activeOpacity={0.7}>
-                <Animated.View
+                  justifyContent: 'flex-end',
+                  paddingBottom: SPACING.xs,
+                }}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Scan"
+                  onPress={onPress}
+                  onLongPress={onLongPress}
+                  activeOpacity={0.8}
                   style={{
-                    transform: [{scale: animatedScale}],
-                    width: '100%',
-                    alignItems: 'center',
+                    marginTop: -28,
                   }}>
-                  {isFocused ? (
-                    <LinearGradient
-                      colors={isDarkMode ? ['#1e3a8a', '#1e1b4b'] : ['#eff6ff', '#dbeafe']}
-                      start={{x: 0, y: 0}}
-                      end={{x: 1, y: 0}}
-                      style={{
-                        position: 'absolute',
-                        top: -SPACING.md,
-                        bottom: -SPACING.md,
-                        left: SPACING.xs,
-                        right: SPACING.xs,
-                        borderRadius: BORDER_RADIUS.large,
-                        opacity: 0.8,
-                      }}
-                    />
-                  ) : null}
-                  <View style={{marginBottom: SPACING.xs}}>
-                    <IkonMenu label={label} active={isFocused} />
-                  </View>
-                  <Text
+                  <LinearGradient
+                    colors={GRADIENTS.primary}
+                    start={{x: 0, y: 0}}
+                    end={{x: 1, y: 1}}
                     style={{
-                      color: isFocused ? BLUE_COLOR : isDarkMode ? '#94a3b8' : '#64748b',
-                      fontSize: 12,
-                      fontWeight: isFocused ? '600' : '400',
+                      width: 58,
+                      height: 58,
+                      borderRadius: 29,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      ...SHADOWS.colored('#1e0bff'),
+                      borderWidth: 4,
+                      borderColor: isDarkMode ? '#1a2332' : '#ffffff',
                     }}>
-                    {label}
-                  </Text>
-                </Animated.View>
-                {isFocused && (
-                  <View
+                    <ScanIcon width={26} height={26} />
+                  </LinearGradient>
+                </TouchableOpacity>
+                <Text
+                  style={{
+                    color: isFocused ? BLUE_COLOR : isDarkMode ? '#94a3b8' : '#64748b',
+                    fontSize: 11,
+                    fontWeight: isFocused ? '600' : '400',
+                    marginTop: 2,
+                  }}>
+                  Scan
+                </Text>
+              </View>
+            );
+          }
+
+          // ========== REGULAR TAB ==========
+          return (
+            <TouchableOpacity
+              key={index}
+              accessibilityRole="button"
+              accessibilityState={isFocused ? {selected: true} : {}}
+              accessibilityLabel={options.tabBarAccessibilityLabel}
+              testID={options.tabBarTestID}
+              onPress={onPress}
+              onLongPress={onLongPress}
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                paddingVertical: SPACING.md,
+                borderRadius: BORDER_RADIUS.large,
+              }}
+              activeOpacity={0.7}>
+              <Animated.View
+                style={{
+                  transform: [{scale: animatedScale}],
+                  width: '100%',
+                  alignItems: 'center',
+                }}>
+                {isFocused ? (
+                  <LinearGradient
+                    colors={isDarkMode ? ['#1e3a8a', '#1e1b4b'] : ['#eff6ff', '#dbeafe']}
+                    start={{x: 0, y: 0}}
+                    end={{x: 1, y: 0}}
                     style={{
                       position: 'absolute',
-                      bottom: 0,
-                      width: 40,
-                      height: 3,
-                      borderRadius: BORDER_RADIUS.full,
-                      backgroundColor: BLUE_COLOR,
+                      top: -SPACING.md,
+                      bottom: -SPACING.md,
+                      left: SPACING.xs,
+                      right: SPACING.xs,
+                      borderRadius: BORDER_RADIUS.large,
+                      opacity: 0.8,
                     }}
                   />
-                )}
-              </TouchableOpacity>
-            );
+                ) : null}
+                <View style={{marginBottom: SPACING.xs}}>
+                  <IkonMenu label={label} active={isFocused} />
+                </View>
+                <Text
+                  style={{
+                    color: isFocused ? BLUE_COLOR : isDarkMode ? '#94a3b8' : '#64748b',
+                    fontSize: 11,
+                    fontWeight: isFocused ? '600' : '400',
+                  }}>
+                  {label}
+                </Text>
+              </Animated.View>
+              {isFocused && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    width: 32,
+                    height: 3,
+                    borderRadius: BORDER_RADIUS.full,
+                    backgroundColor: BLUE_COLOR,
+                  }}
+                />
+              )}
+            </TouchableOpacity>
+          );
         })}
       </View>
     </View>
@@ -164,4 +220,3 @@ function MyTabBar({state, descriptors, navigation}) {
 }
 
 export default MyTabBar;
-

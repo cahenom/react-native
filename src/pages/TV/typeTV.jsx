@@ -19,7 +19,7 @@ import {
   WHITE_BACKGROUND,
 } from '../../utils/const';
 import {ArrowRight} from '../../assets';
-import { api } from '../../utils/api';
+import { fetchProductTypes } from '../../helpers/providerHelper';
 import CustomHeader from '../../components/CustomHeader';
 import SkeletonCard from '../../components/SkeletonCard';
 import ModernButton from '../../components/ModernButton';
@@ -32,46 +32,34 @@ export default function TypeTV({route, navigation}) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchTypes();
+    loadTypes();
   }, []);
 
-  const fetchTypes = async () => {
+  const loadTypes = async (forceRefresh = false) => {
     try {
       setLoading(true);
-      const response = await api.post('/api/product/tv', {
-        provider: provider.toLowerCase(),
-      });
+      const { types: fetchedTypes, error: fetchError } = await fetchProductTypes(
+        'tv',
+        '/api/product/tv',
+        'tv',
+        provider,
+        forceRefresh
+      );
 
-      if (response.data && response.data.data) {
-        let allProducts = response.data.data.tv || [];
-        
-        // Filter to ensure we only have objects with a 'type' property and belong to the selected provider
-        const validProducts = allProducts.filter(item =>
-          item && item.type && item.provider &&
-          item.provider.toLowerCase() === provider.toLowerCase()
-        );
-
-        // Extract unique types
-        const uniqueTypes = [...new Set(validProducts.map(item => item.type))];
-
-        // Format the types for display
-        const formattedTypes = uniqueTypes
-          .filter(type => type)
-          .map(type => ({
-            id: type,
-            name: type,
-            provider: provider
-          }));
-
-        setTypes(formattedTypes);
+      if (fetchError) {
+        setError(fetchError);
+      } else {
+        setTypes(fetchedTypes);
+        setError(null);
       }
       setLoading(false);
     } catch (err) {
       setError(err.message);
       setLoading(false);
-      console.error('Error fetching TV types:', err);
+      console.error('Error in TypeTV loadTypes:', err);
     }
   };
+
 
   const handleTypePress = (selectedType) => {
     navigation.navigate('TopupTV', {
@@ -108,7 +96,7 @@ export default function TypeTV({route, navigation}) {
               </Text>
               <ModernButton
                 label="Coba Lagi"
-                onPress={fetchTypes}
+                onPress={() => loadTypes(true)}
               />
             </View>
           ) : types.length > 0 ? (

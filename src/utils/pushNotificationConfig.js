@@ -17,8 +17,8 @@ export const configurePushNotifications = () => {
     if (remoteMessage.notification) {
       const { title, body } = remoteMessage.notification;
       await displayNotification(
-        title || 'Notifikasi Baru',
-        body || '',
+        title,
+        body,
         remoteMessage.data
       );
     }

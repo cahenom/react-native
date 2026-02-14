@@ -17,7 +17,9 @@ import {
   PLNPascabayar,
   PLNPrabayar,
   ProfilScreen,
+  PromoScreen,
   Pulsa,
+  ScanScreen,
   SettingsScreen,
   SuccessNotif,
   TransactionResult,
@@ -58,6 +60,20 @@ function MyTabs() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Tab.Screen
+        name="Promo"
+        component={PromoScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Tab.Screen
+        name="Scan"
+        component={ScanScreen}
         options={{
           headerShown: false,
         }}

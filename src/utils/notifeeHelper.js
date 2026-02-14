@@ -20,6 +20,12 @@ export const setupNotifeeChannels = async () => {
  * @param {object} data - Optional data payload
  */
 export const displayNotification = async (title, body, data = {}) => {
+  // Skip if title or body is missing or empty
+  if (!title || !body || title.trim() === '' || body.trim() === '') {
+    console.log('Skipping notification: title or body is missing/empty', { title, body });
+    return;
+  }
+
   // Request permissions (required for iOS and Android 13+)
   await notifee.requestPermission();
 

@@ -56,4 +56,14 @@
         </intent-filter>
       </activity>
     </application>
+
+    <!-- Required for Android 11+ (SDK 30+) to resolve contact picker intent -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:mimeType="vnd.android.cursor.dir/contact" />
+        </intent>
+    </queries>
+
 </manifest>

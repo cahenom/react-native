@@ -32,6 +32,9 @@ export default function Input({
   ondelete,
   lebar,
   hasError = false,
+  rightIcon,
+  onRightAction,
+  disabledRightAction = false,
 }) {
   const isDarkMode = useColorScheme() === 'dark';
   const [isFocused, setIsFocused] = React.useState(false);
@@ -79,13 +82,21 @@ export default function Input({
           onChangeText={onchange}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          style={styles.input(isDarkMode)}
+          style={styles.input(isDarkMode, !!rightIcon)}
         />
-        {value && (
+        {value && !rightIcon && (
           <TouchableOpacity
             style={styles.clearButton}
             onPress={ondelete}>
             <XClose width={15} height={15} />
+          </TouchableOpacity>
+        )}
+        {rightIcon && (
+          <TouchableOpacity
+            style={[styles.rightActionButton, disabledRightAction && {opacity: 0.4}]}
+            onPress={onRightAction}
+            disabled={disabledRightAction}>
+            {rightIcon}
           </TouchableOpacity>
         )}
         {hasError && (
@@ -137,19 +148,26 @@ const styles = StyleSheet.create({
     fontFamily: REGULAR_FONT,
     zIndex: 1,
   }),
-  input: isDarkMode => ({
+  input: (isDarkMode, hasRightIcon) => ({
     fontFamily: REGULAR_FONT,
     fontSize: 14,
     color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
     padding: 0,
     margin: 0,
-    paddingRight: 40,
+    paddingRight: hasRightIcon ? 45 : 40,
   }),
   clearButton: {
     position: 'absolute',
     right: SPACING.md,
     top: '50%',
     transform: [{translateY: -7.5}],
+    padding: SPACING.xs,
+  },
+  rightActionButton: {
+    position: 'absolute',
+    right: SPACING.md,
+    top: '50%',
+    transform: [{translateY: -12}], // Centering the icon
     padding: SPACING.xs,
   },
   errorIndicator: {

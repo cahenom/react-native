@@ -11,8 +11,8 @@ export const handleForegroundNotifications = () => {
     if (remoteMessage.notification) {
       const { title, body } = remoteMessage.notification;
       await displayNotification(
-        title || 'Notifikasi Baru',
-        body || '',
+        title,
+        body,
         remoteMessage.data
       );
     }
@@ -31,8 +31,8 @@ export const setBackgroundNotificationHandler = () => {
     if (remoteMessage.notification) {
         const { title, body } = remoteMessage.notification;
         await displayNotification(
-          title || 'Punya Kios',
-          body || '',
+          title,
+          body,
           remoteMessage.data
         );
     }

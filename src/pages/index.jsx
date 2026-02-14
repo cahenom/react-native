@@ -38,6 +38,9 @@ import DepositFailed from './Deposit/DepositFailed';
 import PaymentWebView from './Deposit/PaymentWebView';
 import HelpCenter from './HelpCenter';
 import PrivacyPolicy from './PrivacyPolicy';
+import OnboardingScreen from './Onboarding';
+import PromoScreen from './Promo';
+import ScanScreen from './Scan';
 
 export {
   HomeScreen,
@@ -79,5 +82,8 @@ export {
   DepositFailed,
   PaymentWebView,
   HelpCenter,
-  PrivacyPolicy
+  PrivacyPolicy,
+  OnboardingScreen,
+  PromoScreen,
+  ScanScreen
 };

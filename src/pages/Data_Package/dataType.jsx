@@ -20,7 +20,7 @@ import {
   WHITE_BACKGROUND,
 } from '../../utils/const';
 import {ArrowRight} from '../../assets';
-import { api } from '../../utils/api';
+import { fetchProductTypes } from '../../helpers/providerHelper';
 import CustomHeader from '../../components/CustomHeader';
 import SkeletonCard from '../../components/SkeletonCard';
 import {SafeAreaView} from 'react-native';
@@ -33,65 +33,34 @@ export default function DataType({route, navigation}) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchTypes();
+    loadTypes();
   }, []);
 
-  const fetchTypes = async () => {
+  const loadTypes = async (forceRefresh = false) => {
     try {
       setLoading(true);
-      console.log('Fetching types for provider:', provider); // Debug log
+      const { types: fetchedTypes, error: fetchError } = await fetchProductTypes(
+        'data',
+        '/api/product/data',
+        'data',
+        provider,
+        forceRefresh
+      );
 
-      const response = await api.post('/api/product/data', {
-        provider: provider.toLowerCase(), // Pass the selected provider in lowercase
-      });
-
-      console.log('API Response:', response.data); // Debug log
-
-      if (response.data && response.data.data) {
-        // Extract unique types from the data
-        let allProducts = [];
-
-        // Handle the correct response structure: { status, message, data: { data: [...] } }
-        if (response.data.data && Array.isArray(response.data.data.data)) {
-          allProducts = response.data.data.data;
-        } else if (Array.isArray(response.data.data)) {
-          // Fallback if the structure is slightly different
-          allProducts = response.data.data;
-        }
-
-        console.log('All products:', allProducts); // Debug log
-
-        // Filter to ensure we only have objects with a 'type' property and belong to the selected provider
-        const validProducts = allProducts.filter(item =>
-          item && item.type && item.provider &&
-          item.provider.toLowerCase() === provider.toLowerCase()
-        );
-
-        console.log('Valid products for provider:', validProducts); // Debug log
-
-        // Extract unique types
-        const uniqueTypes = [...new Set(validProducts.map(item => item.type))];
-
-        console.log('Unique types:', uniqueTypes); // Debug log
-
-        // Format the types for display
-        const formattedTypes = uniqueTypes
-          .filter(type => type) // Filter out any undefined/null types
-          .map(type => ({
-            id: type,
-            name: type,
-            provider: provider
-          }));
-
-        setTypes(formattedTypes);
+      if (fetchError) {
+        setError(fetchError);
+      } else {
+        setTypes(fetchedTypes);
+        setError(null);
       }
       setLoading(false);
     } catch (err) {
       setError(err.message);
       setLoading(false);
-      console.error('Error fetching types:', err);
+      console.error('Error in DataType loadTypes:', err);
     }
   };
+
 
   const handleTypePress = (selectedType) => {
     navigation.navigate('TopupData', {
@@ -128,7 +97,7 @@ export default function DataType({route, navigation}) {
               </Text>
               <TouchableOpacity
                 style={[styles.typeButton(isDarkMode), {backgroundColor: '#138EE9', alignItems: 'center'}]}
-                onPress={fetchTypes}
+                onPress={() => loadTypes(true)}
               >
                 <Text style={[styles.typeButtonText(isDarkMode), {color: 'white'}]}>Coba Lagi</Text>
               </TouchableOpacity>

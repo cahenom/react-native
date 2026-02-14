@@ -2,16 +2,13 @@ import {
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
   useColorScheme,
   SafeAreaView,
 } from 'react-native';
-import CustomHeader from '../../components/CustomHeader';
-import ModernButton from '../../components/ModernButton';
-import BottomButton from '../../components/BottomButton';
+import {Alert} from '../../utils/alert';
 import React, {useState} from 'react';
+import { useNavigation } from '@react-navigation/native';
 import {
-  BLUE_COLOR,
   DARK_BACKGROUND,
   DARK_COLOR,
   FONT_NORMAL,
@@ -23,17 +20,94 @@ import {
   REGULAR_FONT,
   SLATE_COLOR,
   WHITE_BACKGROUND,
-  WHITE_COLOR,
 } from '../../utils/const';
 import Input from '../../components/form/Input';
+import { makeCekTagihanCall, makeBayarTagihanCall } from '../../helpers/apiBiometricHelper';
+import CustomHeader from '../../components/CustomHeader';
+import ModernButton from '../../components/ModernButton';
 
 export default function BpjsKesehatan() {
+  const navigation = useNavigation();
   const isDarkMode = useColorScheme() === 'dark';
+
   const [customer_no, setCustomerNo] = useState('');
+  const [billData, setBillData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleCekTagihan = async () => {
+    if (!customer_no.trim()) {
+      Alert.alert('Error', 'Silakan masukkan nomor VA Keluarga');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await makeCekTagihanCall({
+        sku: 'bpjs',
+        customer_no: customer_no
+      }, 'Verifikasi sidik jari atau wajah untuk melihat tagihan BPJS');
+
+      if (response.status === 'Sukses') {
+        setBillData(response.data);
+      } else {
+        Alert.alert('Error', response.message || 'Gagal mengambil data tagihan');
+      }
+    } catch (error) {
+      console.error('Error checking BPJS bill:', error);
+      if (error.message !== 'Biometric authentication failed') {
+        Alert.alert('Error', error.response?.data?.message || `Gagal menghubungi server: ${error.message}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBayarTagihan = async (data) => {
+    if (!data) return;
+    
+    setIsProcessing(true);
+    try {
+      const response = await makeBayarTagihanCall({
+        sku: 'bpjs',
+        customer_no: data.customer_no,
+        ref_id: data.ref_id,
+      }, 'Verifikasi sidik jari atau biometric wajah untuk membayar tagihan BPJS');
+
+      // Navigate to success screen
+      navigation.navigate('SuccessNotif', {
+        item: {
+          ...response,
+          customer_no: data.customer_no,
+          ref: data.ref_id,
+          tujuan: data.customer_no,
+          sku: 'bpjs',
+          status: response.status || 'Sukses',
+          message: response.message || 'Transaksi Sukses',
+          price: data.selling_price || data.price,
+          sn: data.ref_id,
+        },
+        product: {
+          product_name: 'BPJS Kesehatan',
+          name: 'BPJS Kesehatan',
+          label: 'BPJS Kesehatan',
+          product_seller_price: `Rp ${(data.selling_price || data.price)?.toLocaleString('id-ID')}`,
+          price: `Rp ${(data.selling_price || data.price)?.toLocaleString('id-ID')}`
+        },
+      });
+    } catch (error) {
+      console.error('Error paying BPJS bill:', error);
+      // Error will be handled by global interceptor
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}}>
       <CustomHeader title="BPJS Kesehatan" />
+      
       <View style={styles.container}>
         <View style={styles.formGroup}>
           <Input
@@ -41,46 +115,66 @@ export default function BpjsKesehatan() {
             placeholder="Masukan nomor VA Keluarga"
             onchange={text => {
               setCustomerNo(text);
-              // Reset bill info here when real integration is added
+              if (billData) setBillData(null);
             }}
-            ondelete={() => setCustomerNo('')}
+            ondelete={() => {
+              setCustomerNo('');
+              setBillData(null);
+            }}
             type="numeric"
           />
-          <ModernButton
-            label="Cek"
-            onPress={() => console.log('Cek BPJS')}
-          />
+          <View style={{marginTop: 10}}>
+            <ModernButton
+              label="Cek"
+              onPress={handleCekTagihan}
+              isLoading={loading}
+            />
+          </View>
         </View>
 
-        <View style={styles.infoPelanggan(isDarkMode)}>
-          <View style={styles.contentBlock(isDarkMode)}>
-            <Text style={styles.label(isDarkMode)}>Nama</Text>
-            <Text style={styles.value(isDarkMode)}>Lorem Ipsum</Text>
+        {billData && (
+          <View style={styles.infoPelanggan(isDarkMode)}>
+            <View style={styles.contentBlock(isDarkMode)}>
+              <Text style={styles.label(isDarkMode)}>Ref ID</Text>
+              <Text style={styles.value(isDarkMode)}>{billData.ref_id || '-'}</Text>
+            </View>
+            <View style={styles.contentBlock(isDarkMode)}>
+              <Text style={styles.label(isDarkMode)}>Nama Pelanggan</Text>
+              <Text style={styles.value(isDarkMode)}>{billData.customer_name || billData.nama || '-'}</Text>
+            </View>
+            <View style={styles.contentBlock(isDarkMode)}>
+              <Text style={styles.label(isDarkMode)}>ID Pelanggan</Text>
+              <Text style={styles.value(isDarkMode)}>{billData.customer_no}</Text>
+            </View>
+            <View style={styles.contentBlock(isDarkMode)}>
+              <Text style={styles.label(isDarkMode)}>Jumlah Peserta</Text>
+              <Text style={styles.value(isDarkMode)}>{billData.desc?.jumlah_peserta || '-'}</Text>
+            </View>
+            <View style={styles.contentBlock(isDarkMode)}>
+              <Text style={styles.label(isDarkMode)}>Lembar Tagihan</Text>
+              <Text style={styles.value(isDarkMode)}>{billData.desc?.lembar_tagihan || billData.lembar_tagihan || '-'} lbr</Text>
+            </View>
+            <View style={styles.contentBlock(isDarkMode)}>
+              <Text style={styles.label(isDarkMode)}>Status</Text>
+              <Text style={styles.value(isDarkMode)}>{billData.status || '-'}</Text>
+            </View>
+            <View style={styles.contentBlock(isDarkMode)}>
+              <Text style={styles.label(isDarkMode)}>Total Tagihan</Text>
+              <Text style={styles.value(isDarkMode)}>Rp. {(billData.selling_price || billData.price || 0).toLocaleString('id-ID')}</Text>
+            </View>
           </View>
-          <View style={styles.contentBlock(isDarkMode)}>
-            <Text style={styles.label(isDarkMode)}>ID Pelanggan</Text>
-            <Text style={styles.value(isDarkMode)}>1234567890</Text>
-          </View>
-          <View style={styles.contentBlock(isDarkMode)}>
-            <Text style={styles.label(isDarkMode)}>Jumlah peserta</Text>
-            <Text style={styles.value(isDarkMode)}>2</Text>
-          </View>
-          <View style={styles.contentBlock(isDarkMode)}>
-            <Text style={styles.label(isDarkMode)}>Lembar Tagihan</Text>
-            <Text style={styles.value(isDarkMode)}>2 lbr</Text>
-          </View>
-          <View style={styles.contentBlock(isDarkMode)}>
-            <Text style={styles.label(isDarkMode)}>Total Tagihan</Text>
-            <Text style={styles.value(isDarkMode)}>Rp. 120.000</Text>
-          </View>
-        </View>
+        )}
       </View>
 
-      <BottomButton
-        label="Bayar Tagihan"
-        action={() => console.log('Bayar BPJS')}
-        isLoading={false}
-      />
+      {billData && (
+        <View style={styles.bottomInline(isDarkMode)}>
+          <ModernButton
+            label="Bayar Tagihan"
+            onPress={() => handleBayarTagihan(billData)}
+            isLoading={isProcessing}
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -93,16 +187,6 @@ const styles = StyleSheet.create({
   formGroup: {
     flexDirection: 'column',
     rowGap: 5,
-  },
-  button: {
-    backgroundColor: BLUE_COLOR,
-    borderRadius: 5,
-    padding: 15,
-  },
-  buttonText: {
-    color: WHITE_COLOR,
-    fontFamily: REGULAR_FONT,
-    textAlign: 'center',
   },
   infoPelanggan: isDarkMode => ({
     backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
@@ -121,25 +205,17 @@ const styles = StyleSheet.create({
   label: isDarkMode => ({
     fontFamily: MEDIUM_FONT,
     fontSize: FONT_SEDANG,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR,
   }),
   value: isDarkMode => ({
     fontFamily: REGULAR_FONT,
     fontSize: FONT_NORMAL,
-    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    color: isDarkMode ? LIGHT_COLOR : DARK_COLOR,
   }),
-
-  bottom: isDarkMode => ({
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+  bottomInline: isDarkMode => ({
+    marginHorizontal: HORIZONTAL_MARGIN,
+    marginBottom: 20,
+    marginTop: 10,
     backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND,
-    padding: 10,
   }),
-  bottomButton: {
-    backgroundColor: BLUE_COLOR,
-    padding: 10,
-    borderRadius: 5,
-  },
 });

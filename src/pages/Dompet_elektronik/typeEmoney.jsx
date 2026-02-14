@@ -19,7 +19,7 @@ import {
   WHITE_BACKGROUND,
 } from '../../utils/const';
 import {ArrowRight} from '../../assets';
-import { api } from '../../utils/api';
+import { fetchProductTypes } from '../../helpers/providerHelper';
 import CustomHeader from '../../components/CustomHeader';
 import SkeletonCard from '../../components/SkeletonCard';
 import ModernButton from '../../components/ModernButton';
@@ -33,65 +33,34 @@ export default function TypeEmoney({route, navigation}) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchTypes();
+    loadTypes();
   }, []);
 
-  const fetchTypes = async () => {
+  const loadTypes = async (forceRefresh = false) => {
     try {
       setLoading(true);
-      console.log('Fetching types for e-money provider:', provider); // Debug log
+      const { types: fetchedTypes, error: fetchError } = await fetchProductTypes(
+        'emoney',
+        '/api/product/emoney',
+        'emoney',
+        provider,
+        forceRefresh
+      );
 
-      const response = await api.post('/api/product/emoney', {
-        provider: provider.toLowerCase(), // Pass the selected provider in lowercase
-      });
-
-      console.log('API Response for e-money types:', response.data); // Debug log
-
-      if (response.data && response.data.data) {
-        // Extract unique types from the data
-        let allProducts = [];
-
-        // Handle the correct response structure: { status, message, data: { emoney: [...] } }
-        if (response.data.data && Array.isArray(response.data.data.emoney)) {
-          allProducts = response.data.data.emoney;
-        } else if (Array.isArray(response.data.data)) {
-          // Fallback if the structure is slightly different
-          allProducts = response.data.data;
-        }
-
-        console.log('All e-money products:', allProducts); // Debug log
-
-        // Filter to ensure we only have objects with a 'type' property and belong to the selected provider
-        const validProducts = allProducts.filter(item =>
-          item && item.type && item.provider &&
-          item.provider.toLowerCase() === provider.toLowerCase()
-        );
-
-        console.log('Valid e-money products for provider:', validProducts); // Debug log
-
-        // Extract unique types
-        const uniqueTypes = [...new Set(validProducts.map(item => item.type))];
-
-        console.log('Unique e-money types:', uniqueTypes); // Debug log
-
-        // Format the types for display
-        const formattedTypes = uniqueTypes
-          .filter(type => type) // Filter out any undefined/null types
-          .map(type => ({
-            id: type,
-            name: type,
-            provider: provider
-          }));
-
-        setTypes(formattedTypes);
+      if (fetchError) {
+        setError(fetchError);
+      } else {
+        setTypes(fetchedTypes);
+        setError(null);
       }
       setLoading(false);
     } catch (err) {
       setError(err.message);
       setLoading(false);
-      console.error('Error fetching e-money types:', err);
+      console.error('Error in TypeEmoney loadTypes:', err);
     }
   };
+
 
   const handleTypePress = (selectedType) => {
     navigation.navigate('TopupDompet', {
@@ -128,7 +97,7 @@ export default function TypeEmoney({route, navigation}) {
               </Text>
               <ModernButton
                 label="Coba Lagi"
-                onPress={fetchTypes}
+                onPress={() => loadTypes(true)}
               />
             </View>
           ) : (

@@ -14,10 +14,10 @@ messaging().setBackgroundMessageHandler(async remoteMessage => {
   
   // Jika remoteMessage.notification ada, Firebase sudah menampilkannya secara otomatis.
   // Kita hanya perlu memicu notifikasi manual jika ini adalah "data-only" message.
-  if (!remoteMessage.notification && remoteMessage.data) {
+  if (!remoteMessage.notification && remoteMessage.data && remoteMessage.data.title && remoteMessage.data.body) {
     await displayNotification(
-      'Punya Kios',
-      remoteMessage.data.body || 'Ada pesan baru',
+      remoteMessage.data.title,
+      remoteMessage.data.body,
       remoteMessage.data
     );
   }

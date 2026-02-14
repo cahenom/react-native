@@ -32,6 +32,8 @@ import {
   WHITE_BACKGROUND,
 } from '../../utils/const';
 import {product_pulsa} from '../../data/product_pulsa';
+import {UserDefault} from '../../assets';
+import {selectContactPhone} from 'react-native-select-contact';
 import BottomModal from '../../components/BottomModal';
 import Input from '../../components/form/Input';
 import TransactionDetail from '../../components/TransactionDetail';
@@ -54,10 +56,48 @@ export default function Pulsa({navigation}) {
   const [showModal, setShowModal] = useState(false);
   const [data_pulsa, setPulsa] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isPickingContact, setIsPickingContact] = useState(false);
 
   const clearNomor = () => {
     setNomor(null);
   };
+
+  const handlePickContact = async () => {
+    if (isPickingContact) return;
+    setIsPickingContact(true);
+    
+    try {
+      if (Platform.OS === 'android') {
+        const request = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
+        );
+        if (request === PermissionsAndroid.RESULTS.DENIED ||
+            request === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+          setIsPickingContact(false);
+          return;
+        }
+      }
+
+      const selection = await selectContactPhone();
+      if (selection) {
+        const { selectedPhone } = selection;
+        let formattedNumber = selectedPhone.number.replace(/[^0-9]/g, '');
+        
+        if (formattedNumber.startsWith('62')) {
+          formattedNumber = '0' + formattedNumber.slice(2);
+        }
+        
+        setNomor(formattedNumber);
+        if (selectItem) setSelectItem(null);
+        if (data_pulsa.length > 0) setPulsa([]);
+      }
+    } catch (error) {
+      console.log('[CONTACT] Error:', error.message || String(error));
+    } finally {
+      setIsPickingContact(false);
+    }
+  };
+
 
   const handleProduct = async (forceRefresh = false) => {
     if (!nomorTujuan) {
@@ -225,6 +265,9 @@ export default function Pulsa({navigation}) {
               setPulsa([]);
             }}
             type="numeric"
+            rightIcon={<UserDefault width={24} height={24} color={isDarkMode ? LIGHT_COLOR : BLUE_COLOR} />}
+            onRightAction={handlePickContact}
+            disabledRightAction={isPickingContact}
           />
 
           <ModernButton

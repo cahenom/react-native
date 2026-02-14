@@ -1,4 +1,4 @@
-import {StyleSheet, Text, View, useColorScheme, ScrollView, FlatList, ActivityIndicator, SafeAreaView, TouchableOpacity, RefreshControl} from 'react-native';
+import {StyleSheet, Text, View, useColorScheme, ScrollView, FlatList, ActivityIndicator, SafeAreaView, TouchableOpacity, RefreshControl, Platform, PermissionsAndroid} from 'react-native';
 import React, {useState, useEffect, useRef} from 'react';
 import {
   BLUE_COLOR,
@@ -25,6 +25,8 @@ import { api } from '../../utils/api';
 import {numberWithCommas} from '../../utils/formatter';
 import { makeTopupCall } from '../../helpers/apiBiometricHelper';
 import CustomHeader from '../../components/CustomHeader';
+import { UserDefault } from '../../assets';
+import { selectContactPhone } from 'react-native-select-contact';
 
 export default function TopupData({route, navigation}) {
   const {provider, title, type} = route.params;
@@ -53,10 +55,47 @@ export default function TopupData({route, navigation}) {
   };
 
   const clearValidationErrors = () => setValidationErrors({});
+  const [isPickingContact, setIsPickingContact] = useState(false);
   const resetInput = () => {
     setCustomerNo('');
     setSelectItem(null);
     clearValidationErrors();
+  };
+
+  const handlePickContact = async () => {
+    if (isPickingContact) return;
+    setIsPickingContact(true);
+
+    try {
+      if (Platform.OS === 'android') {
+        const request = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
+        );
+        if (request === PermissionsAndroid.RESULTS.DENIED ||
+            request === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+          setIsPickingContact(false);
+          return;
+        }
+      }
+
+      const selection = await selectContactPhone();
+      if (selection) {
+        const { selectedPhone } = selection;
+        let formattedNumber = selectedPhone.number.replace(/[^0-9]/g, '');
+        
+        if (formattedNumber.startsWith('62')) {
+          formattedNumber = '0' + formattedNumber.slice(2);
+        }
+        
+        setCustomerNo(formattedNumber);
+        if (selectItem) setSelectItem(null);
+        clearValidationErrors();
+      }
+    } catch (error) {
+      console.log('[CONTACT] Error:', error.message || String(error));
+    } finally {
+      setIsPickingContact(false);
+    }
   };
 
   // Fetch products when component mounts (using provider and type from route params)
@@ -231,6 +270,9 @@ export default function TopupData({route, navigation}) {
             type="numeric"
             lebar={windowWidth * 0.9}
             hasError={!!validationErrors.customer_no}
+            rightIcon={<UserDefault width={24} height={24} color={isDarkMode ? LIGHT_COLOR : BLUE_COLOR} />}
+            onRightAction={handlePickContact}
+            disabledRightAction={isPickingContact}
           />
         </View>
       </View>
