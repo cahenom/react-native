@@ -4,57 +4,51 @@ import {
   View,
   useColorScheme,
   TouchableOpacity,
-  FlatList,
   ScrollView,
-  Image,
   SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import CustomHeader from '../../components/CustomHeader';
 import React from 'react';
 import {
   BOLD_FONT,
-  DARK_BACKGROUND,
-  DARK_COLOR,
-  FONT_NORMAL,
-  FONT_SEDANG,
-  HORIZONTAL_MARGIN,
-  LIGHT_COLOR,
   MEDIUM_FONT,
   REGULAR_FONT,
+  DARK_BACKGROUND,
+  DARK_COLOR,
+  HORIZONTAL_MARGIN,
+  LIGHT_COLOR,
   SLATE_COLOR,
   WHITE_COLOR,
   BLUE_COLOR,
   WHITE_BACKGROUND,
-  GREY_COLOR,
+  BORDER_RADIUS,
+  SPACING,
+  SHADOWS,
 } from '../../utils/const';
 import {mainmenus} from '../../data/mainmenu';
-import {useAuth} from '../../context/AuthContext';
 import {Alert} from '../../utils/alert';
 
 export default function LihatSemuaScreen({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
-  const {user} = useAuth();
 
-  // Services data based on mainmenus (all services including PDAM, Internet, BPJS)
   const services = mainmenus.map((item, index) => ({
     ...item,
     id: index,
   }));
 
   const pascabayarLabels = ['bpjs kesehatan', 'pdam', 'internet'];
-  
-  const prabayarServices = services.filter(item => 
-    !pascabayarLabels.includes(item.label.toLowerCase())
+
+  const prabayarServices = services.filter(
+    item => !pascabayarLabels.includes(item.label.toLowerCase()),
   );
-  
-  const pascabayarServices = services.filter(item => 
-    pascabayarLabels.includes(item.label.toLowerCase())
+  const pascabayarServices = services.filter(item =>
+    pascabayarLabels.includes(item.label.toLowerCase()),
   );
 
-  // Coming soon services
   const comingSoonServices = ['PDAM', 'Internet'];
 
-  const handleServicePress = (item) => {
+  const handleServicePress = item => {
     if (comingSoonServices.includes(item.label)) {
       Alert.alert('Segera Hadir', `Fitur ${item.label} akan segera hadir!`);
     } else {
@@ -62,64 +56,63 @@ export default function LihatSemuaScreen({navigation}) {
     }
   };
 
-  const renderServiceItem = ({item}) => (
-    <TouchableOpacity
-      style={styles.serviceItem}
-      onPress={() => handleServicePress(item)}>
-      <View
-        style={[
-          styles.serviceIconContainer,
-          {backgroundColor: isDarkMode ? '#1a2332' : '#f1f5f9'},
-        ]}>
-        <Image source={item.ikon} style={styles.serviceIcon} />
-      </View>
-      <Text
-        style={[
-          styles.serviceLabel,
-          {color: isDarkMode ? '#cbd5e1' : '#334155'},
-        ]}>
-        {item.label}
-      </Text>
-      {comingSoonServices.includes(item.label) && (
-        <Text
-          style={[
-            styles.comingSoonBadge,
-            {color: '#f59e0b'},
-          ]}>
-          Segera
-        </Text>
-      )}
-    </TouchableOpacity>
+  const renderGrid = (data) => (
+    <View style={styles.grid}>
+      {data.map((item, index) => {
+        const isComingSoon = comingSoonServices.includes(item.label);
+        return (
+          <TouchableOpacity
+            key={item.id}
+            style={styles.serviceItem}
+            onPress={() => handleServicePress(item)}
+            activeOpacity={0.7}>
+            <View
+              style={[
+                styles.serviceIconBox,
+                {
+                  backgroundColor: isDarkMode ? '#1e293b' : '#f0f3f7',
+                  opacity: isComingSoon ? 0.6 : 1,
+                },
+              ]}>
+              {React.createElement(item.ikon, {width: 24, height: 24})}
+            </View>
+            <Text
+              style={styles.serviceLabel(isDarkMode)}
+              numberOfLines={2}>
+              {item.label}
+            </Text>
+            {isComingSoon && (
+              <View style={styles.comingSoonBadge}>
+                <Text style={styles.comingSoonText}>Segera</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        );
+      })}
+    </View>
   );
 
   return (
-    <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? DARK_BACKGROUND : WHITE_BACKGROUND}}>
+    <SafeAreaView style={styles.container(isDarkMode)}>
       <CustomHeader title="Semua Layanan" />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom: 40}}>
-        <View style={styles.servicesSection}>
-          <Text style={[styles.sectionTitle, {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR}]}>
-            Layanan Prabayar
-          </Text>
-          <FlatList
-            data={prabayarServices}
-            numColumns={4}
-            renderItem={renderServiceItem}
-            keyExtractor={item => item.id.toString()}
-            scrollEnabled={false}
-            contentContainerStyle={styles.gridContent}
-          />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{paddingBottom: 40}}>
 
-          <Text style={[styles.sectionTitle, {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR, marginTop: 10}]}>
-            Layanan Pascabayar
-          </Text>
-          <FlatList
-            data={pascabayarServices}
-            numColumns={4}
-            renderItem={renderServiceItem}
-            keyExtractor={item => item.id.toString()}
-            scrollEnabled={false}
-            contentContainerStyle={styles.gridContent}
-          />
+        {/* Prabayar Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle(isDarkMode)}>Layanan Prabayar</Text>
+          <View style={styles.card(isDarkMode)}>
+            {renderGrid(prabayarServices)}
+          </View>
+        </View>
+
+        {/* Pascabayar Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle(isDarkMode)}>Layanan Pascabayar</Text>
+          <View style={styles.card(isDarkMode)}>
+            {renderGrid(pascabayarServices)}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -127,58 +120,64 @@ export default function LihatSemuaScreen({navigation}) {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: isDarkMode => ({
     flex: 1,
-  },
-  header: {
-    paddingTop: 50,
-    paddingBottom: 16,
+    backgroundColor: isDarkMode ? '#101622' : '#f6f6f8',
+  }),
+  section: {
+    marginTop: SPACING.lg,
     paddingHorizontal: HORIZONTAL_MARGIN,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  servicesSection: {
-    flex: 1,
-    marginHorizontal: HORIZONTAL_MARGIN,
-    marginTop: 20,
-  },
-  gridContent: {
-    paddingBottom: 10,
+  sectionTitle: isDarkMode => ({
+    fontFamily: BOLD_FONT,
+    fontSize: 16,
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+    marginBottom: SPACING.md,
+  }),
+  card: isDarkMode => ({
+    backgroundColor: isDarkMode ? '#1a2332' : WHITE_BACKGROUND,
+    borderRadius: BORDER_RADIUS.large,
+    padding: SPACING.md,
+    ...SHADOWS.small,
+  }),
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   serviceItem: {
-    flex: 1,
+    width: '25%',
     alignItems: 'center',
-    paddingVertical: 12,
-    margin: 4,
+    paddingVertical: SPACING.md,
   },
-  serviceIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
+  serviceIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: BORDER_RADIUS.medium,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: SPACING.xs + 2,
   },
   serviceIcon: {
     width: 26,
     height: 26,
   },
-  serviceLabel: {
+  serviceLabel: isDarkMode => ({
+    fontFamily: MEDIUM_FONT,
     fontSize: 11,
-    fontWeight: '600',
+    color: isDarkMode ? '#cbd5e1' : '#334155',
     textAlign: 'center',
-  },
+    lineHeight: 14,
+  }),
   comingSoonBadge: {
-    fontSize: 9,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginTop: 2,
+    backgroundColor: '#fef3c7',
+    borderRadius: BORDER_RADIUS.small,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginTop: 3,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontFamily: BOLD_FONT,
-    marginBottom: 10,
+  comingSoonText: {
+    fontFamily: MEDIUM_FONT,
+    fontSize: 9,
+    color: '#d97706',
   },
 });

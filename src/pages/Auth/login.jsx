@@ -184,7 +184,6 @@ export default function LoginPage({navigation}) {
           </View>
         </View>
         </ScrollView>
-      
     </KeyboardAvoidingView>
   );
 }

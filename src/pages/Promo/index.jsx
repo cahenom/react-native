@@ -6,8 +6,9 @@ import {
   useColorScheme,
   StatusBar,
   SafeAreaView,
+  TouchableOpacity,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
+import CustomHeader from '../../components/CustomHeader';
 import {
   BOLD_FONT,
   REGULAR_FONT,
@@ -17,7 +18,8 @@ import {
   DARK_COLOR,
   LIGHT_COLOR,
   SLATE_COLOR,
-  GRADIENTS,
+  BLUE_COLOR,
+  WHITE_BACKGROUND,
   BORDER_RADIUS,
   SPACING,
   SHADOWS,
@@ -29,21 +31,10 @@ export default function PromoScreen() {
 
   return (
     <SafeAreaView style={styles.container(isDarkMode)}>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor="transparent"
-        translucent
+      <CustomHeader
+        title="PROMO"
+        showBackButton={false}
       />
-      <LinearGradient
-        colors={GRADIENTS.primary}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 1}}
-        style={styles.header}>
-        <Text style={styles.headerTitle}>Promo</Text>
-        <Text style={styles.headerSubtitle}>
-          Penawaran spesial untuk Anda
-        </Text>
-      </LinearGradient>
 
       <View style={styles.content}>
         <View style={styles.emptyCard(isDarkMode)}>
@@ -62,23 +53,28 @@ export default function PromoScreen() {
 const styles = StyleSheet.create({
   container: isDarkMode => ({
     flex: 1,
-    backgroundColor: isDarkMode ? DARK_BACKGROUND : '#f6f6f8',
+    backgroundColor: isDarkMode ? '#101622' : '#f6f6f8',
   }),
-  header: {
-    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + SPACING.xl : 56,
-    paddingBottom: SPACING.xxxl,
-    paddingHorizontal: HORIZONTAL_MARGIN,
+  bellButton: {
+    position: 'relative',
+    padding: 6,
   },
-  headerTitle: {
+  bellBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 0,
+    backgroundColor: '#ef4444',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  bellBadgeText: {
     fontFamily: BOLD_FONT,
-    fontSize: 24,
+    fontSize: 10,
     color: WHITE_COLOR,
-    marginBottom: SPACING.xs,
-  },
-  headerSubtitle: {
-    fontFamily: REGULAR_FONT,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
   },
   content: {
     flex: 1,

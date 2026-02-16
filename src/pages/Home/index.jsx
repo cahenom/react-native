@@ -9,32 +9,38 @@ import {
   Image,
   RefreshControl,
   SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import React, {useState, useEffect, useCallback, useRef} from 'react';
-import {Alert} from '../../utils/alert';
 import {useFocusEffect} from '@react-navigation/native';
 import {BellIkon, Eye, EyeCros} from '../../assets';
-import CustomHeader from '../../components/CustomHeader';
+import LinearGradient from 'react-native-linear-gradient';
 import {
   BOLD_FONT,
+  MEDIUM_FONT,
+  REGULAR_FONT,
   DARK_BACKGROUND,
   DARK_COLOR,
   FONT_NORMAL,
   FONT_SEDANG,
   HORIZONTAL_MARGIN,
   LIGHT_COLOR,
-  MEDIUM_FONT,
-  REGULAR_FONT,
   SLATE_COLOR,
   WHITE_COLOR,
   BLUE_COLOR,
   WHITE_BACKGROUND,
   GREY_COLOR,
+  GRADIENTS,
+  BORDER_RADIUS,
+  SPACING,
+  SHADOWS,
+  windowWidth,
 } from '../../utils/const';
 import {mainmenus} from '../../data/mainmenu';
 import {useAuth} from '../../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {api} from '../../utils/api';
+import TutorialModal from '../../components/TutorialModal';
 
 export default function HomeScreen({navigation}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -42,380 +48,210 @@ export default function HomeScreen({navigation}) {
   const [refreshing, setRefreshing] = useState(false);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const flatListRef = useRef(null);
+  const [showTutorial, setShowTutorial] = useState(false);
 
+  useEffect(() => {
+    checkOnboarding();
+  }, []);
+
+  const checkOnboarding = async () => {
+    try {
+      const hasSeen = await AsyncStorage.getItem('hasSeenOnboarding');
+      if (!hasSeen) {
+        setShowTutorial(true);
+      }
+    } catch (err) {
+      console.log('Error checking onboarding:', err);
+    }
+  };
+
+  const handleTutorialComplete = async () => {
+    try {
+      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+      setShowTutorial(false);
+    } catch (err) {
+      console.log('Error saving onboarding state:', err);
+      setShowTutorial(false);
+    }
+  };
+
+  // Promo banner data
   const promoData = [
-    {id: 1, icon: '📱', title: 'Cashback 50%'},
-    {id: 2, icon: '🔌', title: 'Gratis Ongkir'},
-    {id: 3, icon: '💧', title: 'Diskon 30%'},
+    {
+      id: 1,
+      image: 'https://idwebhost.com/blog/wp-content/uploads/2025/02/275_cara-klaim-dana-kaget.webp',
+    },
+    {
+      id: 2,
+      image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSGQR9IDBYMlnCq-og5mFWJIojXRBxZW492Rg&s',
+    },
+    {
+      id: 3,
+      image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQtVEMPq5bpMJWGr8xfefY7giRzs-WgxURJw&s',
+    },
   ];
 
+  // Auto-slide promo
   useEffect(() => {
     const timer = setInterval(() => {
       let nextIndex = activeSlideIndex + 1;
-      if (nextIndex >= promoData.length) {
-        nextIndex = 0;
-      }
-      
+      if (nextIndex >= promoData.length) nextIndex = 0;
       if (flatListRef.current) {
-        flatListRef.current.scrollToIndex({
-          index: nextIndex,
+        flatListRef.current.scrollToOffset({
+          offset: nextIndex * (CARD_WIDTH + CARD_GAP),
           animated: true,
         });
         setActiveSlideIndex(nextIndex);
       }
     }, 5000);
-
     return () => clearInterval(timer);
   }, [activeSlideIndex, promoData.length]);
+
+  // State for recent activities
+  const [recentActivities, setRecentActivities] = useState([]);
+
+  const getTransactionIcon = sku => {
+    if (sku.toLowerCase().includes('pulsa') || sku.toLowerCase().includes('data')) return '📶';
+    if (sku.toLowerCase().includes('pln')) return '⚡';
+    if (sku.toLowerCase().includes('pdam')) return '💧';
+    if (sku.toLowerCase().includes('wallet') || sku.toLowerCase().includes('dompet')) return '💳';
+    if (sku.toLowerCase().includes('game')) return '🎮';
+    if (sku.toLowerCase().includes('bpjs')) return '🏥';
+    return '📦';
+  };
+
+  const mapTransactions = (transactions) => {
+    return transactions.slice(0, 3).map((transaction, index) => ({
+      id: index + 1,
+      ref: transaction.ref || '-',
+      tujuan: transaction.tujuan || '-',
+      sku: transaction.sku || '-',
+      produk: transaction.produk || 'Transaksi',
+      status: transaction.status || '-',
+      message: transaction.message || '-',
+      price: transaction.price !== undefined && transaction.price !== null
+        ? typeof transaction.price === 'number'
+          ? transaction.price
+          : typeof transaction.price === 'string'
+          ? parseFloat(transaction.price) || 0
+          : 0
+        : 0,
+      sn: transaction.sn || '-',
+      type: transaction.type || '-',
+      created_at: transaction.created_at || '-',
+    }));
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      // Refresh user profile (balance, etc)
       await refreshUserProfile();
-      
-      // Fetch fresh transaction data
       const response = await api.post('/api/user/transaksi');
-
       if (response.data.status) {
-        let fetchedTransactions = response.data.data || [];
-
-        // Ensure fetchedTransactions is an array
-        if (Array.isArray(fetchedTransactions)) {
-          // Cache the fresh data
-          await AsyncStorage.setItem(
-            'user_transactions',
-            JSON.stringify(fetchedTransactions),
-          );
-
-          // Update recent activities with fresh data (top 3)
-          const recentTransactions = fetchedTransactions
-            .slice(0, 3)
-            .map((transaction, index) => ({
-              id: index + 1,
-              service:
-                transaction.sku || transaction.product_name || 'Transaksi',
-              time: transaction.created_at
-                ? new Date(transaction.created_at).toLocaleDateString('id-ID', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  }) +
-                  ', ' +
-                  new Date(transaction.created_at).toLocaleTimeString('id-ID', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                : 'Unknown Time',
-              amount:
-                transaction.price !== undefined && transaction.price !== null
-                  ? typeof transaction.price === 'number'
-                    ? (transaction.price >= 0 ? '+' : '-') +
-                      'Rp ' +
-                      Math.abs(transaction.price).toLocaleString('id-ID')
-                    : typeof transaction.price === 'string'
-                    ? (parseFloat(transaction.price) >= 0 ? '+' : '-') +
-                      'Rp ' +
-                      Math.abs(parseFloat(transaction.price)).toLocaleString(
-                        'id-ID',
-                      )
-                    : '+Rp 0'
-                  : '+Rp 0',
-              status: transaction.status || 'Unknown',
-              icon: getTransactionIcon(transaction.sku || ''),
-              type: transaction.type || 'debit',
-              color:
-                transaction.status?.toLowerCase() === 'berhasil' ||
-                transaction.status?.toLowerCase() === 'sukses' ||
-                transaction.status?.toLowerCase() === 'success'
-                  ? '#10b981'
-                  : '#ef4444',
-            }));
-
-          setRecentActivities(recentTransactions);
+        let fetched = response.data.data || [];
+        if (Array.isArray(fetched)) {
+          await AsyncStorage.setItem('user_transactions', JSON.stringify(fetched));
+          setRecentActivities(mapTransactions(fetched));
         }
       }
     } catch (error) {
-      console.error('Error refreshing recent activities:', error);
+      console.error('Error refreshing:', error);
     } finally {
       setRefreshing(false);
     }
   };
 
-  // Auto-refresh when screen is focused
-  useFocusEffect(
-    useCallback(() => {
-      onRefresh();
-    }, [])
-  );
+  useFocusEffect(useCallback(() => { onRefresh(); }, []));
 
-  // State for recent activities
-  const [recentActivities, setRecentActivities] = useState([
-    // Default/fallback data in case cache is empty
-    
-  ]);
-
-  // Load recent activities from API and cache
   useEffect(() => {
     const loadRecentActivities = async () => {
       try {
-        // 1. First, try to load from cache to show immediate data (Smart Daily Cache)
         const cachedData = await AsyncStorage.getItem('user_transactions');
         if (cachedData) {
-          const parsedData = JSON.parse(cachedData);
-          if (Array.isArray(parsedData)) {
-            // Take only the 3 most recent transactions
-            const recentTransactions = parsedData
-              .slice(0, 3)
-              .map((transaction, index) => ({
-                id: index + 1,
-                service:
-                  transaction.sku || transaction.product_name || 'Transaksi',
-                time: transaction.created_at
-                  ? new Date(transaction.created_at).toLocaleDateString(
-                      'id-ID',
-                      {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      },
-                    ) +
-                    ', ' +
-                    new Date(transaction.created_at).toLocaleTimeString(
-                      'id-ID',
-                      {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      },
-                    )
-                  : 'Unknown Time',
-                amount:
-                  transaction.price !== undefined && transaction.price !== null
-                    ? typeof transaction.price === 'number'
-                      ? (transaction.price >= 0 ? '+' : '-') +
-                        'Rp ' +
-                        Math.abs(transaction.price).toLocaleString('id-ID')
-                      : typeof transaction.price === 'string'
-                      ? (parseFloat(transaction.price) >= 0 ? '+' : '-') +
-                        'Rp ' +
-                        Math.abs(parseFloat(transaction.price)).toLocaleString(
-                          'id-ID',
-                        )
-                      : '+Rp 0'
-                    : '+Rp 0',
-                status: transaction.status || 'Unknown',
-                icon: getTransactionIcon(transaction.sku || ''),
-                type: transaction.type || 'debit',
-                color:
-                  transaction.status?.toLowerCase() === 'berhasil' ||
-                  transaction.status?.toLowerCase() === 'sukses' ||
-                  transaction.status?.toLowerCase() === 'success'
-                    ? '#10b981'
-                    : '#ef4444',
-              }));
-
-            setRecentActivities(recentTransactions);
-          }
+          const parsed = JSON.parse(cachedData);
+          if (Array.isArray(parsed)) setRecentActivities(mapTransactions(parsed));
         }
-        
-        // 2. Then fetch fresh data from API (Full Online Mode)
         const response = await api.post('/api/user/transaksi');
-
         if (response.data.status) {
-          let fetchedTransactions = response.data.data || [];
-
-          // Ensure fetchedTransactions is an array
-          if (Array.isArray(fetchedTransactions)) {
-            // Cache the fresh data
-            await AsyncStorage.setItem(
-              'user_transactions',
-              JSON.stringify(fetchedTransactions),
-            );
-
-            // Update recent activities with fresh data (top 3)
-            const recentTransactions = fetchedTransactions
-              .slice(0, 3)
-              .map((transaction, index) => ({
-                id: index + 1,
-                service:
-                  transaction.sku || transaction.product_name || 'Transaksi',
-                time: transaction.created_at
-                  ? new Date(transaction.created_at).toLocaleDateString(
-                      'id-ID',
-                      {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      },
-                    ) +
-                    ', ' +
-                    new Date(transaction.created_at).toLocaleTimeString(
-                      'id-ID',
-                      {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      },
-                    )
-                  : 'Unknown Time',
-                amount:
-                  transaction.price !== undefined && transaction.price !== null
-                    ? typeof transaction.price === 'number'
-                      ? (transaction.price >= 0 ? '+' : '-') +
-                        'Rp ' +
-                        Math.abs(transaction.price).toLocaleString('id-ID')
-                      : typeof transaction.price === 'string'
-                      ? (parseFloat(transaction.price) >= 0 ? '+' : '-') +
-                        'Rp ' +
-                        Math.abs(parseFloat(transaction.price)).toLocaleString(
-                          'id-ID',
-                        )
-                      : '+Rp 0'
-                    : '+Rp 0',
-                status: transaction.status || 'Unknown',
-                icon: getTransactionIcon(transaction.sku || ''),
-                type: transaction.type || 'debit',
-                color:
-                  transaction.status?.toLowerCase() === 'berhasil' ||
-                  transaction.status?.toLowerCase() === 'sukses' ||
-                  transaction.status?.toLowerCase() === 'success'
-                    ? '#10b981'
-                    : '#ef4444',
-              }));
-
-            setRecentActivities(recentTransactions);
+          let fetched = response.data.data || [];
+          if (Array.isArray(fetched)) {
+            await AsyncStorage.setItem('user_transactions', JSON.stringify(fetched));
+            setRecentActivities(mapTransactions(fetched));
           }
         }
       } catch (error) {
         console.error('Error loading recent activities:', error);
-        // Keep default data if there's an error
       }
     };
-
     loadRecentActivities();
   }, []);
 
-  // Helper function to get transaction icon
-  const getTransactionIcon = sku => {
-    if (
-      sku.toLowerCase().includes('pulsa') ||
-      sku.toLowerCase().includes('data')
-    ) {
-      return '📶';
-    } else if (sku.toLowerCase().includes('pln')) {
-      return '⚡';
-    } else if (sku.toLowerCase().includes('pdam')) {
-      return '💧';
-    } else if (
-      sku.toLowerCase().includes('wallet') ||
-      sku.toLowerCase().includes('dompet')
-    ) {
-      return '💳';
-    } else if (
-      sku.toLowerCase().includes('game') ||
-      sku.toLowerCase().includes('games')
-    ) {
-      return '🎮';
-    } else if (sku.toLowerCase().includes('bpjs')) {
-      return '🏥';
-    } else {
-      return '📦';
+  // Services — first 7 from mainmenus + Lihat Semua
+  const visibleServices = mainmenus
+    .filter(item =>
+      item.label.toLowerCase() !== 'pdam' &&
+      item.label.toLowerCase() !== 'internet' &&
+      item.label.toLowerCase() !== 'indosat' &&
+      item.label.toLowerCase() !== 'voucher' &&
+      item.label.toLowerCase() !== 'bpjs kesehatan'
+    )
+    .slice(0, 7);
+
+
+
+  const getStatusTheme = (status) => {
+    const s = status?.toLowerCase() || '';
+    if (['berhasil', 'sukses', 'success', 'completed'].includes(s)) {
+      return {bg: isDarkMode ? 'rgba(1,193,162,0.15)' : 'rgba(1,193,162,0.1)', text: '#01C1A2'};
     }
+    if (['gagal', 'failed', 'error', 'none'].includes(s)) {
+      return {bg: isDarkMode ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.1)', text: '#EF4444'};
+    }
+    if (['pending', 'diproses', 'processing'].includes(s)) {
+      return {bg: isDarkMode ? 'rgba(245,158,11,0.15)' : 'rgba(245,158,11,0.1)', text: '#F59E0B'};
+    }
+    return {bg: isDarkMode ? '#1e293b' : '#f1f5f9', text: isDarkMode ? '#94a3b8' : '#64748b'};
   };
 
-  // Services data based on mainmenus
-  const services = mainmenus.map((item, index) => ({
-    ...item,
-    id: index,
-  }));
-
-  // Banner promotions
-  const banners = [
-    {
-      id: 1,
-      title: 'Get 50% Cashback for Data Pkg',
-      subtitle: 'Special Offer',
-      gradient: ['#a855f7', '#135bec'],
-    },
-    {
-      id: 2,
-      title: 'Pay Bills with 0% Admin Fee',
-      subtitle: 'New Arrival',
-      gradient: ['#f97316', '#ef4444'],
-    },
-  ];
-
-  const getStatusColor = status => {
-    if (status === 'Success') {
-      return isDarkMode ? '#4ade80' : '#16a34a';
-    }
-    if (status === 'Pending') {
-      return isDarkMode ? '#fde047' : '#ca8a04';
-    }
-    return isDarkMode ? '#9ca3af' : '#6b7280';
+  const formatDate = dateString => {
+    if (!dateString || dateString === '-') return '-';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'});
   };
 
-  const getAmountColor = type => {
-    return type === 'credit'
-      ? isDarkMode
-        ? '#4ade80'
-        : '#16a34a'
-      : isDarkMode
-      ? '#f87171'
-      : '#dc2626';
+  const formatTime = dateString => {
+    if (!dateString || dateString === '-') return '-';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'});
   };
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 11) {
-      return 'Selamat Pagi,';
-    } else if (hour >= 11 && hour < 15) {
-      return 'Selamat Siang,';
-    } else if (hour >= 15 && hour < 19) {
-      return 'Selamat Sore,';
-    } else {
-      return 'Selamat Malam,';
-    }
-  };
-
-  const renderProfile = (
-    <View style={styles.userProfile}>
-      <View
-        style={[
-          styles.avatar,
-          {backgroundColor: isDarkMode ? '#2d3748' : 'rgba(255,255,255,0.2)'},
-        ]}>
-        <Text style={[styles.avatarText, {color: WHITE_COLOR}]}>
-          {user?.name?.charAt(0) || 'U'}
-        </Text>
-      </View>
-      <View>
-        <Text style={[styles.greeting, {color: 'rgba(255,255,255,0.8)'}]}>
-          {getGreeting()}
-        </Text>
-        <Text style={[styles.userName, {color: WHITE_COLOR, marginTop: 2}]}>
-          {user?.name || user?.email || 'User'}
-        </Text>
-      </View>
-    </View>
-  );
-
-  const renderNotifications = (
-    <TouchableOpacity style={styles.notificationButton}>
-      <Text style={{color: WHITE_COLOR, fontSize: 24}}>🔔</Text>
-      <View style={styles.notificationBadge} />
-    </TouchableOpacity>
-  );
+  const CARD_WIDTH = windowWidth * 0.85;
+  const CARD_GAP = 16;
+  const SIDE_PADDING = (windowWidth - CARD_WIDTH) / 2;
 
   return (
-    <SafeAreaView
-      style={[
-        styles.container,
-        {backgroundColor: isDarkMode ? '#101622' : '#f6f6f8'},
-      ]}>
-      <CustomHeader
-        showBackButton={false}
-        leftComponent={renderProfile}
-        rightComponent={renderNotifications}
+    <SafeAreaView style={styles.container(isDarkMode)}>
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={isDarkMode ? '#101622' : BLUE_COLOR}
+        translucent={false}
+      />
+
+      {/* ===== TOP BAR ===== */}
+      <View style={[styles.topBar, {backgroundColor: isDarkMode ? '#101622' : BLUE_COLOR}]}>
+        <Text style={styles.appName}>PUNYA KIOS</Text>
+        <TouchableOpacity style={styles.bellButton}>
+          <BellIkon width={24} height={24} fill={WHITE_COLOR} />
+          <View style={styles.bellBadge}>
+            <Text style={styles.bellBadgeText}>2</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      <TutorialModal 
+        visible={showTutorial} 
+        onComplete={handleTutorialComplete} 
       />
 
       <ScrollView
@@ -428,533 +264,436 @@ export default function HomeScreen({navigation}) {
             tintColor={BLUE_COLOR}
           />
         }>
-        {/* Balance Card */}
-        <View style={[styles.balanceCard, {backgroundColor: BLUE_COLOR}]}>
-          <View style={styles.balanceContent}>
-            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
-              <Text style={styles.balanceTitle}>Total Balance</Text>
-              <TouchableOpacity onPress={toggleBalanceVisibility} activeOpacity={0.7}>
+
+        {/* ===== BALANCE ROW ===== */}
+        <View style={styles.balanceRow(isDarkMode)}>
+          <View>
+            <Text style={styles.balanceLabel(isDarkMode)}>Saldo Dimiliki,</Text>
+            <View style={styles.balanceAmountRow}>
+              <Text style={styles.balanceAmount(isDarkMode)}>
+                {isBalanceVisible
+                  ? `Rp${user?.saldo ? parseFloat(user.saldo).toLocaleString('id-ID') : '0'}`
+                  : 'Rp ••••••'}
+              </Text>
+              <TouchableOpacity onPress={toggleBalanceVisibility} style={{marginLeft: 8}}>
                 {isBalanceVisible ? (
-                  <Eye width={20} height={20} fill="white" />
+                  <Eye width={18} height={18} fill={isDarkMode ? '#94a3b8' : '#374957'} />
                 ) : (
-                  <EyeCros width={20} height={20} fill="white" />
+                  <EyeCros width={18} height={18} fill={isDarkMode ? '#94a3b8' : '#374957'} />
                 )}
               </TouchableOpacity>
             </View>
-            <Text style={styles.balanceAmount}>
-              {isBalanceVisible
-                ? `Rp ${user?.saldo ? parseFloat(user.saldo).toLocaleString() : '0'}`
-                : 'Rp ••••••'}
-            </Text>
           </View>
-          <View style={styles.balanceActions}>
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                {backgroundColor: 'rgba(255,255,255,0.2)'},
-              ]}
-              onPress={() => navigation.navigate('DepositPage')}>
-              <Text style={styles.actionIcon}>💳</Text>
-              <Text style={styles.actionText}>Deposit</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                {backgroundColor: 'rgba(255,255,255,0.2)'},
-              ]}
-              onPress={() => Alert.alert('Informasi', 'Fitur Transfer/Kirim Saldo akan segera hadir!')}>
-              <Text style={styles.actionIcon}>📤</Text>
-              <Text style={styles.actionText}>Kirim</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.depositButton}
+            onPress={() => navigation.navigate('DepositPage')}
+            activeOpacity={0.8}>
+            <Text style={styles.depositText}>+ Deposit</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Services Grid - Exclude PDAM, Internet, and BPJS Kesehatan, add Semua button */}
-        <View style={styles.servicesSection}>
-          <FlatList
-            data={[
-              ...services.filter(
-                item =>
-                  item.label.toLowerCase() !== 'pdam' &&
-                  item.label.toLowerCase() !== 'internet' &&
-                  item.label.toLowerCase() !== 'indosat' &&
-                  item.label.toLowerCase() !== 'voucher' &&
-                  item.label.toLowerCase() !== 'bpjs kesehatan',  
-              ),
-              {id: 'semua', label: 'Semua', ikon: '🔍'}, // Add Semua as a service item
-            ]}
-            numColumns={4}
-            renderItem={({item}) => {
-              // Check if this is the 'Semua' item
-              if (item.id === 'semua') {
-                return (
-                  <TouchableOpacity
-                    style={styles.serviceItem}
-                    onPress={() => navigation.navigate('LihatSemua')} // Navigate to "Lihat Semua" page
-                  >
-                    <View
-                      style={[
-                        styles.serviceIconContainer,
-                        {backgroundColor: isDarkMode ? '#1a2332' : '#f1f5f9'},
-                      ]}>
-                      <View style={styles.serviceIcon}>
-                        <Text style={{fontSize: 26}}>{item.ikon}</Text>
-                      </View>
-                    </View>
-                    <Text
-                      style={[
-                        styles.serviceLabel,
-                        {color: isDarkMode ? '#cbd5e1' : '#334155'},
-                      ]}>
-                      {item.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              } else {
-                return (
-                  <TouchableOpacity
-                    style={styles.serviceItem}
-                    onPress={() => navigation.navigate(item.path)}>
-                    <View
-                      style={[
-                        styles.serviceIconContainer,
-                        {backgroundColor: isDarkMode ? '#1a2332' : '#f1f5f9'},
-                      ]}>
-                      <Image source={item.ikon} style={styles.serviceIcon} />
-                    </View>
-                    <Text
-                      style={[
-                        styles.serviceLabel,
-                        {color: isDarkMode ? '#cbd5e1' : '#334155'},
-                      ]}>
-                      {item.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              }
-            }}
-            keyExtractor={item => item.id.toString()}
-            scrollEnabled={false}
-          />
-        </View>
-
-        {/* Simple Slider with Dots */}
-        <View style={styles.sliderSection}>
-          <View
-            style={[
-              styles.simpleCard,
-              {backgroundColor: isDarkMode ? '#1a2332' : WHITE_BACKGROUND},
-            ]}>
-            <Text
-              style={[
-                styles.cardTitle,
-                {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
-              ]}>
-              Promo Spesial
-            </Text>
-            <View style={styles.sliderContainer}>
-              <FlatList
-                ref={flatListRef}
-                horizontal
-                data={promoData}
-                renderItem={({item}) => (
-                  <View style={styles.sliderImage}>
-                    <Text style={styles.imagePlaceholder}>{item.icon}</Text>
-                    <Text
-                      style={[
-                        styles.sliderText,
-                        {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
-                      ]}>
-                      {item.title}
-                    </Text>
-                  </View>
-                )}
-                keyExtractor={item => item.id.toString()}
-                showsHorizontalScrollIndicator={false}
-                pagingEnabled
-                onScroll={event => {
-                  const slideSize = event.nativeEvent.layoutMeasurement.width;
-                  const offsetX = event.nativeEvent.contentOffset.x;
-                  const index = Math.round(offsetX / slideSize);
-                  setActiveSlideIndex(index);
-                }}
-                scrollEventThrottle={16}
-                onScrollToIndexFailed={() => {}}
-              />
-              <View style={styles.dotsContainer}>
-                {promoData.map((_, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.dot,
-                      activeSlideIndex === index ? styles.activeDot : null,
-                    ]}
-                  />
-                ))}
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Recent Activities */}
-        <View style={styles.activitiesSection}>
-          <View style={styles.sectionHeader}>
-            <Text
-              style={[
-                styles.sectionTitle,
-                {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
-              ]}>
-              Recent Activity
-            </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Transaksi')}>
-              <Text style={[styles.seeAll, {color: BLUE_COLOR}]}>See All</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.activitiesList}>
-            {recentActivities.map(activity => (
+        {/* ===== SERVICES GRID ===== */}
+        <View style={styles.servicesCard(isDarkMode)}>
+          <View style={styles.servicesGrid}>
+            {visibleServices.map((item, index) => (
               <TouchableOpacity
-                key={activity.id}
-                style={[
-                  styles.activityItem,
-                  {backgroundColor: isDarkMode ? '#1a2332' : WHITE_BACKGROUND},
-                ]}
-                onPress={() =>
-                  navigation.navigate('SuccessNotif', {
-                    item: {
-                      ref: activity.id,
-                      tujuan: activity.service,
-                      sku: activity.service,
-                      status: activity.status,
-                      message: activity.status,
-                      price: activity.amount.includes('+')
-                        ? parseInt(activity.amount.replace(/[^\d]/g, ''))
-                        : -parseInt(activity.amount.replace(/[^\d]/g, '')),
-                      sn: activity.service,
-                      type: activity.type,
-                      created_at: activity.time,
-                    },
-                    product: {
-                      product_name: activity.service,
-                      name: activity.service,
-                      label: activity.service,
-                      product_seller_price: activity.amount,
-                      price: activity.amount,
-                    },
-                  })
-                }>
-                <View
-                  style={[
-                    styles.activityIcon,
-                    {
-                      backgroundColor: isDarkMode
-                        ? '#2d3748'
-                        : `${activity.color}20`,
-                    },
-                  ]}>
-                  <Text
-                    style={[
-                      styles.activityIconText,
-                      {color: isDarkMode ? activity.color : activity.color},
-                    ]}>
-                    {activity.icon}
-                  </Text>
+                key={index}
+                style={styles.serviceItem}
+                onPress={() => navigation.navigate(item.path)}
+                activeOpacity={0.7}>
+                <View style={[styles.serviceIconBox, {backgroundColor: isDarkMode ? '#1e293b' : '#f0f3f7'}]}>
+                  {React.createElement(item.ikon, {width: 24, height: 24})}
                 </View>
-
-                <View style={styles.activityDetails}>
-                  <Text
-                    style={[
-                      styles.activityService,
-                      {color: isDarkMode ? DARK_COLOR : LIGHT_COLOR},
-                    ]}>
-                    {activity.service}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.activityTime,
-                      {color: isDarkMode ? '#94a3b8' : '#64748b'},
-                    ]}>
-                    {activity.time}
-                  </Text>
-                </View>
-
-                <View style={styles.activityAmountContainer}>
-                  <Text
-                    style={[
-                      styles.activityAmount,
-                      {color: getAmountColor(activity.type)},
-                    ]}>
-                    {activity.amount}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.activityStatus,
-                      {color: getStatusColor(activity.status)},
-                    ]}>
-                    {activity.status}
-                  </Text>
-                </View>
+                <Text style={styles.serviceLabel(isDarkMode)} numberOfLines={2}>
+                  {item.label}
+                </Text>
               </TouchableOpacity>
             ))}
+            {/* Lihat Semua */}
+            <TouchableOpacity
+              style={styles.serviceItem}
+              onPress={() => navigation.navigate('LihatSemua')}
+              activeOpacity={0.7}>
+              <View style={[styles.serviceIconBox, {backgroundColor: isDarkMode ? '#1e293b' : '#f0f3f7'}]}>
+                <Text style={{fontSize: 22}}>⊞</Text>
+              </View>
+              <Text style={styles.serviceLabel(isDarkMode)} numberOfLines={2}>
+                Lihat{'\n'}Semua
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
+
+        {/* ===== PROMO SECTION ===== */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle(isDarkMode)}>Promo Spesial</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Promo')}>
+            <Text style={styles.seeAll}>See All</Text>
+          </TouchableOpacity>
+        </View>
+
+        <FlatList
+          ref={flatListRef}
+          horizontal
+          data={promoData}
+          renderItem={({item}) => (
+            <TouchableOpacity activeOpacity={0.9} style={{width: CARD_WIDTH, marginRight: CARD_GAP}}>
+              <Image
+                source={{uri: item.image}}
+                style={styles.promoImage}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+          )}
+          keyExtractor={item => item.id.toString()}
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={CARD_WIDTH + CARD_GAP}
+          snapToAlignment="center"
+          decelerationRate="fast"
+          contentContainerStyle={{paddingHorizontal: SIDE_PADDING}}
+          onScroll={event => {
+            const index = Math.round(event.nativeEvent.contentOffset.x / (CARD_WIDTH + CARD_GAP));
+            if (index >= 0 && index < promoData.length) {
+              setActiveSlideIndex(index);
+            }
+          }}
+          scrollEventThrottle={16}
+          onScrollToIndexFailed={() => {}}
+        />
+
+        {/* Dots */}
+        <View style={styles.dotsContainer}>
+          {promoData.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.dot,
+                activeSlideIndex === index && styles.activeDot,
+              ]}
+            />
+          ))}
+        </View>
+
+        {/* ===== RECENT ACTIVITY ===== */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle(isDarkMode)}>Aktivitas Terkini</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Transaksi')}>
+            <Text style={styles.seeAll}>See All</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.activitiesList}>
+          {recentActivities.length > 0 ? (
+            recentActivities.map(activity => {
+              const statusTheme = getStatusTheme(activity.status);
+              return (
+                <TouchableOpacity
+                  key={activity.id}
+                  style={styles.activityCard(isDarkMode)}
+                  onPress={() =>
+                    navigation.navigate('SuccessNotif', {
+                      item: {
+                        ref: activity.ref,
+                        tujuan: activity.tujuan,
+                        sku: activity.sku,
+                        status: activity.status,
+                        message: activity.message,
+                        price: activity.price,
+                        sn: activity.sn,
+                        type: activity.type,
+                        created_at: activity.created_at,
+                        customer_no: activity.tujuan,
+                        ref_id: activity.ref,
+                        data: activity,
+                      },
+                      product: {
+                        produk: activity.produk,
+                        name: activity.sku,
+                        label: activity.sku,
+                        product_seller_price: `Rp ${(activity.price || 0).toLocaleString('id-ID')}`,
+                        price: `Rp ${(activity.price || 0).toLocaleString('id-ID')}`,
+                      },
+                    })
+                  }
+                  activeOpacity={0.7}>
+                  <View style={styles.cardHeader}>
+                    <Text style={styles.cardType(isDarkMode)}>
+                      {activity.produk}
+                    </Text>
+                    <View style={[styles.statusBadge, {backgroundColor: statusTheme.bg}]}>
+                      <Text style={[styles.statusText, {color: statusTheme.text}]}>
+                        {activity.status}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.cardBody}>
+                    <View style={{flex: 1}}>
+                      <Text style={styles.cardTujuan(isDarkMode)} numberOfLines={1}>
+                        {activity.tujuan}
+                      </Text>
+                      <Text style={styles.cardDate(isDarkMode)}>
+                        {formatDate(activity.created_at)} • {formatTime(activity.created_at)}
+                      </Text>
+                    </View>
+                    <Text style={styles.cardPrice(isDarkMode)}>
+                      Rp {(activity.price || 0).toLocaleString('id-ID')}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          ) : (
+            <View style={styles.emptyActivity(isDarkMode)}>
+              <Text style={{fontSize: 32, marginBottom: 8}}>📭</Text>
+              <Text style={styles.emptyText(isDarkMode)}>Belum ada transaksi</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Bottom spacer for tab bar */}
+        <View style={{height: 100}} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: isDarkMode => ({
     flex: 1,
-  },
-  header: {
-    paddingTop: 20,
-    paddingBottom: 16,
-    paddingHorizontal: HORIZONTAL_MARGIN,
-    zIndex: 20,
-  },
-  headerContent: {
+    backgroundColor: isDarkMode ? '#101622' : '#f6f6f8',
+  }),
+
+  // ===== TOP BAR =====
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingTop: 30,
+    paddingBottom: SPACING.lg,
+    paddingHorizontal: HORIZONTAL_MARGIN,
   },
-  userProfile: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  appName: {
+    fontFamily: BOLD_FONT,
+    fontSize: 26,
+    color: WHITE_COLOR,
+    letterSpacing: 1.2,
   },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#e2e8f0',
-  },
-  avatarText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#4f46e5',
-  },
-  greeting: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  userName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  notificationButton: {
+  bellButton: {
     position: 'relative',
-    padding: 8,
-    borderRadius: 9999,
+    padding: 6,
   },
-  notificationBadge: {
+  bellBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 6,
-    height: 6,
-    borderRadius: 9999,
+    top: 2,
+    right: 0,
     backgroundColor: '#ef4444',
-    borderWidth: 2,
-    borderColor: '#1e293b',
-  },
-  balanceCard: {
-    marginHorizontal: HORIZONTAL_MARGIN,
-    borderRadius: 20,
-    padding: 24,
-    marginTop: 20, // Changed from -20 to 20 to prevent overlapping
-    zIndex: 10,
-    shadowColor: '#135bec',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  balanceContent: {
-    marginBottom: 24,
-  },
-  balanceTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.9)',
-    marginBottom: 4,
-  },
-  balanceAmount: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: WHITE_COLOR,
-  },
-  balanceActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: 4,
   },
-  actionIcon: {
-    fontSize: 20,
-  },
-  actionText: {
-    fontSize: 14,
-    fontWeight: 'bold',
+  bellBadgeText: {
+    fontFamily: BOLD_FONT,
+    fontSize: 10,
     color: WHITE_COLOR,
   },
-  servicesSection: {
+
+  // ===== BALANCE ROW =====
+  balanceRow: isDarkMode => ({
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: HORIZONTAL_MARGIN,
+    paddingVertical: SPACING.lg,
+    backgroundColor: isDarkMode ? '#1a2332' : WHITE_BACKGROUND,
+    borderBottomWidth: 1,
+    borderBottomColor: isDarkMode ? '#2d3748' : '#f1f5f9',
+  }),
+  balanceLabel: isDarkMode => ({
+    fontFamily: REGULAR_FONT,
+    fontSize: 13,
+    color: isDarkMode ? SLATE_COLOR : '#64748b',
+    marginBottom: 2,
+  }),
+  balanceAmountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  balanceAmount: isDarkMode => ({
+    fontFamily: BOLD_FONT,
+    fontSize: 22,
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+  }),
+  depositButton: {
+    backgroundColor: BLUE_COLOR,
+    paddingVertical: SPACING.sm + 2,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: BORDER_RADIUS.full,
+  },
+  depositText: {
+    fontFamily: BOLD_FONT,
+    fontSize: 13,
+    color: WHITE_COLOR,
+  },
+
+  // ===== SERVICES GRID =====
+  servicesCard: isDarkMode => ({
     marginHorizontal: HORIZONTAL_MARGIN,
-    marginTop: 24,
+    marginTop: SPACING.lg,
+    backgroundColor: isDarkMode ? '#1a2332' : WHITE_BACKGROUND,
+    borderRadius: BORDER_RADIUS.large,
+    padding: SPACING.lg,
+    ...SHADOWS.small,
+  }),
+  servicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   serviceItem: {
-    flex: 1,
+    width: '25%',
     alignItems: 'center',
-    paddingVertical: 12,
-    margin: 4,
+    paddingVertical: SPACING.md,
   },
-  serviceIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
+  serviceIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: BORDER_RADIUS.medium,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: SPACING.xs + 2,
   },
   serviceIcon: {
     width: 26,
     height: 26,
   },
-  serviceLabel: {
+  serviceLabel: isDarkMode => ({
+    fontFamily: MEDIUM_FONT,
     fontSize: 11,
-    fontWeight: '600',
+    color: isDarkMode ? '#cbd5e1' : '#334155',
     textAlign: 'center',
-  },
-  sliderSection: {
-    marginHorizontal: HORIZONTAL_MARGIN,
-    marginTop: 24,
-  },
-  simpleCard: {
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  sliderContainer: {
+    lineHeight: 14,
+  }),
+
+  // ===== SECTION HEADER =====
+  sectionHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: HORIZONTAL_MARGIN,
+    marginTop: SPACING.xxl,
+    marginBottom: SPACING.md,
   },
-  sliderImage: {
-    width: 300,
-    aspectRatio: 2,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+  sectionTitle: isDarkMode => ({
+    fontFamily: BOLD_FONT,
+    fontSize: 17,
+    color: isDarkMode ? DARK_COLOR : LIGHT_COLOR,
+  }),
+  seeAll: {
+    fontFamily: MEDIUM_FONT,
+    fontSize: 13,
+    color: BLUE_COLOR,
+  },
+
+  // ===== PROMO CARDS =====
+  promoImage: {
+    width: '100%',
+    height: 160,
+    borderRadius: 16,
     backgroundColor: '#e2e8f0',
-    marginRight: 10,
-  },
-  imagePlaceholder: {
-    fontSize: 24,
-  },
-  sliderText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginTop: 8,
-    textAlign: 'center',
+    overflow: 'hidden',
   },
   dotsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 12,
+    marginTop: SPACING.md,
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: '#d1d5db',
-    marginHorizontal: 4,
+    marginHorizontal: 3,
   },
   activeDot: {
     backgroundColor: BLUE_COLOR,
-    width: 12,
-    height: 12,
+    width: 20,
   },
-  activitiesSection: {
-    marginHorizontal: HORIZONTAL_MARGIN,
-    marginTop: 24,
-    marginBottom: 100,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  seeAll: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
+
+  // ===== RECENT ACTIVITY (matches Transaksi page) =====
   activitiesList: {
+    paddingHorizontal: HORIZONTAL_MARGIN,
     gap: 12,
   },
-  activityItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  activityCard: isDarkMode => ({
+    backgroundColor: isDarkMode ? '#1e293b' : WHITE_COLOR,
+    borderRadius: 16,
     padding: 16,
-    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  activityIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    borderColor: isDarkMode ? '#334155' : '#f1f5f9',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  }),
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
+    marginBottom: 12,
   },
-  activityIconText: {
-    fontSize: 20,
-  },
-  activityDetails: {
-    flex: 1,
-  },
-  activityService: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  activityTime: {
+  cardType: isDarkMode => ({
     fontSize: 12,
+    fontFamily: MEDIUM_FONT,
+    color: isDarkMode ? '#94a3b8' : '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  }),
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    minWidth: 70,
+    alignItems: 'center',
   },
-  activityAmountContainer: {
+  statusText: {
+    fontSize: 11,
+    fontFamily: BOLD_FONT,
+    textTransform: 'capitalize',
+  },
+  cardBody: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'flex-end',
   },
-  activityAmount: {
-    fontSize: 14,
-    fontWeight: 'bold',
+  cardTujuan: isDarkMode => ({
+    fontSize: 15,
+    fontFamily: BOLD_FONT,
+    color: isDarkMode ? WHITE_COLOR : LIGHT_COLOR,
     marginBottom: 4,
-  },
-  activityStatus: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-  },
+  }),
+  cardDate: isDarkMode => ({
+    fontSize: 12,
+    fontFamily: REGULAR_FONT,
+    color: isDarkMode ? '#94a3b8' : SLATE_COLOR,
+  }),
+  cardPrice: isDarkMode => ({
+    fontSize: 16,
+    fontFamily: BOLD_FONT,
+    color: isDarkMode ? WHITE_COLOR : DARK_COLOR,
+  }),
+  emptyActivity: isDarkMode => ({
+    alignItems: 'center',
+    padding: SPACING.xxxl,
+    backgroundColor: isDarkMode ? '#1a2332' : WHITE_BACKGROUND,
+    borderRadius: BORDER_RADIUS.medium,
+    ...SHADOWS.small,
+  }),
+  emptyText: isDarkMode => ({
+    fontFamily: REGULAR_FONT,
+    fontSize: 14,
+    color: isDarkMode ? SLATE_COLOR : '#64748b',
+  }),
 });

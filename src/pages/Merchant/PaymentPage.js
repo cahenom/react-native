@@ -17,6 +17,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import PaymentRequestService from '../../services/PaymentRequestService';
 import ModernButton from '../../components/ModernButton';
 import {
+  isBiometricRequiredForOrder,
+  authenticateWithBiometrics,
+} from '../../utils/biometricUtils';
+import {
   DARK_BACKGROUND,
   WHITE_BACKGROUND,
   DARK_COLOR,
@@ -50,6 +54,23 @@ const PaymentPage = () => {
     if (!paymentRequest?.id) {
       Alert.alert('Error', 'Payment request ID is missing');
       return;
+    }
+
+    // Biometric check
+    const biometricRequired = await isBiometricRequiredForOrder();
+    if (biometricRequired) {
+      try {
+        const biometricResult = await authenticateWithBiometrics(
+          'Verifikasi identitas untuk memproses pembayaran',
+        );
+        if (!biometricResult) {
+          Alert.alert('Dibatalkan', 'Verifikasi biometrik gagal. Pembayaran tidak diproses.');
+          return;
+        }
+      } catch (error) {
+        Alert.alert('Dibatalkan', 'Verifikasi biometrik gagal. Pembayaran tidak diproses.');
+        return;
+      }
     }
 
     setApproving(true);
@@ -88,6 +109,23 @@ const PaymentPage = () => {
   };
 
   const handleReject = async () => {
+    // Biometric check
+    const biometricRequired = await isBiometricRequiredForOrder();
+    if (biometricRequired) {
+      try {
+        const biometricResult = await authenticateWithBiometrics(
+          'Verifikasi identitas untuk menolak pembayaran',
+        );
+        if (!biometricResult) {
+          Alert.alert('Dibatalkan', 'Verifikasi biometrik gagal.');
+          return;
+        }
+      } catch (error) {
+        Alert.alert('Dibatalkan', 'Verifikasi biometrik gagal.');
+        return;
+      }
+    }
+
     Alert.alert(
       'Konfirmasi',
       'Apakah Anda yakin ingin menolak pembayaran ini?',

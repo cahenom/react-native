@@ -74,7 +74,21 @@ export default function SettingsScreen({navigation}) {
       }
     } catch (error) {
       console.error('Update error:', error);
-      // Error will be handled by global interceptor
+      // Show server validation error to user
+      if (error.response?.data) {
+        const data = error.response.data;
+        // Handle validation errors object (e.g. {errors: {name: ["..."]}} )
+        if (data.errors) {
+          const messages = Object.values(data.errors).flat().join('\n');
+          Alert.alert('Gagal', messages);
+        } else if (data.message) {
+          Alert.alert('Gagal', data.message);
+        } else {
+          Alert.alert('Error', 'Gagal memperbarui profil. Silakan coba lagi.');
+        }
+      } else {
+        Alert.alert('Error', 'Gangguan jaringan. Silakan coba lagi.');
+      }
     } finally {
       setLoading(false);
     }

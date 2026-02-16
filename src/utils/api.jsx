@@ -2,6 +2,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from './const';
 import { Alert } from './alert';
+import { Platform } from 'react-native';
+import { version as appVersion } from '../../package.json';
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -21,6 +23,11 @@ api.interceptors.request.use(async config => {
   if (authToken) {
     config.headers.Authorization = 'Bearer ' + authToken;
   }
+  
+  // Add App Version and Platform headers
+  config.headers['X-App-Version'] = appVersion;
+  config.headers['X-App-Platform'] = Platform.OS;
+  
   return config;
 });
 

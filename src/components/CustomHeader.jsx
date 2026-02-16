@@ -8,15 +8,17 @@ import {
   StatusBar,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import LinearGradient from 'react-native-linear-gradient';
 import {
   BOLD_FONT,
   REGULAR_FONT,
   WHITE_COLOR,
-  GRADIENTS,
+  BLUE_COLOR,
+  DARK_COLOR,
+  LIGHT_COLOR,
   BORDER_RADIUS,
   SPACING,
   HORIZONTAL_MARGIN,
+  GRADIENTS,
 } from '../utils/const';
 
 export default function CustomHeader({
@@ -32,15 +34,11 @@ export default function CustomHeader({
   return (
     <>
       <StatusBar
-        barStyle="light-content"
-        backgroundColor="transparent"
-        translucent
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={isDarkMode ? '#101622' : BLUE_COLOR}
+        translucent={false}
       />
-      <LinearGradient
-        colors={gradient}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 1}}
-        style={styles.header}>
+      <View style={[styles.header, {backgroundColor: isDarkMode ? '#101622' : BLUE_COLOR}]}>
         <View style={styles.leftContainer}>
           {showBackButton ? (
             <TouchableOpacity
@@ -61,7 +59,7 @@ export default function CustomHeader({
         <View style={styles.rightContainer}>
           {rightComponent || <View style={styles.spacer} />}
         </View>
-      </LinearGradient>
+      </View>
     </>
   );
 }
@@ -70,7 +68,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: SPACING.xxxl * 2,
+    paddingTop: 30,
     paddingBottom: SPACING.lg,
     paddingHorizontal: HORIZONTAL_MARGIN,
   },
@@ -99,7 +97,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: BOLD_FONT,
-    fontSize: 18,
+    fontSize: 24,
     color: WHITE_COLOR,
     flex: 1,
     textAlign: 'center',

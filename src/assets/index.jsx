@@ -1,15 +1,17 @@
 import HeaderBG from './images/headerBg.jpg';
-import DompetIkon from './images/dompet-icon.png';
-import HandphoneIkon from './images/handphone-icon.png';
-import InternetIkon from './images/internet-icon.png';
-import PLNIkon from './images/pln-icon.png';
-import PDAMIkon from './images/pdam-icon.png';
-import BPJSIkon from './images/bpjs-icon.png';
-import GamesIkon from './images/games-icon.png';
-import VoucherIkon from './images/voucher-icon.png';
-import TvIkon from './images/tv-icon.png';
 
-// svg file
+// Service icons (SVG)
+import HandphoneIkon from './images/svg/handphone-icon.svg';
+import PLNIkon from './images/svg/pln-icon.svg';
+import DompetIkon from './images/svg/dompet-icon.svg';
+import GamesIkon from './images/svg/games-icon.svg';
+import TvIkon from './images/svg/tv-icon.svg';
+import VoucherIkon from './images/svg/voucher-icon.svg';
+import BPJSIkon from './images/svg/bpjs-icon.svg';
+import PDAMIkon from './images/svg/pdam-icon.svg';
+import InternetIkon from './images/svg/internet-icon.svg';
+
+// UI icons (SVG)
 import BellIkon from './images/svg/bell-icon.svg';
 import SendIkon from './images/svg/send.svg';
 import AddIkon from './images/svg/add.svg';
@@ -55,5 +57,5 @@ export {
   EyeCros,
   PromoActive,
   PromoDefault,
-  ScanIcon
+  ScanIcon,
 };
